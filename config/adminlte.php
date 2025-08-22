@@ -328,6 +328,24 @@ return [
                     'icon' => 'fas fa-graduation-cap',
                 ],
             ],
+            [
+                'text' => 'pembimbing',
+                'can'  => 'panitia',
+                'icon' => 'fas fa-users',
+                'submenu' => [
+                    [
+                        'text' => 'Data Pembimbing Pkl Sekolah',
+                        'url'  => 'pembimbing',
+                        'icon' => 'fas fa-users',
+                    ],
+                    [
+                        'text' => 'Data Pembimbing Pkl Perusahaan',
+                        'url'  => 'pembimbing-perusahaan',
+                        'icon' => 'fas fa-building',
+                    ],
+                ],
+
+            ]
         ],
 
         // Menu untuk Kepala Program

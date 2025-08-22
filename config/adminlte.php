@@ -330,6 +330,12 @@ return [
             ],
             
         ],
+        [
+            'text' => 'data pembimbing',
+            'url'  => 'pembimbing',
+            'icon' => 'fas fa-users',
+            'can'  => 'panitia',
+        ],
              // Menu untuk Kepala Program
         [
             'text' => 'Dashboard',

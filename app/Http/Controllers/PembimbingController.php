@@ -12,7 +12,8 @@ class PembimbingController extends Controller
      */
     public function index()
     {
-        //
+        $pembimbing = Pembimbing::all();
+        return view('pembimbing.index', compact('pembimbing'));
     }
 
     /**
@@ -20,7 +21,7 @@ class PembimbingController extends Controller
      */
     public function create()
     {
-        //
+        return view('pembimbing.create');
     }
 
     /**
@@ -28,7 +29,23 @@ class PembimbingController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'nama_pemimbing' => 'required',
+            'nip' => 'required',
+            'jenis_kelamin' => 'required',
+            'alamat' => 'required',
+            'no_hp' => 'required',
+        ]);
+
+        Pembimbing::create([
+            'nama_pemimbing' => $request->nama_pemimbing,
+            'nip' => $request->nip,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'alamat' => $request->alamat,
+            'no_hp' => $request->no_hp,
+        ]);
+
+        return redirect()->route('pembimbing.index')->with('success', 'Data Pembimbing Berhasil Ditambahkan');
     }
 
     /**
@@ -36,7 +53,7 @@ class PembimbingController extends Controller
      */
     public function show(Pembimbing $pembimbing)
     {
-        //
+        return view('pembimbing.show', compact('pembimbing'));
     }
 
     /**
@@ -44,7 +61,7 @@ class PembimbingController extends Controller
      */
     public function edit(Pembimbing $pembimbing)
     {
-        //
+        return view('pembimbing.edit', compact('pembimbing'));
     }
 
     /**
@@ -52,7 +69,23 @@ class PembimbingController extends Controller
      */
     public function update(Request $request, Pembimbing $pembimbing)
     {
-        //
+        $request->validate([
+            'nama_pemimbing' => 'required',
+            'nip' => 'required',
+            'jenis_kelamin' => 'required',
+            'alamat' => 'required',
+            'no_hp' => 'required',
+        ]);
+
+        $pembimbing->update([
+            'nama_pemimbing' => $request->nama_pemimbing,
+            'nip' => $request->nip,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'alamat' => $request->alamat,
+            'no_hp' => $request->no_hp,
+        ]);
+
+        return redirect()->route('pembimbing.index')->with('success', 'Data Pembimbing Berhasil Diupdate');
     }
 
     /**
@@ -60,6 +93,8 @@ class PembimbingController extends Controller
      */
     public function destroy(Pembimbing $pembimbing)
     {
-        //
+        $pembimbing->delete();
+        return redirect()->route('pembimbing.index')->with('success', 'Data Pembimbing Berhasil Dihapus');
     }
 }
+

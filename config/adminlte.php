@@ -331,10 +331,22 @@ return [
             
         ],
         [
-            'text' => 'data pembimbing',
+            'text' => 'Data Pembimbing',
             'url'  => 'pembimbing',
             'icon' => 'fas fa-users',
             'can'  => 'panitia',
+            'submenu' => [
+                [
+                    'text' => 'Pembimbing Sekolah',
+                    'url'  => 'pembimbing',
+                    'icon' => 'fas fa-users',
+                ],
+                [
+                    'text' => 'Pembimbing Perusahaan',
+                    'url'  => 'pembimbing-perusahaan',
+                    'icon' => 'fas fa-building',
+                ],
+            ],
         ],
              // Menu untuk Kepala Program
         [

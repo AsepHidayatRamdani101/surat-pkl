@@ -32,6 +32,7 @@ class PembimbingController extends Controller
         $request->validate([
             'nama_pemimbing' => 'required',
             'nip_pembimbing' => 'required',
+            'jenis_kelamin' => 'required',
             'jabatan_pembimbing' => 'required',
             'no_hp_pembimbing' => 'required',
         ]);
@@ -39,6 +40,7 @@ class PembimbingController extends Controller
         Pembimbing::create([
             'nama_pemimbing' => $request->nama_pemimbing,
             'nip_pembimbing' => $request->nip,
+            'jenis_kelamin' => $request->jenis_kelamin,
             'jabatan_pembimbing' => $request->jabatan_pembimbing,
             'no_hp_pembimbing' => $request->no_hp_pembimbing,
            

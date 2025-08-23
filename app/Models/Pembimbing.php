@@ -13,6 +13,7 @@ class Pembimbing extends Model
 
     protected $fillable = [
         'nama_pembimbing',
+        'jenis_kelamin',
         'jabatan_pembimbing',
         'nip_pembimbing',
         'no_hp_pembimbing',

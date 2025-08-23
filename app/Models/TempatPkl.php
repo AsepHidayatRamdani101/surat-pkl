@@ -14,6 +14,8 @@ class TempatPkl extends Model
     protected $fillable = [
         'perusahaan_id',
         'siswa_id',
+        'pembimbing_id',
+        'pembimbing_perusahaan_id',
         'tanggal_mulai',
         'tanggal_selesai',
         'created_by',

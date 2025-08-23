@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('jabatan_pembimbing');
             $table->string('nip_pembimbing')->unique();
             $table->string('no_hp_pembimbing')->nullable();
+            $table->enum('jenis_kelamin', ['Laki-laki', 'Perempuan'])->nullable();
             $table->timestamps();
         });
     }

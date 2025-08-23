@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\PembimbingController;
+use App\Http\Controllers\PembimbingPerusahaanController;
 use App\Http\Controllers\PerusahaanController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SiswaController;
@@ -99,4 +101,24 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/perusahaan/{id}/edit', [PerusahaanController::class, 'edit'])->name('perusahaan.edit');
     Route::put('/perusahaan/{id}', [PerusahaanController::class, 'update'])->name('perusahaan.update');
     Route::delete('/perusahaan/{id}', [PerusahaanController::class, 'destroy'])->name('perusahaan.destroy');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/pembimbing', [PembimbingController::class, 'index'])->name('pembimbing.index');
+    Route::get('/pembimbing/data', [PembimbingController::class, 'data'])->name('pembimbing.data');
+    Route::post('/pembimbing', [PembimbingController::class, 'store'])->name('pembimbing.store');
+    Route::get('/pembimbing/{id}/edit', [PembimbingController::class, 'edit'])->name('pembimbing.edit');
+    Route::put('/pembimbing/{id}', [PembimbingController::class, 'update'])->name('pembimbing.update');
+    Route::delete('/pembimbing/{id}', [PembimbingController::class, 'destroy'])->name('pembimbing.destroy');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/pembimbing-perusahaan', [PembimbingPerusahaanController::class, 'index'])->name('pembimbing-perusahaan.index');
+    Route::get('/pembimbing-perusahaan/data', [PembimbingPerusahaanController::class, 'data'])->name('pembimbing-perusahaan.data');
+    Route::post('/pembimbing-perusahaan', [PembimbingPerusahaanController::class, 'store'])->name('pembimbing-perusahaan.store');
+    Route::get('/pembimbing-perusahaan/{id}/edit', [PembimbingPerusahaanController::class, 'edit'])->name('pembimbing-perusahaan.edit');
+    Route::put('/pembimbing-perusahaan/{id}', [PembimbingPerusahaanController::class, 'update'])->name('pembimbing-perusahaan.update');
+    Route::delete('/pembimbing-perusahaan/{id}', [PembimbingPerusahaanController::class, 'destroy'])->name('pembimbing-perusahaan.destroy');
+    Route::get('/pembimbing-perusahaan/cetak/{id}', [PembimbingPerusahaanController::class, 'cetak'])->name('pembimbing-perusahaan.cetak');
+    Route::get('/pembimbing-perusahaan/export-excel', [PembimbingPerusahaanController::class, 'exportExcel'])->name('pembimbing-perusahaan.export-excel');
 });

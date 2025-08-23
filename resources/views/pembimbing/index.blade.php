@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Data Perusahaan')
+@section('title', 'Data Pembimbing Sekolah')
 
 @section('content')
     <div class="container pt-4">
@@ -8,7 +8,7 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header">
-                        <h4>Data Perusahaan</h4>
+                        <h4>Data Pembimbing</h4>
                         <button class="btn btn-sm btn-primary ms-auto" id="btnTambah">Tambah Data</button>
                     </div>
                     <div class="card-body">
@@ -16,8 +16,8 @@
                             <thead>
                                 <tr>
                                     <th>No</th>
-                                    <th>Nama Perusahaan</th>
-                                    <th>Alamat</th>
+                                    <th>Nama</th>
+                                    <th>NIP</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
@@ -29,24 +29,23 @@
 
         <div class="modal fade" id="modalForm" tabindex="-1" role="dialog">
             <div class="modal-dialog">
-                <form id="formPerusahaan" enctype="multipart/form-data">
+                <form id="formPembimbing" enctype="multipart/form-data">
                     @csrf
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="modalFormLabel">Form Perusahaan</h5>
+                            <h5 class="modal-title" id="modalFormLabel">Form Pembimbing</h5>
                             <button type="button" class="close" data-dismiss="modal">&times;</button>
                         </div>
                         <div class="modal-body">
 
                             <input type="hidden" name="id" id="id">
                             <div class="form-group">
-                                <label for="nama_perusahaan">Nama Perusahaan</label>
-                                <input type="text" name="nama_perusahaan" id="nama_perusahaan" class="form-control"
-                                    required>
+                                <label for="nama">Nama</label>
+                                <input type="text" name="nama" id="nama" class="form-control" required>
                             </div>
                             <div class="form-group">
-                                <label for="alamat">Alamat</label>
-                                <input type="text" name="alamat" id="alamat" class="form-control" required>
+                                <label for="nip">NIP</label>
+                                <input type="text" name="nip" id="nip" class="form-control" required>
                             </div>
 
                         </div>
@@ -71,8 +70,8 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script>
         $(document).ready(function() {
-            let table = $('#perusahaanTable').DataTable({
-                ajax: '{{ route('perusahaan.data') }}',
+            let table = $('#pembimbingTable').DataTable({
+                ajax: '{{ route('pembimbing.data') }}',
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
@@ -80,12 +79,12 @@
                         searchable: false
                     },
                     {
-                        data: 'nama_perusahaan',
-                        name: 'nama_perusahaan'
+                        data: 'nama',
+                        name: 'nama'
                     },
                     {
-                        data: 'alamat',
-                        name: 'alamat'
+                        data: 'nip',
+                        name: 'nip'
                     },
                     {
                         data: 'aksi',
@@ -98,22 +97,22 @@
 
             $('#btnTambah').click(function() {
                 $('#modalForm').modal('show');
-                $('#modalFormLabel').html('Tambah Data Perusahaan');
-                $('#formPerusahaan').trigger('reset');
+                $('#modalFormLabel').html('Tambah Data Pembimbing');
+                $('#formPembimbing').trigger('reset');
             });
 
             $(document).on('click', '.btnEdit', function() {
                 let data = $(this).data();
-                $('#nama_perusahaan').val(data.nama);
-                $('#alamat').val(data.alamat);
+                $('#nama').val(data.nama);
+                $('#nip').val(data.nip);
                 $('#id').val(data.id);
                 $('#modalForm').modal('show');
-                $('#modalFormLabel').html('Edit Data Perusahaan');
+                $('#modalFormLabel').html('Edit Data Pembimbing');
             });
 
             $(document).on('click', '.btn-simpan', function() {
                 let id = $('#id').val();
-                let url = id ? `/perusahaan/${id}` : '{{ route('perusahaan.store') }}';
+                let url = id ? `/pembimbing/${id}` : '{{ route('pembimbing.store') }}';
                 let method = id ? 'PUT' : 'POST';
 
                 $.ajax({
@@ -121,8 +120,8 @@
                     type: method,
                     data: {
                         _token: '{{ csrf_token() }}',
-                        nama_perusahaan: $('#nama_perusahaan').val(),
-                        alamat: $('#alamat').val(),
+                        nama: $('#nama').val(),
+                        nip: $('#nip').val(),
                     },
                     success: function() {
                         $('#modalForm').modal('hide');
@@ -149,7 +148,7 @@
             //btnHapus
             $(document).on('click', '.btnHapus', function() {
                 let id = $(this).data('id');
-                let url = '{{ route('perusahaan.destroy', ':id') }}';
+                let url = '{{ route('pembimbing.destroy', ':id') }}';
                 url = url.replace(':id', id);
                 Swal.fire({
                     title: 'Yakin hapus data ini?',

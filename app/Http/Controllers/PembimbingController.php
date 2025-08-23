@@ -31,18 +31,17 @@ class PembimbingController extends Controller
     {
         $request->validate([
             'nama_pemimbing' => 'required',
-            'nip' => 'required',
-            'jenis_kelamin' => 'required',
-            'alamat' => 'required',
-            'no_hp' => 'required',
+            'nip_pembimbing' => 'required',
+            'jabatan_pembimbing' => 'required',
+            'no_hp_pembimbing' => 'required',
         ]);
 
         Pembimbing::create([
             'nama_pemimbing' => $request->nama_pemimbing,
-            'nip' => $request->nip,
-            'jenis_kelamin' => $request->jenis_kelamin,
-            'alamat' => $request->alamat,
-            'no_hp' => $request->no_hp,
+            'nip_pembimbing' => $request->nip,
+            'jabatan_pembimbing' => $request->jabatan_pembimbing,
+            'no_hp_pembimbing' => $request->no_hp_pembimbing,
+           
         ]);
 
         return redirect()->route('pembimbing.index')->with('success', 'Data Pembimbing Berhasil Ditambahkan');

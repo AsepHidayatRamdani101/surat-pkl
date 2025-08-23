@@ -13,11 +13,20 @@ class Pembimbing_perusahaan extends Model
     protected $fillable = [
         'nama_pembimbing',
         'perusahaan_id',
+        'NIP',
+        'jabatan',
+        'jenis_kelamin',
+        'nohp',
     ];
 
 
     public function tempatPkl()
     {
         return $this->hasMany(TempatPkl::class, 'pembimbing_perusahaan_id');
+    }
+
+    public function perusahaan()
+    {
+        return $this->belongsTo(Perusahaan::class, 'perusahaan_id');
     }
 }

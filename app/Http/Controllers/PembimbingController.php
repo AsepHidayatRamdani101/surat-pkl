@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Pembimbing;
 use Illuminate\Http\Request;
+use Yajra\DataTables\Contracts\DataTable;
+use Yajra\DataTables\Facades\DataTables;
 
 class PembimbingController extends Controller
 {
@@ -24,13 +26,36 @@ class PembimbingController extends Controller
         return view('pembimbing.create');
     }
 
+    public function data(Request $request)
+    {
+         $perusahaan = Pembimbing::all();
+
+        return DataTables::of($perusahaan)
+            ->addColumn('aksi', function ($perusahaan) {
+                return '
+                    <a href="javascript:void(0)" class="btn btn-sm btn-warning btnEdit" 
+                    data-id="' . $perusahaan->id . '"
+                    data-nama="' . $perusahaan->nama_pembimbing . '"
+                      data-nip="' . $perusahaan->nip_pembimbing . '"
+                      data-jabatan="' . $perusahaan->jabatan_pembimbing . '"
+                      data-jenis="' . $perusahaan->jenis_kelamin . '"
+                      data-nohp="' . $perusahaan->no_hp_pembimbing . '"                  
+                    >Edit</a>
+                    <a href="javascript:void(0)" class="btn btn-sm btn-danger btnHapus" data-id="' . $perusahaan->id . '">Hapus</a>
+                ';
+            })
+            ->addIndexColumn()
+            ->rawColumns(['aksi'])
+            ->make(true);
+    }
+
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
         $request->validate([
-            'nama_pemimbing' => 'required',
+            'nama_pembimbing' => 'required',
             'nip_pembimbing' => 'required',
             'jenis_kelamin' => 'required',
             'jabatan_pembimbing' => 'required',
@@ -38,8 +63,8 @@ class PembimbingController extends Controller
         ]);
 
         Pembimbing::create([
-            'nama_pemimbing' => $request->nama_pemimbing,
-            'nip_pembimbing' => $request->nip,
+            'nama_pembimbing' => $request->nama_pembimbing,
+            'nip_pembimbing' => $request->nip_pembimbing,
             'jenis_kelamin' => $request->jenis_kelamin,
             'jabatan_pembimbing' => $request->jabatan_pembimbing,
             'no_hp_pembimbing' => $request->no_hp_pembimbing,
@@ -52,50 +77,55 @@ class PembimbingController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Pembimbing $pembimbing)
+    public function show(Request $request, $id)
     {
-        return view('pembimbing.show', compact('pembimbing'));
+        $pembimbing = Pembimbing::findOrFail($id);        
+        return response()->json($pembimbing);
     }
+   
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Pembimbing $pembimbing)
+    public function edit(Request $request, $id)
     {
-        return view('pembimbing.edit', compact('pembimbing'));
+        $pembimbing = Pembimbing::findOrFail($id);
+        return response()->json($pembimbing);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Pembimbing $pembimbing)
+    public function update(Request $request, $id)
     {
         $request->validate([
-            'nama_pemimbing' => 'required',
-            'nip' => 'required',
+            'nama_pembimbing' => 'required',
+            'nip_pembimbing' => 'required',
             'jenis_kelamin' => 'required',
-            'alamat' => 'required',
-            'no_hp' => 'required',
+            'jabatan_pembimbing' => 'required',
+            'no_hp_pembimbing' => 'required',
         ]);
-
+        $pembimbing = Pembimbing::findOrFail($id);
         $pembimbing->update([
-            'nama_pemimbing' => $request->nama_pemimbing,
-            'nip' => $request->nip,
+            'nama_pembimbing' => $request->nama_pembimbing,
+            'nip_pembimbing' => $request->nip_pembimbing,
             'jenis_kelamin' => $request->jenis_kelamin,
-            'alamat' => $request->alamat,
-            'no_hp' => $request->no_hp,
+            'jabatan_pembimbing' => $request->jabatan_pembimbing,
+            'no_hp_pembimbing' => $request->no_hp_pembimbing,
         ]);
 
-        return redirect()->route('pembimbing.index')->with('success', 'Data Pembimbing Berhasil Diupdate');
+        return response()->json(['success' => 'Data Pembimbing Berhasil Diupdate']);
+        
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Pembimbing $pembimbing)
+    public function destroy(Request $request, $id)
     {
+        $pembimbing = Pembimbing::findOrFail($id);
         $pembimbing->delete();
-        return redirect()->route('pembimbing.index')->with('success', 'Data Pembimbing Berhasil Dihapus');
+        return response()->json(['success' => 'Data Pembimbing Berhasil Dihapus']);
     }
 }
 

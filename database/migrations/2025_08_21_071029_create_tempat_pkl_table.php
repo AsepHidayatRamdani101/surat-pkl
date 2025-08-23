@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('siswa_id');
             $table->unsignedBigInteger('perusahaan_id');
+            $table->unsignedBigInteger('pembimbing_id')->nullable();
             $table->date('tanggal_mulai');
             $table->date('tanggal_selesai');
             $table->string('surat_kesediaan_path')->nullable();

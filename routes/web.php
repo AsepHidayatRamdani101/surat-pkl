@@ -110,6 +110,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pembimbing/{id}/edit', [PembimbingController::class, 'edit'])->name('pembimbing.edit');
     Route::put('/pembimbing/{id}', [PembimbingController::class, 'update'])->name('pembimbing.update');
     Route::delete('/pembimbing/{id}', [PembimbingController::class, 'destroy'])->name('pembimbing.destroy');
+    Route::get('/pembimbing/export-excel', [PembimbingController::class, 'exportExcel'])->name('pembimbing.export-excel');
+    Route::post('/pembimbing/import', [PembimbingController::class, 'import'])->name('pembimbing.import');
 });
 
 Route::middleware(['auth'])->group(function () {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Pembimbing_perusahaan;
 use App\Models\Perusahaan;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
 
 class PembimbingPerusahaanController extends Controller
@@ -52,6 +53,9 @@ class PembimbingPerusahaanController extends Controller
             ->rawColumns(['aksi'])
             ->make(true);
     }
+
+    
+   
 
     /**
      * Store a newly created resource in storage.

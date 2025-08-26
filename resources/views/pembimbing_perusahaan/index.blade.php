@@ -10,6 +10,10 @@
                     <div class="card-header">
                         <h4>Data Pembimbing Perusahaan</h4>
                         <button class="btn btn-sm btn-primary ms-auto" id="btnTambah">Tambah Data</button>
+                        <a href="{{ route('pembimbing-perusahaan.export-excel') }}" class="btn btn-sm btn-success">Export
+                            Excel</a>
+                        <button class="btn btn-sm btn-secondary" id="btnImport">Import Excel</button>
+
                     </div>
                     <div class="card-body">
                         <table id="pembimbingTable" class="table table-bordered">
@@ -64,7 +68,8 @@
                             </div>
                             <div class="form-group">
                                 <label for="jabatan_pembimbing">Jabatan</label>
-                                <input type="text" name="jabatan_pembimbing" id="jabatan_pembimbing" class="form-control" required>
+                                <input type="text" name="jabatan_pembimbing" id="jabatan_pembimbing" class="form-control"
+                                    required>
                             </div>
                             <div class="form-group">
                                 <label for="jenis_kelamin">Jenis Kelamin</label>
@@ -90,6 +95,33 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="modalImport" tabindex="-1" role="dialog" aria-labelledby="modalImportLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalImportLabel">Import Data Pembimbing Perusahaan</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ route('pembimbing-perusahaan.import') }}" method="post" enctype="multipart/form-data">
+                        @csrf
+                        <div class="form-group">
+                            <label for="file">File Excel</label>
+                            <input type="file" name="file" id="file" class="form-control" required>
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Import</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('css')
@@ -102,9 +134,10 @@
             z-index: 99999 !important;
         }
 
-         /* Biar select2 presisi seperti input bootstrap */
+        /* Biar select2 presisi seperti input bootstrap */
         .select2-container .select2-selection--single {
-            height: calc(2.25rem + 2px); /* sama seperti form-control bootstrap */
+            height: calc(2.25rem + 2px);
+            /* sama seperti form-control bootstrap */
             padding: 0.375rem 0.75rem;
             font-size: 1rem;
             line-height: 1.5;
@@ -113,7 +146,8 @@
         }
 
         .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 2.25rem; /* bikin text di tengah kotak */
+            line-height: 2.25rem;
+            /* bikin text di tengah kotak */
         }
 
         .select2-container--default .select2-selection--single .select2-selection__arrow {
@@ -128,20 +162,25 @@
     @include('sweetalert::alert')
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.full.min.js"></script>
 
     <script>
         $(document).ready(function() {
             console.log("Select2 found:", $('.select2').length);
 
-           $('#modalForm').on('shown.bs.modal', function () {
-            $(this).find('.select2').select2({
-                placeholder: "Pilih Perusahaan",
-                allowClear: true,
-                width: '100%',
-                dropdownParent: $('#modalForm')
+            $('#modalForm').on('shown.bs.modal', function() {
+                $(this).find('.select2').select2({
+                    placeholder: "Pilih Perusahaan",
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $('#modalForm')
+                });
             });
-        });
+
+            $('#btnImport').click(function() {
+                $('#modalImport').modal('show');
+            });
+
 
             let table = $('#pembimbingTable').DataTable({
                 ajax: '{{ route('pembimbing-perusahaan.data') }}',
@@ -212,7 +251,7 @@
             });
 
             $(document).on('click', '.btn-simpan', function() {
-             
+
                 Simpan();
             });
 

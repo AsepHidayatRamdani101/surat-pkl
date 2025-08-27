@@ -15,9 +15,9 @@ class PembimbingPerusahaanController extends Controller
      */
     public function index()
     {
-       $perusahaan = Perusahaan::orderBy('nama_perusahaan', 'asc')->get();
-       $pembimbing_perusahaan = Pembimbing_perusahaan::all();
-        
+        $perusahaan = Perusahaan::orderBy('nama_perusahaan', 'asc')->get();
+        $pembimbing_perusahaan = Pembimbing_perusahaan::all();
+
         return view('pembimbing_perusahaan.index', compact('pembimbing_perusahaan', 'perusahaan'));
     }
 
@@ -54,8 +54,8 @@ class PembimbingPerusahaanController extends Controller
             ->make(true);
     }
 
-    
-   
+
+
 
     /**
      * Store a newly created resource in storage.
@@ -70,7 +70,7 @@ class PembimbingPerusahaanController extends Controller
             'jabatan' => 'required',
             'jenis_kelamin' => 'required',
             'nohp' => 'required',
-            
+
 
         ]);
 
@@ -93,8 +93,6 @@ class PembimbingPerusahaanController extends Controller
     {
         $pembimbing_perusahaan = Pembimbing_perusahaan::where('id_perusahaan', $id)->get();
         return response()->json($pembimbing_perusahaan);
-    
-    
     }
 
     /**
@@ -104,7 +102,6 @@ class PembimbingPerusahaanController extends Controller
     {
         $pembimbing_perusahaan = Pembimbing_perusahaan::findOrFail($id);
         return response()->json($pembimbing_perusahaan);
-    
     }
 
     /**
@@ -112,7 +109,7 @@ class PembimbingPerusahaanController extends Controller
      */
     public function update(Request $request, $id)
     {
-       $request->validate([
+        $request->validate([
             'nama_pembimbing' => 'required',
             'NIP' => 'required',
             'perusahaan_id' => 'required',

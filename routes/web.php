@@ -123,4 +123,5 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/pembimbing-perusahaan/{id}', [PembimbingPerusahaanController::class, 'destroy'])->name('pembimbing-perusahaan.destroy');
     Route::get('/pembimbing-perusahaan/cetak/{id}', [PembimbingPerusahaanController::class, 'cetak'])->name('pembimbing-perusahaan.cetak');
     Route::get('/pembimbing-perusahaan/export-excel', [PembimbingPerusahaanController::class, 'exportExcel'])->name('pembimbing-perusahaan.export-excel');
+    Route::post('/pembimbing-perusahaan/import', [PembimbingPerusahaanController::class, 'import'])->name('pembimbing-perusahaan.import');
 });

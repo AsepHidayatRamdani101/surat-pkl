@@ -28,6 +28,7 @@ class TempatPkl extends Model
         'tugas_siswa',
 
 
+
     ];
 
     public function perusahaan()

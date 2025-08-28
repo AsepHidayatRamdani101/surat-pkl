@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\PembimbingController;
 use App\Http\Controllers\PembimbingPerusahaanController;
 use App\Http\Controllers\PerusahaanController;
@@ -73,6 +74,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tempat-pkl', [TempatPklController::class, 'store'])->name('tempat-pkl.store');
     Route::get('/tempat-pkl/{id}/edit', [TempatPklController::class, 'edit']);
     Route::put('/tempat-pkl/{id}', [TempatPklController::class, 'update']);
+    Route::put('/tempat-pkl/{id}/editPembimbing', [TempatPklController::class, 'editPembimbing'])->name('tempat-pkl.edit-pembimbing');
     Route::get('/tempat-pkl/cetak', [TempatPklController::class, 'index_cetak'])->name('tempat-pkl.index_cetak');
     Route::delete('/tempat-pkl/{id}', [TempatPklController::class, 'destroy'])->name('tempat-pkl.destroy');
     Route::get('/tempat-pkl/{id}/cetak', [TempatPklController::class, 'cetak'])->name('tempat-pkl.cetak');
@@ -124,4 +126,19 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pembimbing-perusahaan/cetak/{id}', [PembimbingPerusahaanController::class, 'cetak'])->name('pembimbing-perusahaan.cetak');
     Route::get('/pembimbing-perusahaan/export-excel', [PembimbingPerusahaanController::class, 'exportExcel'])->name('pembimbing-perusahaan.export-excel');
     Route::post('/pembimbing-perusahaan/import', [PembimbingPerusahaanController::class, 'import'])->name('pembimbing-perusahaan.import');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring.index');
+    Route::get('/monitoring/data', [MonitoringController::class, 'data'])->name('monitoring.data');
+    Route::get('/monitoring/lihatdata/{id}', [MonitoringController::class, 'lihatdata'])->name('monitoring.lihatdata');
+
+    Route::post('/monitoring', [MonitoringController::class, 'store'])->name('monitoring.store');
+    Route::get('/monitoring/{id}/edit', [MonitoringController::class, 'edit'])->name('monitoring.edit');
+    Route::put('/monitoring/{id}', [MonitoringController::class, 'update'])->name('monitoring.update');
+    Route::delete('/monitoring/{id}', [MonitoringController::class, 'destroy'])->name('monitoring.destroy');
+    Route::get('/monitoring/data', [MonitoringController::class, 'data'])->name('monitoring.data');
+    Route::get('/monitoring/cetak', [MonitoringController::class, 'index_cetak'])->name('monitoring.index_cetak');
+    Route::get('/monitoring/cetak-monitoring/{id}', [MonitoringController::class, 'cetakMonitoring'])->name('monitoring.cetak-monitoring');
+    Route::get('/monitoring/cetak-sppd/{id}', [MonitoringController::class, 'cetakSppd'])->name('monitoring.cetak-sppd');
 });

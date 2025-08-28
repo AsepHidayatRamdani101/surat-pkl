@@ -273,6 +273,19 @@ class TempatPklController extends Controller
         return response()->json(['message' => 'Data tempat PKL berhasil disimpan']);
     }
 
+
+    public function editPembimbing(Request $request, $id)
+    {
+        $data = TempatPkl::where('perusahaan_id', $id)->get();
+        foreach ($data as $tempatPkl) {
+            $tempatPkl->update([
+                'pembimbing_id' => $request->pembimbing_id
+            ]);
+        }
+
+        return response()->json($data);
+    }
+
     public function edit($id)
     {
         $data = TempatPkl::findOrFail($id);

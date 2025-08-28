@@ -328,7 +328,7 @@ return [
                     'icon' => 'fas fa-graduation-cap',
                 ],
             ],
-            
+
         ],
         [
             'text' => 'Data Pembimbing',
@@ -348,7 +348,7 @@ return [
                 ],
             ],
         ],
-             // Menu untuk Kepala Program
+        // Menu untuk Kepala Program
         [
             'text' => 'Dashboard',
             'url'  => 'dashboard',
@@ -383,6 +383,25 @@ return [
                     'url'  => 'tempat-pkl/cetak',
                     'icon' => 'fas fa-print',
                 ],
+
+            ],
+        ],
+        [
+            'text' => 'Monitoring',
+            'icon' => 'fas fa-eye',
+            'can'  => ['kepala_program', 'panitia'],
+            'submenu' => [
+                [
+                    'text' => 'Data Monitoring',
+                    'url'  => 'monitoring',
+                    'icon' => 'fas fa-tasks',
+                ],
+                [
+                    'text' => 'Cetak Monitoring',
+                    'url'  => 'monitoring/cetak',
+                    'icon' => 'fas fa-print',
+                ],
+
             ],
         ],
 

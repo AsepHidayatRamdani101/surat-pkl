@@ -170,7 +170,7 @@
         <div style="margin-top: -50px">
             <table>
                 <tr>
-                    <td><img src="file:{{ str_replace("\\", "/", public_path('LogoJabar.png')) }}" class="logo" alt="logo" width="100px"
+                    <td><img src="file:///{{ str_replace("\\", "/", public_path('LogoJabar.png')) }}" class="logo" alt="logo" width="100px"
                             style="margin-right: 20px"></td>
                     <td>
                         <div class="text-kop">
@@ -255,7 +255,7 @@
         <div style="margin-left: 300px">
             Garut, {{ \Carbon\Carbon::parse($tanggal_surat)->translatedFormat('d F Y') }}<br>
             Kepala Sekolah,<br>
-            <img src="file:{{ str_replace("\\", "/", public_path($nama_file_ttd)) }}" class="ttd-left" alt="ttd_kepsek" width="180px"
+            <img src="file:///{{ str_replace("\\", "/", public_path($nama_file_ttd)) }}" class="ttd-left" alt="ttd_kepsek" width="180px"
                 style="margin-top: -10px;margin-bottom: -20px"><br>
             <strong><u>{{ $nama_kepala_sekolah }}</u></strong><br>
             NIP. {{ $nip_kepala_sekolah }}
@@ -275,7 +275,7 @@
         <div style="margin-top: -50px">
             <table>
                 <tr>
-                    <td><img src="file:{{ str_replace("\\", "/", public_path('LogoJabar.png')) }}" class="logo" alt="logo" width="100px"
+                    <td><img src="file:///{{ str_replace("\\", "/", public_path('LogoJabar.png')) }}" class="logo" alt="logo" width="100px"
                             style="margin-right: 20px"></td>
                     <td>
                         <div class="text-kop">

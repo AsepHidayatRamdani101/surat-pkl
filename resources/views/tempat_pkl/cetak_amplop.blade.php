@@ -11,7 +11,7 @@
         }
 
         body {
-            background-image: url('file:{{ str_replace("\\", "/", public_path('amplop.jpg')) }}');
+            background-image: url('file:///{{ str_replace("\\", "/", public_path('amplop.jpg')) }}');
             background-repeat: no-repeat;
             background-size: cover;
             margin: 0;

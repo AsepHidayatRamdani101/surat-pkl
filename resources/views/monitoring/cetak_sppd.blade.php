@@ -50,7 +50,7 @@
                 <table style="width: 100%; border: none;">
                     <tr>
                         <td style="width: 15%; border: none;">
-                            <img src="file:{{ str_replace("\\", "/", public_path('LogoJabar.png')) }}" alt="Logo SMKN 8 Garut" style="width: 80px;">
+                            <img src="file:///{{ str_replace("\\", "/", public_path('LogoJabar.png')) }}" alt="Logo SMKN 8 Garut" style="width: 80px;">
                         </td>
                         <td style="width: 85%; border: none;">
                             <div class="header">
@@ -153,7 +153,7 @@
                     <p>Dikeluarkan di : SMK Negeri 8 Garut<br>
                         Tanggal : {{ \Carbon\Carbon::parse($tanggal_surat)->translatedFormat('d F Y') }}<br>
                         KUASA PENGGUNA ANGGARAN<br><br><br><br><br>
-                        <img src="file:{{ str_replace("\\", "/", public_path($nama_file_ttd)) }}" class="ttd-left" alt="ttd_kepsek" width="140px"
+                        <img src="file:///{{ str_replace("\\", "/", public_path($nama_file_ttd)) }}" class="ttd-left" alt="ttd_kepsek" width="140px"
                             style="margin-top: -70px;margin-bottom: -50px"><br>
                         <b>{{ $nama_kepala_sekolah }}</b><br>
                         NIP. {{ $nip_kepala_sekolah }}
@@ -292,7 +292,7 @@
                                     <td colspan="2" style="text-align: center;border: none;">
                                         KUASA PENGGUNA ANGGARAN,
                                         <br><br><br><br>
-                                        <img src="file:{{ str_replace("\\", "/", public_path($nama_file_ttd)) }}" class="ttd-left" alt="ttd_kepsek"
+                                        <img src="file:///{{ str_replace("\\", "/", public_path($nama_file_ttd)) }}" class="ttd-left" alt="ttd_kepsek"
                                             width="140px" style="margin-top: -50px;margin-bottom: -50px"><br>
                                         <b>{{ $nama_kepala_sekolah }}</b> <br>
                                         NIP. {{ $nip_kepala_sekolah }}

@@ -56,7 +56,7 @@
         <div style="margin-top: -50px">
             <table>
                 <tr>
-                    <td><img src="{{ public_path('LogoJabar.png') }}" class="logo" alt="logo" width="100px"
+                    <td><img src="file:{{ str_replace("\\", "/", public_path('LogoJabar.png')) }}" class="logo" alt="logo" width="100px"
                             style="margin-right: 20px"></td>
                     <td>
                         <div class="text-kop">
@@ -105,7 +105,7 @@
         <div style="margin-left: 350px">
             Garut, 17 April 2025<br>
             Kepala Sekolah,<br>
-            <img src="{{ public_path('ttd_kepsek.png') }}" class="ttd-left" alt="ttd_kepsek" width="180px"
+            <img src="file:{{ str_replace("\\", "/", public_path('ttd_kepsek.png')) }}" class="ttd-left" alt="ttd_kepsek" width="180px"
                 style="margin-top: -10px;margin-bottom: -20px"><br>
             <strong><u>MOH. ROFIK ZEN, S.Pd., M.M.Pd.</u></strong><br>
             NIP. 196906131994121002
@@ -119,7 +119,7 @@
         <div style="margin-top: -50px">
             <table>
                 <tr>
-                    <td><img src="{{ public_path('LogoJabar.png') }}" class="logo" alt="logo" width="100px"
+                    <td><img src="file:{{ str_replace("\\", "/", public_path('LogoJabar.png')) }}" class="logo" alt="logo" width="100px"
                             style="margin-right: 20px"></td>
                     <td>
                         <div class="text-kop">
@@ -174,7 +174,7 @@
         <div style="margin-left: 350px">
             Garut, 17 April 2025<br>
             Kepala Sekolah,<br>
-            <img src="{{ public_path('ttd_kepsek.png') }}" class="ttd-left" alt="ttd_kepsek" width="180px"
+            <img src="file:{{ str_replace("\\", "/", public_path('ttd_kepsek.png')) }}" class="ttd-left" alt="ttd_kepsek" width="180px"
                 style="margin-top: -10px;margin-bottom: -20px"><br>
             <strong><u>MOH. ROFIK ZEN, S.Pd., M.M.Pd.</u></strong><br>
             NIP. 196906131994121002

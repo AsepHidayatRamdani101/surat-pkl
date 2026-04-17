@@ -216,7 +216,8 @@ class MonitoringController extends Controller
             'nomor_surat' => session('nomor_surat'),
 
         ]);
-        return $pdf->stream('surat-izin-pkl.pdf'); // atau ->download('namafile.pdf');
+        $pdf->setOption(['enable_remote' => true, 'isHTML5ParserEnabled' => true]);
+        return $pdf->stream('surat-izin-pkl.pdf');
 
     }
 
@@ -377,7 +378,7 @@ class MonitoringController extends Controller
             'nama_file_ttd' => session('nama_file_ttd'),
             'nomor_surat' => session('nomor_surat'),
         ]);
-
+        $pdf->setOption(['enable_remote' => true, 'isHTML5ParserEnabled' => true]);
         return $pdf->stream('sppd.pdf');
     }
 

@@ -344,7 +344,8 @@ class TempatPklController extends Controller
             ->get();
 
         $pdf = pdf::loadView('tempat_pkl.cetak', compact('data'));
-        return $pdf->stream('surat-izin-pkl.pdf'); // atau ->download('namafile.pdf');
+        $pdf->setOption(['enable_remote' => true, 'isHTML5ParserEnabled' => true]);
+        return $pdf->stream('surat-izin-pkl.pdf');
     }
 
     public function cetakAmplop($id)
@@ -354,7 +355,8 @@ class TempatPklController extends Controller
             ->get();
 
         $pdf = Pdf::loadView('tempat_pkl.cetak_amplop', compact('data'));
-        $pdf->setPaper([0, 0, 650, 312], 'potrait'); // ukuran 23 x 11 cm
+        $pdf->setPaper([0, 0, 650, 312], 'potrait');
+        $pdf->setOption(['enable_remote' => true, 'isHTML5ParserEnabled' => true]);
 
         return $pdf->stream('amplop.pdf');
     }

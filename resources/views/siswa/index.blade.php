@@ -6,14 +6,18 @@
     <div class="container pt-4">
         <div class="card">
             <div class="card-header">
-                <h4>Data Tempat PKL</h4>
-                <button class="btn btn-sm btn-primary ms-auto" id="btnTambah">Tambah Data</button>
-                <button class="btn btn-sm btn-success" id="btnImport">Import Data</button>
+                <h4 class="d-inline">Data Siswa</h4>
+                <div class="float-right">
+                    <button class="btn btn-sm btn-primary" id="btnTambah">Tambah Data</button>
+                    <button class="btn btn-sm btn-success" id="btnImport">Import Data</button>
+                    <button class="btn btn-sm btn-danger" id="btnHapusMultiple" style="display: none;">Hapus Pilihan</button>
+                </div>
             </div>
             <div class="card-body">
                 <table id="siswaTable" class="table table-bordered">
                     <thead>
                         <tr>
+                            <th style="width: 30px;"><input type="checkbox" id="checkAll" class="form-check"></th>
                             <th>No</th>
                             <th>NIS</th>
                             <th>Nama Siswa</th>
@@ -34,6 +38,11 @@
                                 <button type="button" class="close" data-dismiss="modal">&times;</button>
                             </div>
                             <div class="modal-body">
+                                <p class="text-muted mb-3">
+                                    <a href="{{ route('siswa.downloadTemplate') }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-download"></i> Download Format Template
+                                    </a>
+                                </p>
                                 <form id="formImportSiswa" enctype="multipart/form-data">
                                     <div class="form-group">
                                         <label for="file">File Excel</label>
@@ -117,6 +126,12 @@
                 serverSide: true,
                 ajax: '{{ route('siswa.data') }}',
                 columns: [{
+                        data: 'checkbox',
+                        name: 'checkbox',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
                         orderable: false,
@@ -242,6 +257,68 @@
                         console.log(xhr.responseText);
                     }
                 });
+            });
+
+            // Handle Check All
+            $(document).on('click', '#checkAll', function() {
+                const isChecked = $(this).prop('checked');
+                $('.checkbox-siswa').prop('checked', isChecked);
+                updateButtonHapusMultiple();
+            });
+
+            // Handle Individual Checkbox
+            $(document).on('click', '.checkbox-siswa', function() {
+                updateButtonHapusMultiple();
+                updateCheckAll();
+            });
+
+            // Update Button Delete Multiple
+            function updateButtonHapusMultiple() {
+                const checkedCount = $('.checkbox-siswa:checked').length;
+                if (checkedCount > 0) {
+                    $('#btnHapusMultiple').show();
+                } else {
+                    $('#btnHapusMultiple').hide();
+                }
+            }
+
+            // Update Check All status
+            function updateCheckAll() {
+                const totalCheckbox = $('.checkbox-siswa').length;
+                const checkedCheckbox = $('.checkbox-siswa:checked').length;
+                $('#checkAll').prop('checked', totalCheckbox === checkedCheckbox && totalCheckbox > 0);
+            }
+
+            // Handle Hapus Multiple
+            $('#btnHapusMultiple').click(function() {
+                const selectedIds = [];
+                $('.checkbox-siswa:checked').each(function() {
+                    selectedIds.push($(this).val());
+                });
+
+                if (selectedIds.length === 0) {
+                    alert('Pilih minimal satu data untuk dihapus');
+                    return;
+                }
+
+                if (confirm('Yakin hapus ' + selectedIds.length + ' data siswa ini?')) {
+                    $.ajax({
+                        url: '{{ route('siswa.destroyMultiple') }}',
+                        type: 'DELETE',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            ids: selectedIds
+                        },
+                        success: function(response) {
+                            alert(response.message);
+                            table.ajax.reload();
+                            $('#btnHapusMultiple').hide();
+                        },
+                        error: function(xhr) {
+                            alert('Error: ' + (xhr.responseJSON?.message || 'Terjadi kesalahan'));
+                        }
+                    });
+                }
             });
 
         });

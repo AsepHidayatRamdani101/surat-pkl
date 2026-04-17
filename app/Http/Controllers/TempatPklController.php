@@ -61,10 +61,8 @@ class TempatPklController extends Controller
                 ->make(true);
         }
 
-        $siswa = Siswa::whereHas('kelas.jurusan', function ($query) {
-            $query->where('id', auth()->user()->jurusan_id);
-            $query->where('status', '!=', 'belum_terdaftar');
-        })->get();
+        $siswa = Siswa::where('status', '!=', 'belum_terdaftar')->get();
+        
         $perusahaan = Perusahaan::orderBy('nama_perusahaan')->get();
         //   var_dump($siswa);
         return view('tempat_pkl.index', compact('siswa', 'perusahaan'));

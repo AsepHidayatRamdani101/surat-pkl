@@ -99,7 +99,7 @@
                     <tr>
                         <td style="width: 5%">1.</td>
                         <td style="width: 45%;">Pengguna Anggaran/Kuasa Pengguna Anggaran</td>
-                        <td style="width: 30%;">: Moh. Rofiq Zen, S.Pd., M.M.Pd</td>
+                        <td style="width: 30%;">: {{ $nama_kepala_sekolah }}</td>
                     </tr>
                     <tr>
                         <td>2.</td>
@@ -121,7 +121,7 @@
                     <tr>
                         <td>4.</td>
                         <td>Maksud Perjalanan</td>
-                        <td>: Pengantaran dan Monitoring PKL</td>
+                        <td>: Penjemputan PKL</td>
                     </tr>
                     <tr>
                         <td>5.</td>
@@ -137,7 +137,8 @@
                         <td>7.</td>
                         <td>Lamanya Perjalanan Dinas <br>a. Tanggal berangkat <br>b. Tanggal harus kembali / tiba di
                             tempat baru *)</td>
-                        <td> <br>: 1 September 2025 <br>: .................................................</td>
+                        <td> <br>: {{ \Carbon\Carbon::parse($tanggal_berangkat)->translatedFormat('d F Y') }} <br>:
+                            .................................................</td>
                     </tr>
                     <tr>
                         <td>8.</td>
@@ -150,10 +151,12 @@
                 <br>
                 <div style="margin-left: 240px">
                     <p>Dikeluarkan di : SMK Negeri 8 Garut<br>
-                        Tanggal : 29 Agustus 2025<br>
+                        Tanggal : {{ \Carbon\Carbon::parse($tanggal_surat)->translatedFormat('d F Y') }}<br>
                         KUASA PENGGUNA ANGGARAN<br><br><br><br><br>
-                        <b>MOH. ROFIK ZEN, S.Pd., M.M.Pd</b><br>
-                        NIP. 196906131994121002
+                        <img src="{{ public_path($nama_file_ttd) }}" class="ttd-left" alt="ttd_kepsek" width="140px"
+                            style="margin-top: -70px;margin-bottom: -50px"><br>
+                        <b>{{ $nama_kepala_sekolah }}</b><br>
+                        NIP. {{ $nip_kepala_sekolah }}
                     </p>
                 </div>
             </td>
@@ -289,8 +292,10 @@
                                     <td colspan="2" style="text-align: center;border: none;">
                                         KUASA PENGGUNA ANGGARAN,
                                         <br><br><br><br>
-                                        <b>MOH. ROFIK ZEN, S.Pd.,M.M.Pd</b> <br>
-                                        NIP. 196906131994121002
+                                        <img src="{{ public_path($nama_file_ttd) }}" class="ttd-left" alt="ttd_kepsek"
+                                            width="140px" style="margin-top: -50px;margin-bottom: -50px"><br>
+                                        <b>{{ $nama_kepala_sekolah }}</b> <br>
+                                        NIP. {{ $nip_kepala_sekolah }}
 
                                     </td>
 

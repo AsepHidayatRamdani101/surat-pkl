@@ -8,6 +8,8 @@ use App\Models\Siswa;
 use Exception;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Yajra\DataTables\Facades\DataTables;
 
 class SiswaController extends Controller
@@ -27,17 +29,20 @@ class SiswaController extends Controller
             $data = Siswa::with('kelas.jurusan')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
+                ->addColumn('checkbox', function ($row) {
+                    return '<input type="checkbox" class="form-check checkbox-siswa" value="' . $row->id . '">';
+                })
                 ->addColumn('aksi', function ($row) {
                     return '
-                        <button class="btn btn-warning btnEdit" data-id="' .
+                        <button class="btn btn-sm btn-warning btnEdit" data-id="' .
                         $row->id .
                         '">Edit</button>
-                        <button class="btn btn-danger btnHapus" data-id="' .
+                        <button class="btn btn-sm btn-danger btnHapus" data-id="' .
                         $row->id .
                         '">Hapus</button>
                     ';
                 })
-                ->rawColumns(['aksi'])
+                ->rawColumns(['checkbox', 'aksi'])
                 ->make(true);
         }
     }
@@ -91,6 +96,23 @@ class SiswaController extends Controller
         return response()->json(['message' => 'Data berhasil dihapus']);
     }
 
+    public function destroyMultiple(Request $request)
+    {
+        try {
+            $ids = $request->ids;
+            
+            if (!is_array($ids) || empty($ids)) {
+                return response()->json(['message' => 'Pilih minimal satu data'], 422);
+            }
+
+            Siswa::whereIn('id', $ids)->delete();
+            
+            return response()->json(['message' => 'Data berhasil dihapus (' . count($ids) . ' data)']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function import(Request $request)
     {
         $file = $request->file('file');
@@ -107,5 +129,45 @@ class SiswaController extends Controller
             ]);
         }
         return response()->json(['message' => 'Data berhasil diimport']);
+    }
+
+    public function downloadTemplate()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        // Set header
+        $sheet->setCellValue('A1', 'Nama Siswa');
+        $sheet->setCellValue('B1', 'NIS');
+        $sheet->setCellValue('C1', 'Kelas ID');
+        
+        // Style header
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '4472C4']],
+            'alignment' => ['horizontal' => 'center', 'vertical' => 'center'],
+        ];
+        $sheet->getStyle('A1:C1')->applyFromArray($headerStyle);
+        
+        // Add sample data
+        $sheet->setCellValue('A2', 'Contoh: Budi Santoso');
+        $sheet->setCellValue('B2', '2024001');
+        $sheet->setCellValue('C2', '1');
+        
+        // Set column width
+        $sheet->getColumnDimension('A')->setWidth(30);
+        $sheet->getColumnDimension('B')->setWidth(15);
+        $sheet->getColumnDimension('C')->setWidth(15);
+        
+        // Create writer and response
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'template_import_siswa_' . date('d_m_Y_H_i_s') . '.xlsx';
+        
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+        
+        $writer->save('php://output');
+        exit;
     }
 }

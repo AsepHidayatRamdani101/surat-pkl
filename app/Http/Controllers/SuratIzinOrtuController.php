@@ -12,9 +12,7 @@ class SuratIzinOrtuController extends Controller
 {
     public function index()
     {
-        $siswa = Siswa::whereHas('kelas.jurusan', function ($query) {
-            $query->where('id', auth()->user()->jurusan_id);
-        })->get();
+        $siswa = Siswa::all();
         return view('surat_izin_ortu.index', compact('siswa'));
     }
 

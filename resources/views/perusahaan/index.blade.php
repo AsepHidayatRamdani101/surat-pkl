@@ -9,13 +9,17 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header">
-                        <h4>Data Perusahaan</h4>
-                        <button class="btn btn-sm btn-primary ms-auto" id="btnTambah">Tambah Data</button>
+                        <h4 class="d-inline">Data Perusahaan</h4>
+                        <div class="float-right">
+                            <button class="btn btn-sm btn-primary" id="btnTambah">Tambah Data</button>
+                            <button class="btn btn-sm btn-danger" id="btnHapusMultiple" style="display: none;">Hapus Pilihan</button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <table id="perusahaanTable" class="table table-bordered">
                             <thead>
                                 <tr>
+                                    <th style="width: 30px;"><input type="checkbox" id="checkAll" class="form-check"></th>
                                     <th>No</th>
                                     <th>Nama Perusahaan</th>
                                     <th>Alamat</th>
@@ -74,6 +78,12 @@
                 let table = $('#perusahaanTable').DataTable({
                     ajax: '{{ route('perusahaan.data') }}',
                     columns: [{
+                            data: 'checkbox',
+                            name: 'checkbox',
+                            orderable: false,
+                            searchable: false
+                        },
+                        {
                             data: 'DT_RowIndex',
                             name: 'DT_RowIndex',
                             orderable: false,
@@ -187,6 +197,87 @@
                         }
                     });
                 })
+
+                // Handle Check All
+                $(document).on('click', '#checkAll', function() {
+                    const isChecked = $(this).prop('checked');
+                    $('.checkbox-perusahaan').prop('checked', isChecked);
+                    updateButtonHapusMultiple();
+                });
+
+                // Handle Individual Checkbox
+                $(document).on('click', '.checkbox-perusahaan', function() {
+                    updateButtonHapusMultiple();
+                    updateCheckAll();
+                });
+
+                // Update Button Delete Multiple
+                function updateButtonHapusMultiple() {
+                    const checkedCount = $('.checkbox-perusahaan:checked').length;
+                    if (checkedCount > 0) {
+                        $('#btnHapusMultiple').show();
+                    } else {
+                        $('#btnHapusMultiple').hide();
+                    }
+                }
+
+                // Update Check All status
+                function updateCheckAll() {
+                    const totalCheckbox = $('.checkbox-perusahaan').length;
+                    const checkedCheckbox = $('.checkbox-perusahaan:checked').length;
+                    $('#checkAll').prop('checked', totalCheckbox === checkedCheckbox && totalCheckbox > 0);
+                }
+
+                // Handle Hapus Multiple
+                $('#btnHapusMultiple').click(function() {
+                    const selectedIds = [];
+                    $('.checkbox-perusahaan:checked').each(function() {
+                        selectedIds.push($(this).val());
+                    });
+
+                    if (selectedIds.length === 0) {
+                        alert('Pilih minimal satu data untuk dihapus');
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Yakin hapus ' + selectedIds.length + ' data perusahaan ini?',
+                        text: 'Tindakan ini tidak bisa dibatalkan!',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, hapus!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $.ajax({
+                                url: '{{ route('perusahaan.destroyMultiple') }}',
+                                type: 'DELETE',
+                                data: {
+                                    _token: '{{ csrf_token() }}',
+                                    ids: selectedIds
+                                },
+                                success: function(response) {
+                                    table.ajax.reload();
+                                    $('#btnHapusMultiple').hide();
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Berhasil',
+                                        text: response.message,
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    });
+                                },
+                                error: function(xhr) {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Oops...',
+                                        text: xhr.responseJSON?.message || 'Terjadi kesalahan.',
+                                    });
+                                }
+                            });
+                        }
+                    });
+                });
             });
         </script>
     @endsection

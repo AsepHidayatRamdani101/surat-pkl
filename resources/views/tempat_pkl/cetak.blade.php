@@ -170,7 +170,7 @@
                 @endforeach
             </tbody>
         </table>
-        <br><br><br><br>
+        <br><br>
         <div style="margin-left: 350px">
             Garut, 17 April 2025<br>
             Kepala Sekolah,<br>

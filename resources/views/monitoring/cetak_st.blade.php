@@ -193,14 +193,14 @@
 
         <div style="text-align: center">
             <div class="judul"><b>SURAT TUGAS</b></div>
-            <div class="nomor">Nomor: 131/PK.03.03-SMKN8GRT</div>
+            <div class="nomor">Nomor: {{ $nomor_surat }}/PK.03.03-SMKN8GRT</div>
         </div>
 
         <div class="section">
             <div class="table-like">
                 <div style="margin-bottom: 10px"><strong>Yang bertanda tangan di bawah ini:</strong></div>
-                <div><span class="label">Nama</span><span class="value">: Moh Rofik Zen, S.Pd., M.M.Pd.</span></div>
-                <div><span class="label">NIP</span><span class="value">: 196906131994121002</span></div>
+                <div><span class="label">Nama</span><span class="value">: {{ $nama_kepala_sekolah }}</span></div>
+                <div><span class="label">NIP</span><span class="value">: {{ $nip_kepala_sekolah }}</span></div>
                 <div><span class="label">Jabatan</span><span class="value">: Kepala SMK Negeri 8 Garut </span></div>
             </div>
         </div>
@@ -231,11 +231,12 @@
                     pada:
                 </div>
                 <br>
-                <div><span class="label">Hari/Tanggal</span><span class="value">: Senin, 1 September 2025
+                <div><span class="label">Hari/Tanggal</span><span class="value">:
+                        {{ \Carbon\Carbon::parse($tanggal_berangkat)->translatedFormat('d F Y') }}
                     </span>
                 </div>
                 <div><span class="label">Waktu</span><span class="value">: 07.00 s.d. selesai</span></div>
-                <div><span class="label">Kegiatan</span><span class="value">: Monitoring PKL</span></div>
+                <div><span class="label">Kegiatan</span><span class="value">: Penjemputan PKL</span></div>
             </div>
         </div>
 
@@ -252,12 +253,12 @@
 
 
         <div style="margin-left: 300px">
-            Garut, 29 Agustus 2025<br>
+            Garut, {{ \Carbon\Carbon::parse($tanggal_surat)->translatedFormat('d F Y') }}<br>
             Kepala Sekolah,<br>
-            <img src="{{ public_path('ttd_kepsek.png') }}" class="ttd-left" alt="ttd_kepsek" width="180px"
+            <img src="{{ public_path($nama_file_ttd) }}" class="ttd-left" alt="ttd_kepsek" width="180px"
                 style="margin-top: -10px;margin-bottom: -20px"><br>
-            <strong><u>MOH. ROFIK ZEN, S.Pd., M.M.Pd.</u></strong><br>
-            NIP. 196906131994121002
+            <strong><u>{{ $nama_kepala_sekolah }}</u></strong><br>
+            NIP. {{ $nip_kepala_sekolah }}
         </div>
 
     </div>
@@ -300,7 +301,8 @@
         <table style="border: none">
             <tr>
                 <td style="border: none" width="150px"><span class="label">Hari/Tanggal</span></td>
-                <td style="border: none">: 1 September 2025</td>
+                <td style="border: none">: {{ \Carbon\Carbon::parse($tanggal_berangkat)->translatedFormat('d F Y') }}
+                </td>
             </tr>
             <tr>
                 <td style="border: none" width="200px">Waktu Monitoring</td>
@@ -318,18 +320,7 @@
             </tr>
 
 
-            <tr>
-                <td style="border: none" width="150px">Nama Pembimbing Industri</td>
-                <td style="border: none">
-                    :.....................................................................................
-                </td>
-            </tr>
-            <tr>
-                <td style="border: none" width="150px">Nama Guru Pendamping</td>
-                <td style="border: none">
-                    :.....................................................................................
-                </td>
-            </tr>
+
         </table>
 
         <table class="table table-bordered">
@@ -400,7 +391,7 @@
 
 
         <div style="margin-left: 300px">
-            Garut, 29 Agustus 2025<br>
+            Garut, {{ \Carbon\Carbon::parse($tanggal_berangkat)->translatedFormat('d F Y') }}<br>
             Pembimbing,<br>
 
 

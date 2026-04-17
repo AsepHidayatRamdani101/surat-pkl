@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\JurusanController;
+use App\Http\Controllers\KelasController;
 use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\PembimbingController;
 use App\Http\Controllers\PembimbingPerusahaanController;
@@ -93,7 +95,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/siswa/{id}/edit', [SiswaController::class, 'edit'])->name('siswa.edit');
     Route::put('/siswa/{id}', [SiswaController::class, 'update'])->name('siswa.update');
     Route::delete('/siswa/{id}', [SiswaController::class, 'destroy'])->name('siswa.destroy');
+    Route::delete('/siswa', [SiswaController::class, 'destroyMultiple'])->name('siswa.destroyMultiple');
     Route::post('/siswa/import', [SiswaController::class, 'import'])->name('siswa.import');
+    Route::get('/siswa/download/template', [SiswaController::class, 'downloadTemplate'])->name('siswa.downloadTemplate');
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -103,6 +107,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/perusahaan/{id}/edit', [PerusahaanController::class, 'edit'])->name('perusahaan.edit');
     Route::put('/perusahaan/{id}', [PerusahaanController::class, 'update'])->name('perusahaan.update');
     Route::delete('/perusahaan/{id}', [PerusahaanController::class, 'destroy'])->name('perusahaan.destroy');
+    Route::delete('/perusahaan', [PerusahaanController::class, 'destroyMultiple'])->name('perusahaan.destroyMultiple');
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -132,7 +137,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring.index');
     Route::get('/monitoring/data', [MonitoringController::class, 'data'])->name('monitoring.data');
     Route::get('/monitoring/lihatdata/{id}', [MonitoringController::class, 'lihatdata'])->name('monitoring.lihatdata');
+    Route::get('/monitoring/export-excel', [MonitoringController::class, 'exportExcel'])->name('monitoring.exportExcel');
 
+    Route::get('/monitoring/set-tanggal', [MonitoringController::class, 'setTanggal'])->name('monitoring.set-tanggal');
     Route::post('/monitoring', [MonitoringController::class, 'store'])->name('monitoring.store');
     Route::get('/monitoring/{id}/edit', [MonitoringController::class, 'edit'])->name('monitoring.edit');
     Route::put('/monitoring/{id}', [MonitoringController::class, 'update'])->name('monitoring.update');
@@ -141,4 +148,26 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/monitoring/cetak', [MonitoringController::class, 'index_cetak'])->name('monitoring.index_cetak');
     Route::get('/monitoring/cetak-monitoring/{id}', [MonitoringController::class, 'cetakMonitoring'])->name('monitoring.cetak-monitoring');
     Route::get('/monitoring/cetak-sppd/{id}', [MonitoringController::class, 'cetakSppd'])->name('monitoring.cetak-sppd');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/jurusan', [JurusanController::class, 'index'])->name('jurusan.index');
+    Route::get('/jurusan/data', [JurusanController::class, 'data'])->name('jurusan.data');
+    Route::post('/jurusan', [JurusanController::class, 'store'])->name('jurusan.store');
+    Route::get('/jurusan/{id}/edit', [JurusanController::class, 'edit'])->name('jurusan.edit');
+    Route::put('/jurusan/{id}', [JurusanController::class, 'update'])->name('jurusan.update');
+    Route::delete('/jurusan/{id}', [JurusanController::class, 'destroy'])->name('jurusan.destroy');
+    Route::post('/jurusan/import', [JurusanController::class, 'import'])->name('jurusan.import');
+    Route::get('/jurusan/download/template', [JurusanController::class, 'downloadTemplate'])->name('jurusan.downloadTemplate');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/kelas', [KelasController::class, 'index'])->name('kelas.index');
+    Route::get('/kelas/data', [KelasController::class, 'data'])->name('kelas.data');
+    Route::post('/kelas', [KelasController::class, 'store'])->name('kelas.store');
+    Route::get('/kelas/{id}/edit', [KelasController::class, 'edit'])->name('kelas.edit');
+    Route::put('/kelas/{id}', [KelasController::class, 'update'])->name('kelas.update');
+    Route::delete('/kelas/{id}', [KelasController::class, 'destroy'])->name('kelas.destroy');
+    Route::post('/kelas/import', [KelasController::class, 'import'])->name('kelas.import');
+    Route::get('/kelas/download/template', [KelasController::class, 'downloadTemplate'])->name('kelas.downloadTemplate');
 });

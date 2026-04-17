@@ -7,6 +7,23 @@
         <div class="card">
             <div class="card-header">
                 <h4>Data Monitoring PKL</h4>
+                <div class="row">
+                    <div class="col-md-4">
+
+                        <a href="{{ route('monitoring.exportExcel') }}" class="btn btn-success">Export Excel</a>
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalTanggal">
+                            Set Tanggal
+                        </button>
+                    </div>
+
+                    <div class="col-md-4">
+                        <p>Tanggal Surat: {{ session('tanggal_surat') }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p>Tanggal Berangkat: {{ session('tanggal_berangkat') }}</p>
+                    </div>
+                </div>
+
             </div>
             <div class="card-body">
                 <table id="monitoringTable" class="table table-bordered">
@@ -69,6 +86,56 @@
                     </form>
                 </div>
             </div>
+
+            <div class="modal fade" id="modalTanggal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form id="formTanggal" method="GET" action="{{ route('monitoring.set-tanggal') }}">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Input Tanggal SPPD</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+
+                            <div class="modal-body">
+                                <input type="hidden" name="id" id="idPerusahaan">
+
+                                <div class="mb-3">
+                                    <label class="form-label">Nomor Surat</label>
+                                    <input type="text" name="nomor_surat" class="form-control" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Tanggal Surat</label>
+                                    <input type="date" name="tanggal_surat" class="form-control" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Tanggal Berangkat</label>
+                                    <input type="date" name="tanggal_berangkat" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Nama Kepala Sekolah</label>
+                                    <input type="text" name="nama_kepala_sekolah" class="form-control" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">NIP Kepala Sekolah</label>
+                                    <input type="text" name="nip_kepala_sekolah" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Nama File TTD</label>
+                                    <input type="text" name="nama_file_ttd" class="form-control" required>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Set Tanggal</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
 
         </div>
     </div>

@@ -20,6 +20,9 @@ class PerusahaanController extends Controller
         $perusahaan = Perusahaan::all();
 
         return DataTables::of($perusahaan)
+            ->addColumn('checkbox', function ($perusahaan) {
+                return '<input type="checkbox" class="form-check checkbox-perusahaan" value="' . $perusahaan->id . '">';
+            })
             ->addColumn('aksi', function ($perusahaan) {
                 return '
                     <a href="javascript:void(0)" class="btn btn-sm btn-warning btnEdit" 
@@ -31,7 +34,7 @@ class PerusahaanController extends Controller
                 ';
             })
             ->addIndexColumn()
-            ->rawColumns(['aksi'])
+            ->rawColumns(['checkbox', 'aksi'])
             ->make(true);
     }
 
@@ -72,5 +75,22 @@ class PerusahaanController extends Controller
         $perusahaan->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    public function destroyMultiple(Request $request)
+    {
+        try {
+            $ids = $request->ids;
+            
+            if (!is_array($ids) || empty($ids)) {
+                return response()->json(['message' => 'Pilih minimal satu data'], 422);
+            }
+
+            Perusahaan::whereIn('id', $ids)->delete();
+            
+            return response()->json(['message' => 'Data berhasil dihapus (' . count($ids) . ' data)']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        }
     }
 }

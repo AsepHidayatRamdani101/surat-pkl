@@ -28,7 +28,9 @@ class PerusahaanController extends Controller
                     <a href="javascript:void(0)" class="btn btn-sm btn-warning btnEdit" 
                     data-id="' . $perusahaan->id . '"
                     data-nama="' . $perusahaan->nama_perusahaan . '"
-                    data-alamat="' . $perusahaan->alamat . '"                    
+                    data-alamat="' . $perusahaan->alamat . '"
+                    data-nama-pemilik="' . $perusahaan->nama_pemilik_perusahaan . '"
+                    data-telepon-pemilik="' . $perusahaan->telepon_pemilik_perusahaan . '"
                     >Edit</a>
                     <a href="javascript:void(0)" class="btn btn-sm btn-danger btnHapus" data-id="' . $perusahaan->id . '">Hapus</a>
                 ';
@@ -47,6 +49,8 @@ class PerusahaanController extends Controller
 
         Perusahaan::create([
             'nama_perusahaan' => $request->nama_perusahaan,
+            'nama_pemilik_perusahaan' => $request->nama_pemilik_perusahaan,
+            'telepon_pemilik_perusahaan' => $request->telepon_pemilik_perusahaan,
             'alamat' => $request->alamat,
         ]);
 
@@ -57,12 +61,16 @@ class PerusahaanController extends Controller
     {
         $request->validate([
             'nama_perusahaan' => 'required',
+            'nama_pemilik_perusahaan' => 'required',
+            'telepon_pemilik_perusahaan' => 'required',
             'alamat' => 'required',
         ]);
 
         $perusahaan = Perusahaan::find($id);
         $perusahaan->update([
             'nama_perusahaan' => $request->nama_perusahaan,
+            'nama_pemilik_perusahaan' => $request->nama_pemilik_perusahaan,
+            'telepon_pemilik_perusahaan' => $request->telepon_pemilik_perusahaan,
             'alamat' => $request->alamat,
         ]);
 

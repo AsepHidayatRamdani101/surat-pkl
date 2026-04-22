@@ -11,25 +11,7 @@ class TempatPkl extends Model
 
     protected $table = 'tempat_pkl';
 
-    protected $fillable = [
-        'perusahaan_id',
-        'siswa_id',
-        'pembimbing_id',
-        'pembimbing_perusahaan_id',
-        'tanggal_mulai',
-        'tanggal_selesai',
-        'created_by',
-        'surat_kesediaan_path',
-        'surat_izin_path',
-        'nama_pembimbing',
-        'jabatan_pembimbing',
-        'no_hp_pembimbing',
-        'NIP_pembimbing',
-        'tugas_siswa',
-
-
-
-    ];
+    protected $guarded = ['id'];
 
     public function perusahaan()
     {

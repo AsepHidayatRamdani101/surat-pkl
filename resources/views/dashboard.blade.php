@@ -75,6 +75,20 @@
                     </div>
                 </div>
             </div>
+
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-danger h-100">
+                    <div class="inner">
+                        <p>Siswa yang belum memilih tempat PKL</p>
+                        <h3>{{ \App\Models\Siswa::where('status', 'belum_terdaftar')->whereHas('kelas.jurusan', function ($query) {$query->where('id', auth()->user()->jurusan_id);})->count() }}</h3>
+                        <p>Belum Mendaftar</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
+                    <a href="{{ url('/siswa?status=belum_terdaftar') }}" class="small-box-footer">Lihat Data <i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
         </div>
         <div class="row pt-4">
             <div class="col-md-12">
@@ -147,6 +161,20 @@
                     <div class="icon">
                         <i class="fas fa-building"></i>
                     </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-danger h-100">
+                    <div class="inner">
+                        <p>Siswa yang belum memilih tempat PKL</p>
+                        <h3>{{ \App\Models\Siswa::where('status', 'belum_terdaftar')->count() }}</h3>
+                        <p>Belum Mendaftar</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
+                    <a href="{{ url('/siswa?status=belum_terdaftar') }}" class="small-box-footer">Lihat Data <i class="fas fa-arrow-circle-right"></i></a>
                 </div>
             </div>
         </div>

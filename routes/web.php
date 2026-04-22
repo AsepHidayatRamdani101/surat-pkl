@@ -7,6 +7,7 @@ use App\Http\Controllers\PembimbingController;
 use App\Http\Controllers\PembimbingPerusahaanController;
 use App\Http\Controllers\PerusahaanController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SekolahController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\SuratIzinOrtuController;
 use App\Http\Controllers\TempatPklController;
@@ -78,6 +79,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/tempat-pkl/{id}', [TempatPklController::class, 'update']);
     Route::put('/tempat-pkl/{id}/editPembimbing', [TempatPklController::class, 'editPembimbing'])->name('tempat-pkl.edit-pembimbing');
     Route::get('/tempat-pkl/cetak', [TempatPklController::class, 'index_cetak'])->name('tempat-pkl.index_cetak');
+    Route::get('/tempat-pkl/set-tanggal', [TempatPklController::class, 'setTanggal'])->name('tempat-pkl.set-tanggal');
     Route::delete('/tempat-pkl/{id}', [TempatPklController::class, 'destroy'])->name('tempat-pkl.destroy');
     Route::get('/tempat-pkl/{id}/cetak', [TempatPklController::class, 'cetak'])->name('tempat-pkl.cetak');
     Route::get('/tempat-pkl/upload_kesediaan', [TempatPklController::class, 'upload_kesediaan'])->name('upload-kesediaan');
@@ -85,6 +87,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/tempat-pkl/cetak-amplop/{id}', [TempatPklController::class, 'cetakAmplop'])->name('tempat-pkl.cetak-amplop');
     Route::get('/tempat-pkl/cetak-amplop-word/{id}', [TempatPklController::class, 'cetakAmplopWord'])->name('tempat-pkl.cetak-amplop-word');
     Route::get('/tempat-pkl/export-excel', [TempatPklController::class, 'exportExcel'])->name('tempat-pkl.export-excel');
+
+    Route::get('/sekolah', [SekolahController::class, 'index'])->name('sekolah.index');
+    Route::get('/sekolah/data', [SekolahController::class, 'data'])->name('sekolah.data');
+    Route::post('/sekolah', [SekolahController::class, 'store'])->name('sekolah.store');
+    Route::get('/sekolah/{id}/edit', [SekolahController::class, 'edit'])->name('sekolah.edit');
+    Route::put('/sekolah/{id}', [SekolahController::class, 'update'])->name('sekolah.update');
+    Route::delete('/sekolah/{id}', [SekolahController::class, 'destroy'])->name('sekolah.destroy');
+    Route::delete('/sekolah', [SekolahController::class, 'destroyMultiple'])->name('sekolah.destroyMultiple');
 });
 
 Route::middleware(['auth'])->group(function () {

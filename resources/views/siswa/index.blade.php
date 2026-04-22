@@ -4,6 +4,12 @@
 
 @section('content')
     <div class="container pt-4">
+        @if (($statusFilter ?? null) === 'belum_terdaftar')
+            <div class="alert alert-warning">
+                <strong>Jumlah siswa belum mendaftar:</strong> {{ $jumlahBelumMendaftar }} siswa
+            </div>
+        @endif
+
         <div class="card">
             <div class="card-header">
                 <h4 class="d-inline">Data Siswa</h4>
@@ -113,6 +119,8 @@
 
     <script>
         $(document).ready(function() {
+            const dataSiswaUrl = @json(route('siswa.data') . (($statusFilter ?? null) === 'belum_terdaftar' ? '?status=belum_terdaftar' : ''));
+
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -124,7 +132,7 @@
             let table = $('#siswaTable').DataTable({
                 processing: true,
                 serverSide: true,
-                ajax: '{{ route('siswa.data') }}',
+                ajax: dataSiswaUrl,
                 columns: [{
                         data: 'checkbox',
                         name: 'checkbox',

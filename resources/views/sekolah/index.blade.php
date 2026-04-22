@@ -1,7 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Data Perusahaan')
-
+@section('title', 'Manajemen Sekolah')
 
 @section('content')
     <div class="container pt-4">
@@ -9,22 +8,24 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="d-inline">Data Perusahaan</h4>
+                        <h4 class="d-inline">Manajemen Sekolah</h4>
                         <div class="float-right">
                             <button class="btn btn-sm btn-primary" id="btnTambah">Tambah Data</button>
                             <button class="btn btn-sm btn-danger" id="btnHapusMultiple" style="display: none;">Hapus Pilihan</button>
                         </div>
                     </div>
                     <div class="card-body">
-                        <table id="perusahaanTable" class="table table-bordered">
+                        <table id="sekolahTable" class="table table-bordered">
                             <thead>
                                 <tr>
                                     <th style="width: 30px;"><input type="checkbox" id="checkAll" class="form-check"></th>
                                     <th>No</th>
-                                    <th>Nama Perusahaan</th>
-                                    <th>Nama Pemilik</th>
-                                    <th>No. Telp Pemilik</th>
-                                    <th>Alamat</th>
+                                    <th>Nama Kepala Sekolah</th>
+                                    <th>NIP Kepala Sekolah</th>
+                                    <th>Tanggal Mulai PKL</th>
+                                    <th>Tanggal Selesai PKL</th>
+                                    <th>Cap Sekolah</th>
+                                    <th>TTD KS</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
@@ -36,36 +37,42 @@
 
         <div class="modal fade" id="modalForm" tabindex="-1" role="dialog">
             <div class="modal-dialog">
-                <form id="formPerusahaan" enctype="multipart/form-data">
+                <form id="formSekolah" enctype="multipart/form-data">
                     @csrf
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="modalFormLabel">Form Perusahaan</h5>
+                            <h5 class="modal-title" id="modalFormLabel">Form Manajemen Sekolah</h5>
                             <button type="button" class="close" data-dismiss="modal">&times;</button>
                         </div>
                         <div class="modal-body">
-
                             <input type="hidden" name="id" id="id">
-                            <div class="form-group">
-                                <label for="nama_perusahaan">Nama Perusahaan</label>
-                                <input type="text" name="nama_perusahaan" id="nama_perusahaan" class="form-control"
-                                    required>
-                            </div>
-                            <div class="form-group">
-                                <label for="nama_pemilik_perusahaan">Nama Pemilik Perusahaan</label>
-                                <input type="text" name="nama_pemilik_perusahaan" id="nama_pemilik_perusahaan"
-                                    class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="telepon_pemilik_perusahaan">No. Telp Pemilik Perusahaan</label>
-                                <input type="text" name="telepon_pemilik_perusahaan" id="telepon_pemilik_perusahaan"
-                                    class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="alamat">Alamat</label>
-                                <input type="text" name="alamat" id="alamat" class="form-control" required>
-                            </div>
 
+                            <div class="form-group">
+                                <label for="nama_kepala_sekolah">Nama Kepala Sekolah</label>
+                                <input type="text" name="nama_kepala_sekolah" id="nama_kepala_sekolah" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="nip_kepala_sekolah">NIP Kepala Sekolah</label>
+                                <input type="text" name="nip_kepala_sekolah" id="nip_kepala_sekolah" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="tanggal_mulai_pkl">Tanggal Mulai PKL</label>
+                                <input type="date" name="tanggal_mulai_pkl" id="tanggal_mulai_pkl" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="tanggal_selesai_pkl">Tanggal Selesai PKL</label>
+                                <input type="date" name="tanggal_selesai_pkl" id="tanggal_selesai_pkl" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cap_sekolah">Upload Cap Sekolah</label>
+                                <input type="file" name="cap_sekolah" id="cap_sekolah" class="form-control">
+                                <p id="capPreview" class="mt-2"></p>
+                            </div>
+                            <div class="form-group">
+                                <label for="ttd_kepala_sekolah">Upload TTD Kepala Sekolah</label>
+                                <input type="file" name="ttd_kepala_sekolah" id="ttd_kepala_sekolah" class="form-control">
+                                <p id="ttdPreview" class="mt-2"></p>
+                            </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-success btn-simpan">Simpan</button>
@@ -87,9 +94,10 @@
         <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
         <script>
             $(document).ready(function() {
-                let table = $('#perusahaanTable').DataTable({
-                    ajax: '{{ route('perusahaan.data') }}',
-                    columns: [{
+                let table = $('#sekolahTable').DataTable({
+                    ajax: '{{ route('sekolah.data') }}',
+                    columns: [
+                        {
                             data: 'checkbox',
                             name: 'checkbox',
                             orderable: false,
@@ -102,20 +110,32 @@
                             searchable: false
                         },
                         {
-                            data: 'nama_perusahaan',
-                            name: 'nama_perusahaan'
+                            data: 'nama_kepala_sekolah',
+                            name: 'nama_kepala_sekolah'
                         },
                         {
-                            data: 'nama_pemilik_perusahaan',
-                            name: 'nama_pemilik_perusahaan'
+                            data: 'nip_kepala_sekolah',
+                            name: 'nip_kepala_sekolah'
                         },
                         {
-                            data: 'telepon_pemilik_perusahaan',
-                            name: 'telepon_pemilik_perusahaan'
+                            data: 'tanggal_mulai_pkl',
+                            name: 'tanggal_mulai_pkl'
                         },
                         {
-                            data: 'alamat',
-                            name: 'alamat'
+                            data: 'tanggal_selesai_pkl',
+                            name: 'tanggal_selesai_pkl'
+                        },
+                        {
+                            data: 'cap_sekolah',
+                            name: 'cap_sekolah',
+                            orderable: false,
+                            searchable: false
+                        },
+                        {
+                            data: 'ttd_kepala_sekolah',
+                            name: 'ttd_kepala_sekolah',
+                            orderable: false,
+                            searchable: false
                         },
                         {
                             data: 'aksi',
@@ -128,36 +148,55 @@
 
                 $('#btnTambah').click(function() {
                     $('#modalForm').modal('show');
-                    $('#modalFormLabel').html('Tambah Data Perusahaan');
-                    $('#formPerusahaan').trigger('reset');
+                    $('#modalFormLabel').html('Tambah Data Sekolah');
+                    $('#formSekolah')[0].reset();
+                    $('#id').val('');
+                    $('#capPreview').text('');
+                    $('#ttdPreview').text('');
                 });
 
                 $(document).on('click', '.btnEdit', function() {
-                    let data = $(this).data();
-                    $('#nama_perusahaan').val(data.nama);
-                    $('#nama_pemilik_perusahaan').val(data.namaPemilik);
-                    $('#telepon_pemilik_perusahaan').val(data.teleponPemilik);
-                    $('#alamat').val(data.alamat);
-                    $('#id').val(data.id);
-                    $('#modalForm').modal('show');
-                    $('#modalFormLabel').html('Edit Data Perusahaan');
+                    let id = $(this).data('id');
+
+                    $.ajax({
+                        url: `/sekolah/${id}/edit`,
+                        type: 'GET',
+                        success: function(data) {
+                            $('#id').val(data.id);
+                            $('#nama_kepala_sekolah').val(data.nama_kepala_sekolah);
+                            $('#nip_kepala_sekolah').val(data.nip_kepala_sekolah);
+                            $('#tanggal_mulai_pkl').val(data.tanggal_mulai_pkl);
+                            $('#tanggal_selesai_pkl').val(data.tanggal_selesai_pkl);
+                            $('#capPreview').html(data.cap_sekolah_url ? `<a href="${data.cap_sekolah_url}" target="_blank">Lihat cap sekolah saat ini</a>` : 'Belum ada cap sekolah');
+                            $('#ttdPreview').html(data.ttd_kepala_sekolah_url ? `<a href="${data.ttd_kepala_sekolah_url}" target="_blank">Lihat TTD KS saat ini</a>` : 'Belum ada TTD KS');
+                            $('#modalFormLabel').html('Edit Data Sekolah');
+                            $('#modalForm').modal('show');
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Oops...',
+                                text: 'Gagal mengambil data.',
+                            });
+                        }
+                    });
                 });
 
                 $(document).on('click', '.btn-simpan', function() {
                     let id = $('#id').val();
-                    let url = id ? `/perusahaan/${id}` : '{{ route('perusahaan.store') }}';
-                    let method = id ? 'PUT' : 'POST';
+                    let url = id ? `/sekolah/${id}` : '{{ route('sekolah.store') }}';
+                    let formData = new FormData($('#formSekolah')[0]);
+                    if (id) {
+                        formData.append('_method', 'PUT');
+                    }
 
                     $.ajax({
                         url: url,
-                        type: method,
-                        data: {
-                            _token: '{{ csrf_token() }}',
-                            nama_perusahaan: $('#nama_perusahaan').val(),
-                            nama_pemilik_perusahaan: $('#nama_pemilik_perusahaan').val(),
-                            telepon_pemilik_perusahaan: $('#telepon_pemilik_perusahaan').val(),
-                            alamat: $('#alamat').val(),
-                        },
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        cache: false,
                         success: function() {
                             $('#modalForm').modal('hide');
                             table.ajax.reload();
@@ -170,21 +209,21 @@
                             });
                         },
                         error: function(xhr) {
-                            console.log(xhr.responseText);
+                            let message = 'Terjadi kesalahan.';
+                            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                                message = Object.values(xhr.responseJSON.errors).flat().join('\n');
+                            }
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Oops...',
-                                text: 'Terjadi kesalahan.',
+                                text: message,
                             });
                         }
                     });
                 });
 
-                //btnHapus
                 $(document).on('click', '.btnHapus', function() {
                     let id = $(this).data('id');
-                    let url = '{{ route('perusahaan.destroy', ':id') }}';
-                    url = url.replace(':id', id);
                     Swal.fire({
                         title: 'Yakin hapus data ini?',
                         icon: 'warning',
@@ -194,10 +233,10 @@
                     }).then((result) => {
                         if (result.isConfirmed) {
                             $.ajax({
-                                url: url,
+                                url: `/sekolah/${id}`,
                                 type: 'DELETE',
                                 data: {
-                                    _token: '{{ csrf_token() }}',
+                                    _token: '{{ csrf_token() }}'
                                 },
                                 success: function() {
                                     table.ajax.reload();
@@ -210,7 +249,6 @@
                                     });
                                 },
                                 error: function(xhr) {
-                                    console.log(xhr.responseText);
                                     Swal.fire({
                                         icon: 'error',
                                         title: 'Oops...',
@@ -220,24 +258,21 @@
                             });
                         }
                     });
-                })
+                });
 
-                // Handle Check All
                 $(document).on('click', '#checkAll', function() {
                     const isChecked = $(this).prop('checked');
-                    $('.checkbox-perusahaan').prop('checked', isChecked);
+                    $('.checkbox-sekolah').prop('checked', isChecked);
                     updateButtonHapusMultiple();
                 });
 
-                // Handle Individual Checkbox
-                $(document).on('click', '.checkbox-perusahaan', function() {
+                $(document).on('click', '.checkbox-sekolah', function() {
                     updateButtonHapusMultiple();
                     updateCheckAll();
                 });
 
-                // Update Button Delete Multiple
                 function updateButtonHapusMultiple() {
-                    const checkedCount = $('.checkbox-perusahaan:checked').length;
+                    const checkedCount = $('.checkbox-sekolah:checked').length;
                     if (checkedCount > 0) {
                         $('#btnHapusMultiple').show();
                     } else {
@@ -245,28 +280,29 @@
                     }
                 }
 
-                // Update Check All status
                 function updateCheckAll() {
-                    const totalCheckbox = $('.checkbox-perusahaan').length;
-                    const checkedCheckbox = $('.checkbox-perusahaan:checked').length;
+                    const totalCheckbox = $('.checkbox-sekolah').length;
+                    const checkedCheckbox = $('.checkbox-sekolah:checked').length;
                     $('#checkAll').prop('checked', totalCheckbox === checkedCheckbox && totalCheckbox > 0);
                 }
 
-                // Handle Hapus Multiple
                 $('#btnHapusMultiple').click(function() {
                     const selectedIds = [];
-                    $('.checkbox-perusahaan:checked').each(function() {
+                    $('.checkbox-sekolah:checked').each(function() {
                         selectedIds.push($(this).val());
                     });
 
                     if (selectedIds.length === 0) {
-                        alert('Pilih minimal satu data untuk dihapus');
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Peringatan',
+                            text: 'Pilih minimal satu data untuk dihapus.'
+                        });
                         return;
                     }
 
                     Swal.fire({
-                        title: 'Yakin hapus ' + selectedIds.length + ' data perusahaan ini?',
-                        text: 'Tindakan ini tidak bisa dibatalkan!',
+                        title: 'Yakin hapus ' + selectedIds.length + ' data ini?',
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonText: 'Ya, hapus!',
@@ -274,19 +310,20 @@
                     }).then((result) => {
                         if (result.isConfirmed) {
                             $.ajax({
-                                url: '{{ route('perusahaan.destroyMultiple') }}',
+                                url: '{{ route('sekolah.destroyMultiple') }}',
                                 type: 'DELETE',
                                 data: {
                                     _token: '{{ csrf_token() }}',
                                     ids: selectedIds
                                 },
-                                success: function(response) {
+                                success: function() {
                                     table.ajax.reload();
+                                    $('#checkAll').prop('checked', false);
                                     $('#btnHapusMultiple').hide();
                                     Swal.fire({
                                         icon: 'success',
                                         title: 'Berhasil',
-                                        text: response.message,
+                                        text: 'Data telah dihapus.',
                                         timer: 1500,
                                         showConfirmButton: false
                                     });
@@ -295,7 +332,7 @@
                                     Swal.fire({
                                         icon: 'error',
                                         title: 'Oops...',
-                                        text: xhr.responseJSON?.message || 'Terjadi kesalahan.',
+                                        text: 'Terjadi kesalahan.',
                                     });
                                 }
                             });

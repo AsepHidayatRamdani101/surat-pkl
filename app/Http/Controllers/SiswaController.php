@@ -20,13 +20,22 @@ class SiswaController extends Controller
     {
         $kelas = Kelas::all();
         $jurusan = Jurusan::all();
-        return view('siswa.index', compact('kelas', 'jurusan'));
+        $statusFilter = request('status');
+        $jumlahBelumMendaftar = Siswa::where('status', 'belum_terdaftar')->count();
+
+        return view('siswa.index', compact('kelas', 'jurusan', 'statusFilter', 'jumlahBelumMendaftar'));
     }
 
     public function data(Request $request)
     {
         if ($request->ajax()) {
-            $data = Siswa::with('kelas.jurusan')->get();
+            $query = Siswa::with('kelas.jurusan');
+
+            if ($request->status === 'belum_terdaftar') {
+                $query->where('status', 'belum_terdaftar');
+            }
+
+            $data = $query->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('checkbox', function ($row) {

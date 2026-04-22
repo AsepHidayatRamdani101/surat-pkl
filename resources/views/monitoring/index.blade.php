@@ -176,23 +176,22 @@
             });
 
             $(document).on('click', '.btn-simpan', function() {
-
-                let formData = new FormData();
-                formData.append('_token', '{{ csrf_token() }}');
-                formData.append('_method', 'PUT');
-                formData.append('siswa_id', $('#siswa_id').val());
-                formData.append('perusahaan_id', $('#perusahaan_id').val());
-                formData.append('pembimbing_id', $('#pembimbing_id').val());
-                formData.append('id', $('#id').val());
+               
+                
+                
 
                 $.ajax({
                     url: `/tempat-pkl/${$('#id').val()}/editPembimbing`,
                     type: 'PUT',
-                    data: formData,
-                    contentType: false,
-                    processData: false,
+                    data: {
+                        token: $('meta[name="csrf-token"]').attr('content'),
+                        siswa_id: $('#siswa_id').val(),
+                        perusahaan_id: $('#perusahaan_id').val(),
+                        pembimbing_id: $('#pembimbing_id').val(),
+                    },
                     success: function(data) {
                         console.log(data);
+                        
 
                         $('#modalForm').modal('hide');
                         $('#monitoringTable').DataTable().ajax.reload();

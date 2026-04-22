@@ -11,7 +11,7 @@
         }
 
         body {
-            background-image: url('file:///{{ str_replace("\\", "/", public_path('amplop.jpg')) }}');
+            background-image: url('file:///{{ str_replace('\\', '/', public_path('amplop.jpg')) }}');
             background-repeat: no-repeat;
             background-size: cover;
             margin: 0;
@@ -60,7 +60,15 @@
     <div class="amplop-container">
 
 
+        <div style="position: relative; width:100%; height:100%;">
 
+            <img src="{{ public_path('amplop.jpg') }}" style="position:absolute; width:100%; height:100%; top:0; left:0;">
+
+            <div style="position:relative; z-index:1;">
+                <!-- isi konten -->
+            </div>
+
+        </div>
 
         <div style="position: absolute; top: 140px; left: 600px; color: white;width: 200px">
             Kepada Yth:<br>

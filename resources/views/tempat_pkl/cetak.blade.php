@@ -56,7 +56,7 @@
         <div style="margin-top: -50px">
             <table>
                 <tr>
-                    <td><img src="file:///{{ str_replace("\\", "/", public_path('LogoJabar.png')) }}" class="logo" alt="logo" width="100px"
+                    <td><img src="{{ public_path('LogoJabar.png') }}" class="logo" alt="logo" width="100px"
                             style="margin-right: 20px"></td>
                     <td>
                         <div class="text-kop">
@@ -70,6 +70,7 @@
                             </p>
                         </div>
                     </td>
+                   
                 </tr>
             </table>
         </div>
@@ -77,7 +78,7 @@
         <hr style="margin-top: -10px">
 
 
-        <p>Nomor&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 087/PK.03.03-SMKN8GRT<br>
+        <p>Nomor&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {{ $nomor_surat }}<br>
             Lampiran&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 1 (satu) berkas<br>
             Hal&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: Pengajuan
             Tempat
@@ -92,7 +93,7 @@
             <p>Berdasarkan Program Kurikulum SMK Negeri 8 Garut yang mengharuskan setiap siswa SMK melaksanakan kegiatan
                 Praktik Kerja Baik di Dunia Usaha, Dunia Industri, maupun Dunia Kerja,
                 maka bersama surat ini kami mengajukan permohonan
-                tempat pelaksanaan PRAKERIN bagi siswa kami mulai tanggal 1 September sampai 30 November 2025.</p>
+                tempat pelaksanaan PRAKERIN bagi siswa kami mulai tanggal {{ $tanggal_mulai }} sampai {{ $tanggal_selesai }}.</p>
 
             <p>Adapun nama siswa terlampir.</p>
 
@@ -103,12 +104,15 @@
         </div>
 
         <div style="margin-left: 350px">
-            Garut, 17 April 2025<br>
+            Garut, {{ $tanggal_surat }}<br>
             Kepala Sekolah,<br>
-            <img src="file:///{{ str_replace("\\", "/", public_path('ttd_kepsek.png')) }}" class="ttd-left" alt="ttd_kepsek" width="180px"
-                style="margin-top: -10px;margin-bottom: -20px"><br>
-            <strong><u>MOH. ROFIK ZEN, S.Pd., M.M.Pd.</u></strong><br>
-            NIP. 196906131994121002
+            @if ($school && $school->ttd_kepala_sekolah_path)
+                <img src="{{ public_path('storage/' . $school->ttd_kepala_sekolah_path) }}"
+                    class="ttd-left" alt="ttd_kepsek" width="180px"
+                    style="margin-top: -10px;margin-bottom: -20px"><br>
+            @endif
+            <strong><u>{{ optional($school)->nama_kepala_sekolah ?? 'MOH. ROFIK ZEN, S.Pd., M.M.Pd.' }}</u></strong><br>
+            NIP. {{ optional($school)->nip_kepala_sekolah ?? '196906131994121002' }}
         </div>
 
     </div>
@@ -119,7 +123,7 @@
         <div style="margin-top: -50px">
             <table>
                 <tr>
-                    <td><img src="file:///{{ str_replace("\\", "/", public_path('LogoJabar.png')) }}" class="logo" alt="logo" width="100px"
+                    <td><img src="{{ public_path('LogoJabar.png') }}" class="logo" alt="logo" width="100px"
                             style="margin-right: 20px"></td>
                     <td>
                         <div class="text-kop">
@@ -142,8 +146,8 @@
 
         <p><i>lampiran I</i> <br>
             Pengajuan Tempat PRAKERIN <br>
-            Nomor&nbsp;&nbsp;&nbsp;: 087/PK.03.03-SMKN8GRT <br>
-            Tanggal : 17 April 2025</p>
+            Nomor&nbsp;&nbsp;&nbsp;: {{ $nomor_surat }} <br>
+            Tanggal : {{ $tanggal_surat }}</p>
 
         <h4 style="text-align: center">DAFTAR SISWA AJUAN TEMPAT PRAKERIN</h4>
 
@@ -172,12 +176,15 @@
         </table>
         <br><br>
         <div style="margin-left: 350px">
-            Garut, 17 April 2025<br>
+            Garut, {{ $tanggal_surat }}<br>
             Kepala Sekolah,<br>
-            <img src="file:///{{ str_replace("\\", "/", public_path('ttd_kepsek.png')) }}" class="ttd-left" alt="ttd_kepsek" width="180px"
-                style="margin-top: -10px;margin-bottom: -20px"><br>
-            <strong><u>MOH. ROFIK ZEN, S.Pd., M.M.Pd.</u></strong><br>
-            NIP. 196906131994121002
+            @if ($school && $school->ttd_kepala_sekolah_path)
+                <img src="{{ public_path('storage/' . $school->ttd_kepala_sekolah_path) }}"
+                    class="ttd-left" alt="ttd_kepsek" width="180px"
+                    style="margin-top: -10px;margin-bottom: -20px"><br>
+            @endif
+            <strong><u>{{ optional($school)->nama_kepala_sekolah ?? 'MOH. ROFIK ZEN, S.Pd., M.M.Pd.' }}</u></strong><br>
+            NIP. {{ optional($school)->nip_kepala_sekolah ?? '196906131994121002' }}
         </div>
 
     </div>
@@ -204,20 +211,22 @@
             <td>Alamat Perusahaan</td>
             <td>: ______________________________________________________________</td>
         </tr>
+        <br>
         <tr>
             <td></td>
-            <td> &nbsp;&nbsp;______________________________________________________________</td>
+            <td> ______________________________________________________________</td>
         </tr>
         <tr>
             <td>No. Telp/HP</td>
             <td>: ______________________________________________________________</td>
         </tr>
+        
     </table>
 
     <p style="text-align: justify">
         Menyatakan bahwa siswa-siswi SMKN 8 Garut yang diajukan untuk Prakerin di tempat kami, diterima sebanyak ______
         orang,
-        dari tanggal 1 September sampai 30 November 2025.
+        dari tanggal {{ $tanggal_mulai }} sampai {{ $tanggal_selesai }}.
     </p>
 
     <p>Dengan daftar siswa sebagai berikut:</p>
@@ -249,7 +258,7 @@
 
     <div style="margin-left: 400px">
         <br>
-        __________, ______________ 2025<br>
+        __________, ______________ 2026<br>
         Yang menyatakan<br><br><br><br><br>
         _______________________
     </div>

@@ -110,23 +110,23 @@
         </p>
 
         <p>Dengan ini memberikan izin kepada anak saya tersebut di atas untuk mengikuti kegiatan
-            Praktik Kerja Industri
-            (PRAKERIN) yang diselenggarakan oleh SMK Negeri 8 Garut, sesuai dengan program sekolah.</p>
+            Praktik Kerja Lapangan
+            (PKL) yang diselenggarakan oleh SMK Negeri 8 Garut, sesuai dengan program sekolah.</p>
 
         <div>
             <p>Saya bersedia:</p>
             <ol style="margin: 0px -5px 0px -5px">
-                <li>Membimbing, mengawasi, dan memberikan dukungan selama anak saya mengikuti kegiatan PRAKERIN.</li>
+                <li>Membimbing, mengawasi, dan memberikan dukungan selama anak saya mengikuti kegiatan PKL.</li>
                 <li>Bertanggung jawab atas segala tindakan dan perilaku anak saya selama kegiatan berlangsung.</li>
                 <li>Tidak akan menuntut pihak sekolah apabila terjadi sesuatu di luar tanggung jawab sekolah selama
-                    pelaksanaan PRAKERIN, sejauh sekolah telah menjalankan prosedur yang berlaku.</li>
+                    pelaksanaan PKL, sejauh sekolah telah menjalankan prosedur yang berlaku.</li>
             </ol>
         </div>
 
         <p>Demikian surat izin ini saya buat dengan sebenar-benarnya untuk digunakan sebagaimana mestinya.</p>
 
         <div class="sign" style="text-align: right;margin-top: -10px">
-            <p>Garut, ................. 2025</p>
+            <p>Garut, ................. 2026</p>
             <p>Hormat saya,</p>
             <br>
             <div

@@ -6,7 +6,12 @@
     <div class="container pt-4">
         <div class="card">
             <div class="card-header">
-                <h4>Data Tempat PKL</h4>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4>Data Tempat PKL</h4>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalTanggal">
+                        <i class="fas fa-calendar"></i> Nomor Surat
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <table id="tempatPklTable" class="table table-bordered">
@@ -21,6 +26,34 @@
                         </tr>
                     </thead>
                 </table>
+
+                <!-- Modal Tanggal -->
+                <div class="modal fade" id="modalTanggal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form id="formTanggal" method="GET" action="{{ route('tempat-pkl.set-tanggal') }}">
+
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Set Nomor Surat</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nomor Surat</label>
+                                        <input type="text" name="nomor_surat" class="form-control"
+                                            value="{{ session('tempat_pkl_nomor_surat', '087/PK.03.03-SMKN8GRT') }}" required>
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-primary">Simpan Nomor Surat</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Modal Form -->
                 <div class="modal fade" id="modalForm" tabindex="-1" role="dialog">

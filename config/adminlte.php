@@ -313,6 +313,12 @@ return [
             'can'  => 'panitia',
             'submenu' => [
                 [
+                    'text' => 'Manajemen Sekolah',
+                    'url'  => 'sekolah',
+                    'icon' => 'fas fa-school',
+                    'can'  => ['kepala_program', 'panitia'],
+                ],
+                [
                     'text' => 'Management Siswa',
                     'url'  => 'siswa',
                     'icon' => 'fas fa-user-graduate',
@@ -327,6 +333,7 @@ return [
                     'url'  => 'jurusan',
                     'icon' => 'fas fa-graduation-cap',
                 ],
+
             ],
 
         ],
@@ -386,6 +393,7 @@ return [
 
             ],
         ],
+
         [
             'text' => 'Monitoring',
             'icon' => 'fas fa-eye',

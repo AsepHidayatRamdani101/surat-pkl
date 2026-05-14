@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kelas;
 use App\Models\Sekolah;
 use App\Models\TempatPkl;
 use App\Models\Siswa;
@@ -26,18 +27,15 @@ class TempatPklController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            // Grouping by perusahaan
-            if (auth()->user()->role == 'panitia') {
-                $grouped = TempatPkl::with(['siswa', 'perusahaan', 'pembimbing'])
-                    ->get();
-            } else {
-                $grouped = TempatPkl::with(['siswa', 'perusahaan', 'pembimbing'])
-                    ->whereHas('siswa.kelas.jurusan', function ($query) {
-                        $query->where('id', auth()->user()->jurusan_id);
-                    });
+            $query = TempatPkl::with(['siswa.kelas.jurusan', 'perusahaan', 'pembimbing']);
+
+            if ($this->jurusanId()) {
+                $query->whereHas('siswa.kelas', function ($kelasQuery) {
+                    $kelasQuery->where('jurusan_id', $this->jurusanId());
+                });
             }
 
-            return DataTables::of($grouped)
+            return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('aksi', function ($row) {
                     return '
@@ -63,7 +61,12 @@ class TempatPklController extends Controller
                 ->make(true);
         }
 
-        $siswa = Siswa::where('status', '!=', 'belum_terdaftar')->get();
+        $siswa = Siswa::with('kelas')
+            ->where('status', '!=', 'belum_terdaftar')
+            ->when($this->jurusanId(), function ($query, $jurusanId) {
+                $query->whereIn('kelas_id', $this->kelasIds($jurusanId));
+            })
+            ->get();
 
         $perusahaan = Perusahaan::orderBy('nama_perusahaan')->get();
         //   var_dump($siswa);
@@ -186,9 +189,13 @@ class TempatPklController extends Controller
     public function index_cetak(Request $request)
     {
         if ($request->ajax()) {
-            // Grouping by perusahaan
             $grouped = TempatPkl::with(['siswa.kelas', 'perusahaan'])
                 ->get()
+                ->when($this->jurusanId(), function ($collection) {
+                    return $collection->filter(function ($item) {
+                        return $item->siswa && in_array($item->siswa->kelas_id, $this->kelasIds(), true);
+                    });
+                })
                 ->groupBy('perusahaan_id')
                 ->map(function ($group) {
                     return [
@@ -253,6 +260,18 @@ class TempatPklController extends Controller
         }
 
         $siswaIds = $request->siswa_id;
+
+        if ($this->jurusanId()) {
+            $allowedKelasIds = $this->kelasIds();
+            $invalidSiswa = Siswa::whereIn('id', $siswaIds)
+                ->whereNotIn('kelas_id', $allowedKelasIds)
+                ->exists();
+
+            if ($invalidSiswa) {
+                return response()->json(['message' => 'Ada siswa di luar jurusan akun Anda.'], 422);
+            }
+        }
+
         foreach ($siswaIds as $siswaId) {
             TempatPkl::create([
                 'perusahaan_id' => $request->perusahaan_id,
@@ -303,6 +322,15 @@ class TempatPklController extends Controller
 
         $siswaId = (int) $request->siswa_id[0];
 
+        if ($this->jurusanId()) {
+            $allowedKelasIds = $this->kelasIds();
+            $siswa = Siswa::findOrFail($siswaId);
+
+            if (!in_array($siswa->kelas_id, $allowedKelasIds, true)) {
+                return response()->json(['message' => 'Siswa tidak sesuai jurusan akun Anda.'], 422);
+            }
+        }
+
         $data = TempatPkl::findOrFail($id);
         $data->update([
             'perusahaan_id' => $request->perusahaan_id,
@@ -342,7 +370,16 @@ class TempatPklController extends Controller
     {
         $data = TempatPkl::with(['siswa.kelas.jurusan', 'perusahaan'])
             ->where('perusahaan_id', $id)
+            ->when($this->jurusanId(), function ($query, $jurusanId) {
+                $query->whereHas('siswa.kelas', function ($kelasQuery) use ($jurusanId) {
+                    $kelasQuery->where('jurusan_id', $jurusanId);
+                });
+            })
             ->get();
+
+        if ($data->isEmpty()) {
+            abort(404);
+        }
 
         //get data manajemen sekolah
 
@@ -370,7 +407,16 @@ class TempatPklController extends Controller
     {
         $data = TempatPkl::with(['siswa.kelas.jurusan', 'perusahaan'])
             ->where('perusahaan_id', $id)
+            ->when($this->jurusanId(), function ($query, $jurusanId) {
+                $query->whereHas('siswa.kelas', function ($kelasQuery) use ($jurusanId) {
+                    $kelasQuery->where('jurusan_id', $jurusanId);
+                });
+            })
             ->get();
+
+        if ($data->isEmpty()) {
+            abort(404);
+        }
 
         $tanggal_surat = session('tempat_pkl_tanggal_surat') ?? now()->translatedFormat('d F Y');
 
@@ -383,7 +429,14 @@ class TempatPklController extends Controller
 
     public function cetakAmplopWord($id)
     {
-        $data = TempatPkl::with('perusahaan')->findOrFail($id);
+        $data = TempatPkl::with(['perusahaan', 'siswa.kelas.jurusan'])
+            ->where('perusahaan_id', $id)
+            ->when($this->jurusanId(), function ($query, $jurusanId) {
+                $query->whereHas('siswa.kelas', function ($kelasQuery) use ($jurusanId) {
+                    $kelasQuery->where('jurusan_id', $jurusanId);
+                });
+            })
+            ->firstOrFail();
 
         // Pastikan ini benar
         $phpWord = new PhpWord();
@@ -423,5 +476,21 @@ class TempatPklController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Nomor surat berhasil diset!');
+    }
+
+    private function jurusanId(): ?int
+    {
+        return auth()->user()?->jurusan_id ? (int) auth()->user()->jurusan_id : null;
+    }
+
+    private function kelasIds(?int $jurusanId = null): array
+    {
+        $jurusanId = $jurusanId ?? $this->jurusanId();
+
+        if (!$jurusanId) {
+            return [];
+        }
+
+        return Kelas::where('jurusan_id', $jurusanId)->pluck('id')->all();
     }
 }

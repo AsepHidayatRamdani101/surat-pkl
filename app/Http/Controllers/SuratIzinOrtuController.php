@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kelas;
 use App\Models\Siswa;
 use App\Models\SuratIzinOrtu;
 use Illuminate\Http\Request;
@@ -12,13 +13,24 @@ class SuratIzinOrtuController extends Controller
 {
     public function index()
     {
-        $siswa = Siswa::all();
+        $siswa = Siswa::with('kelas')
+            ->when($this->jurusanId(), function ($query, $jurusanId) {
+                $query->whereIn('kelas_id', $this->kelasIds($jurusanId));
+            })
+            ->orderBy('nama_siswa')
+            ->get();
+
         return view('surat_izin_ortu.index', compact('siswa'));
     }
 
     public function data()
     {
-        $data = SuratIzinOrtu::with('siswa')->latest();
+        $data = SuratIzinOrtu::with('siswa.kelas.jurusan')->latest()
+            ->when($this->jurusanId(), function ($query, $jurusanId) {
+                $query->whereHas('siswa', function ($siswaQuery) use ($jurusanId) {
+                    $siswaQuery->whereIn('kelas_id', $this->kelasIds($jurusanId));
+                });
+            });
 
         return DataTables::of($data)
             ->addIndexColumn()
@@ -54,7 +66,15 @@ class SuratIzinOrtuController extends Controller
             'no_hp_siswa' => 'required|string',
         ]);
 
+        $jurusanId = $this->jurusanId();
+        if ($jurusanId) {
+            $allowedKelasIds = $this->kelasIds($jurusanId);
+            $siswa = Siswa::where('id', $request->siswa_id)->firstOrFail();
 
+            if (!in_array($siswa->kelas_id, $allowedKelasIds, true)) {
+                return response()->json(['message' => 'Siswa tidak sesuai jurusan akun Anda.'], 422);
+            }
+        }
 
         SuratIzinOrtu::create($request->all());
 
@@ -72,6 +92,16 @@ class SuratIzinOrtuController extends Controller
     public function update(Request $request, $id)
     {
         $izin = SuratIzinOrtu::findOrFail($id);
+
+        $jurusanId = $this->jurusanId();
+        if ($jurusanId) {
+            $allowedKelasIds = $this->kelasIds($jurusanId);
+            $siswa = Siswa::where('id', $request->siswa_id)->firstOrFail();
+
+            if (!in_array($siswa->kelas_id, $allowedKelasIds, true)) {
+                return response()->json(['message' => 'Siswa tidak sesuai jurusan akun Anda.'], 422);
+            }
+        }
 
         $izin->update($request->all());
 
@@ -101,8 +131,31 @@ class SuratIzinOrtuController extends Controller
 
     public function cetak($id)
     {
-        $izin = SuratIzinOrtu::with('siswa.kelas.jurusan')->findOrFail($id);
+        $izin = SuratIzinOrtu::with('siswa.kelas.jurusan')
+            ->whereHas('siswa', function ($query) {
+                $query->when($this->jurusanId(), function ($studentQuery, $jurusanId) {
+                    $studentQuery->whereIn('kelas_id', $this->kelasIds($jurusanId));
+                });
+            })
+            ->findOrFail($id);
+
         $pdf = Pdf::loadView('surat_izin_ortu.cetak', compact('izin'))->setPaper('A4', 'portrait');
         return $pdf->stream('Surat_Izin_Orangtua_' . $izin->siswa->nama_siswa . '.pdf');
+    }
+
+    private function jurusanId(): ?int
+    {
+        return auth()->user()?->jurusan_id ? (int) auth()->user()->jurusan_id : null;
+    }
+
+    private function kelasIds(?int $jurusanId = null): array
+    {
+        $jurusanId = $jurusanId ?? $this->jurusanId();
+
+        if (!$jurusanId) {
+            return [];
+        }
+
+        return Kelas::where('jurusan_id', $jurusanId)->pluck('id')->all();
     }
 }

@@ -11,6 +11,27 @@
 
 
 @section('content')
+    @php
+        $percent = static function ($num, $den) {
+            return $den > 0 ? number_format(($num / $den) * 100, 2) : '0.00';
+        };
+
+        $totalSiswa = \App\Models\Siswa::count();
+        $jurusanSiswa = \App\Models\Siswa::whereHas('kelas.jurusan', function ($query) {
+            $query->where('id', auth()->user()->jurusan_id);
+        })->count();
+        $jurusanSuratIzin = \App\Models\SuratIzinOrtu::whereHas('siswa.kelas.jurusan', function ($query) {
+            $query->where('id', auth()->user()->jurusan_id);
+        })->count();
+        $jurusanTempatPkl = \App\Models\TempatPkl::whereHas('siswa.kelas.jurusan', function ($query) {
+            $query->where('id', auth()->user()->jurusan_id);
+        })->count();
+
+        $totalPerusahaan = \App\Models\Perusahaan::count();
+        $totalSuratIzin = \App\Models\SuratIzinOrtu::count();
+        $totalTempatPkl = \App\Models\TempatPkl::count();
+    @endphp
+
     @if (auth()->user()->role == 'kepala_program')
         <div class="row pt-4">
             <div class="col-lg-3 col-6">
@@ -28,10 +49,10 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-info h-100">
                     <div class="inner">
-                        <p>{{ number_format((\App\Models\Siswa::whereHas('kelas.jurusan', function ($query) {$query->where('id', auth()->user()->jurusan_id);})->count() /\App\Models\Siswa::count()) *100,2) }}
+                        <p>{{ $percent($jurusanSiswa, $totalSiswa) }}
                             %</p>
 
-                        <h3>{{ \App\Models\Siswa::whereHas('kelas.jurusan', function ($query) {$query->where('id', auth()->user()->jurusan_id);})->count() }}
+                        <h3>{{ $jurusanSiswa }}
                         </h3>
                         <p>Jumlah Siswa</p>
                         <a href="/siswa" class="btn btn-block btn-primary">Lihat Data</a>
@@ -45,10 +66,10 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-success h-100">
                     <div class="inner">
-                        <p>{{ number_format((\App\Models\SuratIzinOrtu::whereHas('siswa.kelas.jurusan', function ($query) {$query->where('id', auth()->user()->jurusan_id);})->count() /\App\Models\Siswa::whereHas('kelas.jurusan', function ($query) {$query->where('id', auth()->user()->jurusan_id);})->count()) *100,2) }}
+                        <p>{{ $percent($jurusanSuratIzin, $jurusanSiswa) }}
                             %</p>
 
-                        <h3>{{ \App\Models\SuratIzinOrtu::whereHas('siswa.kelas.jurusan', function ($query) {$query->where('id', auth()->user()->jurusan_id);})->count() }}
+                        <h3>{{ $jurusanSuratIzin }}
                         </h3>
                         <p>Jumlah Siswa yang sudah mengisi surat izin</p>
                         <a href="/surat-izin-ortu" class="btn btn-block btn-primary">Lihat Data</a>
@@ -62,10 +83,10 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-warning h-100">
                     <div class="inner">
-                        <p>{{ number_format((\App\Models\TempatPkl::whereHas('siswa.kelas.jurusan', function ($query) {$query->where('id', auth()->user()->jurusan_id);})->count() /\App\Models\Siswa::whereHas('kelas.jurusan', function ($query) {$query->where('id', auth()->user()->jurusan_id);})->count()) *100,2) }}
+                        <p>{{ $percent($jurusanTempatPkl, $jurusanSiswa) }}
                             %</p>
 
-                        <h3>{{ \App\Models\TempatPkl::whereHas('siswa.kelas.jurusan', function ($query) {$query->where('id', auth()->user()->jurusan_id);})->count() }}
+                        <h3>{{ $jurusanTempatPkl }}
                         </h3>
                         <p>Jumlah Siswa yang sudah mengisi tempat pkl</p>
                         <a href="/tempat-pkl" class="btn btn-block btn-primary">Lihat Data</a>
@@ -93,9 +114,9 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-secondary h-100">
                     <div class="inner">
-                        <p>{{ number_format((\App\Models\TempatPkl::count() / \App\Models\Siswa::count()) * 100, 2) }} %</p>
+                        <p>{{ $percent($totalTempatPkl, $totalSiswa) }} %</p>
 
-                        <h3>{{ \App\Models\Perusahaan::count() }}</h3>
+                        <h3>{{ $totalPerusahaan }}</h3>
                         <p>Total Perusahaan</p>
                         <a href="/perusahaan" class="btn btn-block btn-primary">Lihat Data</a>
                     </div>
@@ -108,8 +129,8 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-info h-100">
                     <div class="inner">
-                        <p>{{ number_format((\App\Models\Siswa::count() / \App\Models\Siswa::count()) * 100, 2) }} %</p>
-                        <h3>{{ \App\Models\Siswa::count() }}</h3>
+                        <p>{{ $percent($totalSiswa, $totalSiswa) }} %</p>
+                        <h3>{{ $totalSiswa }}</h3>
                         <p>Total Siswa</p>
                         <a href="/siswa" class="btn btn-block btn-primary">Lihat Data</a>
                     </div>
@@ -122,10 +143,10 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-success h-100">
                     <div class="inner">
-                        <p>{{ number_format((\App\Models\SuratIzinOrtu::count() / \App\Models\Siswa::count()) * 100, 2) }}
+                        <p>{{ $percent($totalSuratIzin, $totalSiswa) }}
                             %
                         </p>
-                        <h3>{{ \App\Models\SuratIzinOrtu::count() }}</h3>
+                        <h3>{{ $totalSuratIzin }}</h3>
                         <p>Siswa Mengisi Surat Izin</p>
                         <a href="/surat-izin-ortu" class="btn btn-block btn-primary">Lihat Data</a>
                     </div>
@@ -138,9 +159,9 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-warning h-100">
                     <div class="inner">
-                        <p>{{ number_format((\App\Models\TempatPkl::count() / \App\Models\Siswa::count()) * 100, 2) }} %
+                        <p>{{ $percent($totalTempatPkl, $totalSiswa) }} %
                         </p>
-                        <h3>{{ \App\Models\TempatPkl::count() }}</h3>
+                        <h3>{{ $totalTempatPkl }}</h3>
                         <p>Siswa Mengisi Tempat PKL</p>
                         <a href="/tempat-pkl" class="btn btn-block btn-primary">Lihat Data</a>
                     </div>
@@ -163,6 +184,11 @@
             </div>
         </div>
     @endif
+@endsection
+@section('footer')
+    <div class="text-center">
+        @include('partials.site_footer')
+    </div>
 @endsection
 
 @section('js')

@@ -355,6 +355,23 @@ return [
                 ],
             ],
         ],
+        [
+            'text' => 'User & Role',
+            'icon' => 'fas fa-user-shield',
+            'can'  => 'panitia',
+            'submenu' => [
+                [
+                    'text' => 'Manajemen User',
+                    'url'  => 'manajemen-user',
+                    'icon' => 'fas fa-users-cog',
+                ],
+                [
+                    'text' => 'Manajemen Role',
+                    'url'  => 'manajemen-role',
+                    'icon' => 'fas fa-user-tag',
+                ],
+            ],
+        ],
         // Menu untuk Kepala Program
         [
             'text' => 'Dashboard',

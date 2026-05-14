@@ -7,10 +7,12 @@ use App\Http\Controllers\PembimbingController;
 use App\Http\Controllers\PembimbingPerusahaanController;
 use App\Http\Controllers\PerusahaanController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoleManagementController;
 use App\Http\Controllers\SekolahController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\SuratIzinOrtuController;
 use App\Http\Controllers\TempatPklController;
+use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,7 +27,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
 Route::get('/dashboard', function () {
@@ -180,4 +182,20 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/kelas/{id}', [KelasController::class, 'destroy'])->name('kelas.destroy');
     Route::post('/kelas/import', [KelasController::class, 'import'])->name('kelas.import');
     Route::get('/kelas/download/template', [KelasController::class, 'downloadTemplate'])->name('kelas.downloadTemplate');
+});
+
+Route::middleware(['auth', 'can:panitia'])->group(function () {
+    Route::get('/manajemen-user', [UserManagementController::class, 'index'])->name('user-management.index');
+    Route::get('/manajemen-user/data', [UserManagementController::class, 'data'])->name('user-management.data');
+    Route::post('/manajemen-user', [UserManagementController::class, 'store'])->name('user-management.store');
+    Route::get('/manajemen-user/{user}/edit', [UserManagementController::class, 'edit'])->name('user-management.edit');
+    Route::put('/manajemen-user/{user}', [UserManagementController::class, 'update'])->name('user-management.update');
+    Route::delete('/manajemen-user/{user}', [UserManagementController::class, 'destroy'])->name('user-management.destroy');
+
+    Route::get('/manajemen-role', [RoleManagementController::class, 'index'])->name('role-management.index');
+    Route::get('/manajemen-role/data', [RoleManagementController::class, 'data'])->name('role-management.data');
+    Route::post('/manajemen-role', [RoleManagementController::class, 'store'])->name('role-management.store');
+    Route::get('/manajemen-role/{role}/edit', [RoleManagementController::class, 'edit'])->name('role-management.edit');
+    Route::put('/manajemen-role/{role}', [RoleManagementController::class, 'update'])->name('role-management.update');
+    Route::delete('/manajemen-role/{role}', [RoleManagementController::class, 'destroy'])->name('role-management.destroy');
 });

@@ -26,5 +26,8 @@
                 {{ $slot }}
             </div>
         </div>
+        @unless(request()->routeIs('login') || request()->routeIs('register'))
+            @include('partials.guest_footer')
+        @endunless
     </body>
 </html>

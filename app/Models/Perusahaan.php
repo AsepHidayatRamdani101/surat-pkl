@@ -10,7 +10,17 @@ class Perusahaan extends Model
     use HasFactory;
 
     protected $table = 'perusahaan';
-    protected $fillable = ['id', 'nama_perusahaan', 'nama_pemilik_perusahaan', 'telepon_pemilik_perusahaan', 'alamat'];
+    protected $fillable = [
+        'id',
+        'nama_perusahaan',
+        'nama_pemilik_perusahaan',
+        'telepon_pemilik_perusahaan',
+        'alamat',
+        'provinsi_id',
+        'kabupaten_kota_id',
+        'kecamatan_id',
+        'desa_id',
+    ];
 
     public function tempatPkl()
     {

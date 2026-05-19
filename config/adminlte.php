@@ -393,6 +393,13 @@ return [
 
         ],
         [
+            'text' => 'Rekap Wilayah',
+            'url'  => 'perusahaan/rekap-wilayah',
+            'icon' => 'fas fa-map-marked-alt',
+            'can'  => ['kepala_program', 'panitia'],
+
+        ],
+        [
             'text' => 'Tempat PKL',
             'icon' => 'fas fa-briefcase',
             'can'  => ['kepala_program', 'panitia'],

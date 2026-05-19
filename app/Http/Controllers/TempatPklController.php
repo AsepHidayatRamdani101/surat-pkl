@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\TempatPkl;
 use App\Models\Siswa;
 use App\Models\Perusahaan;
+use App\Models\Kelas;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use App\Models\Sekolah;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpWord\IOFactory;
@@ -25,18 +27,17 @@ class TempatPklController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            // Grouping by perusahaan
-            if (auth()->user()->role == 'panitia') {
-                $grouped = TempatPkl::with(['siswa', 'perusahaan'])
-                    ->get();
-            } else {
-                $grouped = TempatPkl::with(['siswa', 'perusahaan'])
-                    ->whereHas('siswa.kelas.jurusan', function ($query) {
-                        $query->where('id', auth()->user()->jurusan_id);
-                    });
+            $query = TempatPkl::with(['siswa.kelas', 'perusahaan']);
+
+            if (auth()->user()->role !== 'panitia') {
+                $query->whereHas('siswa.kelas.jurusan', function ($builder) {
+                    $builder->where('id', auth()->user()->jurusan_id);
+                });
             }
 
-            return DataTables::of($query)
+            $grouped = $query->get();
+
+            return DataTables::of($grouped)
                 ->addIndexColumn()
                 ->addColumn('aksi', function ($row) {
                     return '
@@ -52,7 +53,7 @@ class TempatPklController extends Controller
                         data-id="' . $row->id . '"
                         >Upload
                         </button>
-                        <button class="btn btn-sm btn-danger btn-hapus" data-id="' . $row['id'] . '">
+                        <button class="btn btn-sm btn-danger btn-hapus" data-id="' . $row->id . '">
                             Hapus
                         </button>
                         
@@ -221,6 +222,47 @@ class TempatPklController extends Controller
         return view('tempat_pkl.index_cetak', compact('siswa', 'perusahaan'));
     }
 
+    public function setTanggal(Request $request)
+    {
+        // Allow only nomor_surat from the tempat-pkl form; other fields optional
+        $request->validate([
+            'nomor_surat' => 'required|string',
+            'tanggal_surat' => 'sometimes|nullable|date',
+            'tanggal_berangkat' => 'sometimes|nullable|date',
+            'nama_kepala_sekolah' => 'sometimes|nullable|string',
+            'nip_kepala_sekolah' => 'sometimes|nullable|string',
+            'nama_file_ttd' => 'sometimes|nullable|string',
+        ]);
+
+        // Store under a distinct session key used by the tempat_pkl views
+        session([
+            'tempat_pkl_nomor_surat' => $request->nomor_surat,
+            'tanggal_surat' => $request->tanggal_surat,
+            'tanggal_berangkat' => $request->tanggal_berangkat,
+            'nama_kepala_sekolah' => $request->nama_kepala_sekolah,
+            'nip_kepala_sekolah' => $request->nip_kepala_sekolah,
+            'nama_file_ttd' => $request->nama_file_ttd,
+        ]);
+
+        return redirect()->back()->with('success', 'Nomor surat berhasil disimpan!');
+    }
+
+    private function jurusanId(): ?int
+    {
+        return auth()->user()?->jurusan_id ? (int) auth()->user()->jurusan_id : null;
+    }
+
+    private function kelasIds(?int $jurusanId = null): array
+    {
+        $jurusanId = $jurusanId ?? $this->jurusanId();
+
+        if (! $jurusanId) {
+            return [];
+        }
+
+        return Kelas::where('jurusan_id', $jurusanId)->pluck('id')->all();
+    }
+
     public function store(Request $request)
     {
         //tampilkan seluruh isi request
@@ -364,6 +406,8 @@ class TempatPklController extends Controller
 
     public function cetak($id)
     {
+        Carbon::setLocale('id');
+
         $data = TempatPkl::with(['siswa.kelas.jurusan', 'perusahaan'])
             ->where('perusahaan_id', $id)
             ->when($this->jurusanId(), function ($query, $jurusanId) {
@@ -373,7 +417,24 @@ class TempatPklController extends Controller
             })
             ->get();
 
-        $pdf = pdf::loadView('tempat_pkl.cetak', compact('data'));
+        $nomor_surat = session('tempat_pkl_nomor_surat') ?: session('nomor_surat');
+        $tanggal_surat = session('tanggal_surat') ?: Carbon::now()->translatedFormat('d F Y');
+
+        $first = $data->first();
+        $tanggal_mulai = $first && $first->tanggal_mulai ? Carbon::parse($first->tanggal_mulai)->translatedFormat('d F Y') : '';
+        $tanggal_selesai = $first && $first->tanggal_selesai ? Carbon::parse($first->tanggal_selesai)->translatedFormat('d F Y') : '';
+        $school = Sekolah::first();
+
+        $pdf = pdf::loadView('tempat_pkl.cetak', compact('data') + [
+            'nomor_surat' => $nomor_surat,
+            'tanggal_surat' => $tanggal_surat,
+            'tanggal_mulai' => $tanggal_mulai,
+            'tanggal_selesai' => $tanggal_selesai,
+            'nama_kepala_sekolah' => session('nama_kepala_sekolah'),
+            'nip_kepala_sekolah' => session('nip_kepala_sekolah'),
+            'nama_file_ttd' => session('nama_file_ttd'),
+            'school' => $school,
+        ]);
         $pdf->setOption(['enable_remote' => true, 'isHTML5ParserEnabled' => true]);
         return $pdf->stream('surat-izin-pkl.pdf');
     }

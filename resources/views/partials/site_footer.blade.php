@@ -1,5 +1,7 @@
- <div class="footer-content text-center">
-    <strong>Copyright &copy;2024 <a href="">Asep Hidayat Ramdani, S.T.</a></strong>
-  </div>
+<div class="footer-content text-muted py-1 text-center">
+    <strong>Copyright &copy; 2024</strong>
+    <a href="#" class="text-decoration-none text-primary">Asep Hidayat Ramdani, S.T.</a>
+</div>
+
 
   

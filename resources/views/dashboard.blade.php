@@ -125,72 +125,68 @@
         </div>
     @elseif (auth()->user()->role == 'panitia')
         <div class="row pt-4">
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-secondary h-100">
-                    <div class="inner">
-                        <p>{{ $percent($totalTempatPkl, $totalSiswa) }} %</p>
-
-                        <h3>{{ $totalPerusahaan }}</h3>
-                        <p>Total Perusahaan</p>
-                        <a href="/perusahaan" class="btn btn-block btn-primary">Lihat Data</a>
+            <div class="col-lg-3 col-md-6 col-12 mb-4 d-flex">
+                <div class="small-box bg-secondary shadow-sm h-100 w-100 mb-0">
+                    <div class="inner p-3">
+                        <p class="mb-1 text-uppercase small">{{ $percent($totalTempatPkl, $totalSiswa) }}%</p>
+                        <h3 class="mb-1">{{ $totalPerusahaan }}</h3>
+                        <p class="mb-3">Total Perusahaan</p>
                     </div>
                     <div class="icon">
                         <i class="fas fa-building"></i>
                     </div>
+                    <a href="/perusahaan" class="small-box-footer">Lihat Data <i class="fas fa-arrow-circle-right"></i></a>
                 </div>
             </div>
 
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-info h-100">
-                    <div class="inner">
-                        <p>{{ $percent($totalSiswa, $totalSiswa) }} %</p>
-                        <h3>{{ $totalSiswa }}</h3>
-                        <p>Total Siswa</p>
-                        <a href="/siswa" class="btn btn-block btn-primary">Lihat Data</a>
+            <div class="col-lg-3 col-md-6 col-12 mb-4 d-flex">
+                <div class="small-box bg-info shadow-sm h-100 w-100 mb-0">
+                    <div class="inner p-3">
+                        <p class="mb-1 text-uppercase small">{{ $percent($totalSiswa, $totalSiswa) }}%</p>
+                        <h3 class="mb-1">{{ $totalSiswa }}</h3>
+                        <p class="mb-3">Total Siswa</p>
                     </div>
                     <div class="icon">
                         <i class="fas fa-user-graduate"></i>
                     </div>
+                    <a href="/siswa" class="small-box-footer">Lihat Data <i class="fas fa-arrow-circle-right"></i></a>
                 </div>
             </div>
 
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-success h-100">
-                    <div class="inner">
-                        <p>{{ $percent($totalSuratIzin, $totalSiswa) }}
-                            %
-                        </p>
-                        <h3>{{ $totalSuratIzin }}</h3>
-                        <p>Siswa Mengisi Surat Izin</p>
-                        <a href="/surat-izin-ortu" class="btn btn-block btn-primary">Lihat Data</a>
+            <div class="col-lg-3 col-md-6 col-12 mb-4 d-flex">
+                <div class="small-box bg-success shadow-sm h-100 w-100 mb-0">
+                    <div class="inner p-3">
+                        <p class="mb-1 text-uppercase small">{{ $percent($totalSuratIzin, $totalSiswa) }}%</p>
+                        <h3 class="mb-1">{{ $totalSuratIzin }}</h3>
+                        <p class="mb-3">Siswa Mengisi Surat Izin</p>
                     </div>
                     <div class="icon">
                         <i class="fas fa-file-signature"></i>
                     </div>
+                    <a href="/surat-izin-ortu" class="small-box-footer">Lihat Data <i class="fas fa-arrow-circle-right"></i></a>
                 </div>
             </div>
 
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-warning h-100">
-                    <div class="inner">
-                        <p>{{ $percent($totalTempatPkl, $totalSiswa) }} %
-                        </p>
-                        <h3>{{ $totalTempatPkl }}</h3>
-                        <p>Siswa Mengisi Tempat PKL</p>
-                        <a href="/tempat-pkl" class="btn btn-block btn-primary">Lihat Data</a>
+            <div class="col-lg-3 col-md-6 col-12 mb-4 d-flex">
+                <div class="small-box bg-warning shadow-sm h-100 w-100 mb-0">
+                    <div class="inner p-3">
+                        <p class="mb-1 text-uppercase small">{{ $percent($totalTempatPkl, $totalSiswa) }}%</p>
+                        <h3 class="mb-1">{{ $totalTempatPkl }}</h3>
+                        <p class="mb-3">Siswa Mengisi Tempat PKL</p>
                     </div>
                     <div class="icon">
                         <i class="fas fa-building"></i>
                     </div>
+                    <a href="/tempat-pkl" class="small-box-footer">Lihat Data <i class="fas fa-arrow-circle-right"></i></a>
                 </div>
             </div>
 
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-danger h-100">
-                    <div class="inner">
-                        <p>Siswa yang belum memilih tempat PKL</p>
-                        <h3>{{ \App\Models\Siswa::where('status', 'belum_terdaftar')->count() }}</h3>
-                        <p>Belum Mendaftar</p>
+            <div class="col-lg-3 col-md-6 col-12 mb-4 d-flex">
+                <div class="small-box bg-danger shadow-sm h-100 w-100 mb-0">
+                    <div class="inner p-3">
+                        <p class="mb-1">Siswa yang belum memilih tempat PKL</p>
+                        <h3 class="mb-1">{{ \App\Models\Siswa::where('status', 'belum_terdaftar')->count() }}</h3>
+                        <p class="mb-3">Belum Mendaftar</p>
                     </div>
                     <div class="icon">
                         <i class="fas fa-user-clock"></i>
@@ -201,22 +197,17 @@
         </div>
         <div class="row pt-4">
             <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-0 pb-0">
                         <h4>Statistik</h4>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body pt-2">
                         <canvas id="myChart" width="400" height="200"></canvas>
                     </div>
                 </div>
             </div>
         </div>
     @endif
-@endsection
-@section('footer')
-    <div class="text-center">
-        @include('partials.site_footer')
-    </div>
 @endsection
 
 @section('js')

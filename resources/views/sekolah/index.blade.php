@@ -7,9 +7,9 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="card">
-                    <div class="card-header">
-                        <h4 class="d-inline">Manajemen Sekolah</h4>
-                        <div class="float-right">
+                    <div class="card-header position-relative d-flex align-items-center">
+                        <h4 class="position-absolute w-100 ">Manajemen Sekolah</h4>
+                        <div class="ml-auto d-flex flex-wrap justify-content-end" style="gap: .5rem;">
                             <button class="btn btn-sm btn-primary" id="btnTambah">Tambah Data</button>
                             <button class="btn btn-sm btn-danger" id="btnHapusMultiple" style="display: none;">Hapus Pilihan</button>
                         </div>
@@ -82,6 +82,7 @@
                 </form>
             </div>
         </div>
+    </div>
     @endsection
 
     @section('css')

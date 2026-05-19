@@ -115,6 +115,12 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/perusahaan', [PerusahaanController::class, 'index'])->name('perusahaan.index');
     Route::get('/perusahaan/data', [PerusahaanController::class, 'data'])->name('perusahaan.data');
+    Route::get('/perusahaan/rekap-wilayah', [PerusahaanController::class, 'rekapWilayah'])->name('perusahaan.rekap-wilayah');
+    Route::get('/perusahaan/{id}/wilayah', [PerusahaanController::class, 'wilayahPerusahaan'])->name('perusahaan.wilayah');
+    Route::get('/wilayah/provinsi', [PerusahaanController::class, 'provinsi'])->name('wilayah.provinsi');
+    Route::get('/wilayah/kabupaten/{provinceId}', [PerusahaanController::class, 'kabupatenKota'])->name('wilayah.kabupaten');
+    Route::get('/wilayah/kecamatan/{regencyId}', [PerusahaanController::class, 'kecamatan'])->name('wilayah.kecamatan');
+    Route::get('/wilayah/desa/{districtId}', [PerusahaanController::class, 'desa'])->name('wilayah.desa');
     Route::post('/perusahaan', [PerusahaanController::class, 'store'])->name('perusahaan.store');
     Route::get('/perusahaan/{id}/edit', [PerusahaanController::class, 'edit'])->name('perusahaan.edit');
     Route::put('/perusahaan/{id}', [PerusahaanController::class, 'update'])->name('perusahaan.update');

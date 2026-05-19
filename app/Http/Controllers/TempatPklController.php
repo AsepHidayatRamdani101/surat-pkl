@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Kelas;
-use App\Models\Sekolah;
 use App\Models\TempatPkl;
 use App\Models\Siswa;
 use App\Models\Perusahaan;
@@ -27,12 +25,15 @@ class TempatPklController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = TempatPkl::with(['siswa.kelas.jurusan', 'perusahaan', 'pembimbing']);
-
-            if ($this->jurusanId()) {
-                $query->whereHas('siswa.kelas', function ($kelasQuery) {
-                    $kelasQuery->where('jurusan_id', $this->jurusanId());
-                });
+            // Grouping by perusahaan
+            if (auth()->user()->role == 'panitia') {
+                $grouped = TempatPkl::with(['siswa', 'perusahaan'])
+                    ->get();
+            } else {
+                $grouped = TempatPkl::with(['siswa', 'perusahaan'])
+                    ->whereHas('siswa.kelas.jurusan', function ($query) {
+                        $query->where('id', auth()->user()->jurusan_id);
+                    });
             }
 
             return DataTables::of($query)
@@ -61,13 +62,8 @@ class TempatPklController extends Controller
                 ->make(true);
         }
 
-        $siswa = Siswa::with('kelas')
-            ->where('status', '!=', 'belum_terdaftar')
-            ->when($this->jurusanId(), function ($query, $jurusanId) {
-                $query->whereIn('kelas_id', $this->kelasIds($jurusanId));
-            })
-            ->get();
-
+        $siswa = Siswa::where('status', '!=', 'belum_terdaftar')->get();
+        
         $perusahaan = Perusahaan::orderBy('nama_perusahaan')->get();
         //   var_dump($siswa);
         return view('tempat_pkl.index', compact('siswa', 'perusahaan'));
@@ -377,28 +373,7 @@ class TempatPklController extends Controller
             })
             ->get();
 
-        if ($data->isEmpty()) {
-            abort(404);
-        }
-
-        //get data manajemen sekolah
-
-        $msekolah = Sekolah::latest()->first();
-
-        //get perusahaan
-        $perusahaan = Perusahaan::findOrFail($id);
-        
-
-        $school = Sekolah::latest()->first();
-        $tanggal_surat = Carbon::now()->translatedFormat('d F Y');
-        $tanggal_mulai = $msekolah->tanggal_mulai_pkl->translatedFormat('d F Y') ?? '1 Januari 2025';
-        $tanggal_selesai = $msekolah->tanggal_selesai_pkl->translatedFormat('d F Y') ?? '30 November 2025';
-        $nomor_surat = session('tempat_pkl_nomor_surat') ?? '087/PK.03.03-SMKN8GRT';
-        $nama_pimpinan_perusahaan = $perusahaan->nama_pemilik_perusahaan ?? '-';
-        $no_telpon_pimpinan_perusahaan = $perusahaan->telepon_pemilik_perusahaan ?? '-';
-        
-
-        $pdf = pdf::loadView('tempat_pkl.cetak', compact('data', 'school', 'tanggal_surat', 'tanggal_mulai', 'tanggal_selesai', 'nomor_surat'));
+        $pdf = pdf::loadView('tempat_pkl.cetak', compact('data'));
         $pdf->setOption(['enable_remote' => true, 'isHTML5ParserEnabled' => true]);
         return $pdf->stream('surat-izin-pkl.pdf');
     }
@@ -414,13 +389,7 @@ class TempatPklController extends Controller
             })
             ->get();
 
-        if ($data->isEmpty()) {
-            abort(404);
-        }
-
-        $tanggal_surat = session('tempat_pkl_tanggal_surat') ?? now()->translatedFormat('d F Y');
-
-        $pdf = Pdf::loadView('tempat_pkl.cetak_amplop', compact('data', 'tanggal_surat'));
+        $pdf = Pdf::loadView('tempat_pkl.cetak_amplop', compact('data'));
         $pdf->setPaper([0, 0, 650, 312], 'potrait');
         $pdf->setOption(['enable_remote' => true, 'isHTML5ParserEnabled' => true]);
 
@@ -463,34 +432,5 @@ class TempatPklController extends Controller
         $writer->save($path);
 
         return response()->download($path)->deleteFileAfterSend(true);
-    }
-
-    public function setTanggal(Request $request)
-    {
-        $request->validate([
-            'nomor_surat' => 'required|string',
-        ]);
-
-        session([
-            'tempat_pkl_nomor_surat' => $request->nomor_surat,
-        ]);
-
-        return redirect()->back()->with('success', 'Nomor surat berhasil diset!');
-    }
-
-    private function jurusanId(): ?int
-    {
-        return auth()->user()?->jurusan_id ? (int) auth()->user()->jurusan_id : null;
-    }
-
-    private function kelasIds(?int $jurusanId = null): array
-    {
-        $jurusanId = $jurusanId ?? $this->jurusanId();
-
-        if (!$jurusanId) {
-            return [];
-        }
-
-        return Kelas::where('jurusan_id', $jurusanId)->pluck('id')->all();
     }
 }

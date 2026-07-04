@@ -24,7 +24,6 @@
                     </thead>
                 </table>
 
-                <!-- Modal Import -->
                 <div class="modal fade" id="modalImport" tabindex="-1" role="dialog">
                     <div class="modal-dialog">
                         <div class="modal-content">
@@ -41,8 +40,10 @@
                                 <form id="formImportJurusan" enctype="multipart/form-data">
                                     <div class="form-group">
                                         <label for="file">File Excel (Format: Nama Jurusan | Kode Jurusan)</label>
-                                        <input type="file" name="file" id="file" class="form-control" accept=".xlsx,.xls,.csv" required>
-                                        <small class="form-text text-muted">Format kolom: Kolom A = Nama Jurusan, Kolom B = Kode Jurusan</small>
+                                        <input type="file" name="file" id="file" class="form-control"
+                                            accept=".xlsx,.xls,.csv" required>
+                                        <small class="form-text text-muted">Format kolom: Kolom A = Nama Jurusan, Kolom B =
+                                            Kode Jurusan</small>
                                     </div>
                                 </form>
                             </div>
@@ -54,7 +55,6 @@
                     </div>
                 </div>
 
-                <!-- Modal Form -->
                 <div class="modal fade" id="modalForm" tabindex="-1" role="dialog">
                     <div class="modal-dialog">
                         <form id="formJurusan">
@@ -68,16 +68,18 @@
                                     <input type="hidden" name="id" id="id">
                                     <div class="form-group">
                                         <label for="kode_jurusan">Kode Jurusan</label>
-                                        <input type="text" name="kode_jurusan" id="kode_jurusan" class="form-control" required>
+                                        <input type="text" name="kode_jurusan" id="kode_jurusan" class="form-control"
+                                            required>
                                     </div>
-                                    <div class="form-group">
+                                    <div class="form-group mb-0">
                                         <label for="nama_jurusan">Nama Jurusan</label>
-                                        <input type="text" name="nama_jurusan" id="nama_jurusan" class="form-control" required>
+                                        <input type="text" name="nama_jurusan" id="nama_jurusan" class="form-control"
+                                            required>
                                     </div>
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-success" id="btnSimpan">Simpan</button>
                                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                                    <button type="button" class="btn btn-primary" id="btnSimpan">Simpan</button>
                                 </div>
                             </div>
                         </form>
@@ -93,21 +95,51 @@
 @endsection
 
 @section('js')
+    @include('sweetalert::alert')
+
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script>
         $(document).ready(function() {
+            const originalSwalFire = Swal.fire.bind(Swal);
+            Swal.fire = function(options, ...args) {
+                if (typeof options === 'object' && options !== null) {
+                    const merged = {
+                        confirmButtonColor: '#0d6efd',
+                        cancelButtonColor: '#6c757d',
+                        ...options,
+                    };
+
+                    if (merged.showCancelButton) {
+                        merged.confirmButtonText = merged.confirmButtonText || 'Ya, lanjut';
+                        merged.cancelButtonText = merged.cancelButtonText || 'Batal';
+                    } else {
+                        merged.confirmButtonText = merged.confirmButtonText || 'OK';
+                    }
+
+                    if (merged.icon === 'success' && merged.timer === undefined && merged.showConfirmButton ===
+                        undefined) {
+                        merged.timer = 1800;
+                        merged.showConfirmButton = false;
+                    }
+
+                    return originalSwalFire(merged, ...args);
+                }
+
+                return originalSwalFire(options, ...args);
+            };
+
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
-            })
+            });
 
             let table = $('#jurusanTable').DataTable({
                 processing: true,
                 serverSide: true,
                 ajax: '{{ route('jurusan.data') }}',
-                columns: [
-                    {
+                columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
                         orderable: false,
@@ -130,7 +162,6 @@
                 ]
             });
 
-            // Tambah Data
             $('#btnTambah').click(function() {
                 $('#formJurusan')[0].reset();
                 $('#id').val('');
@@ -138,13 +169,11 @@
                 $('#modalForm').modal('show');
             });
 
-            // Import Data
             $('#btnImport').click(function() {
                 $('#formImportJurusan')[0].reset();
                 $('#modalImport').modal('show');
             });
 
-            // Simpan Data
             $('#btnSimpan').click(function() {
                 let id = $('#id').val();
                 let url = id ? '{{ route('jurusan.update', '') }}/' + id : '{{ route('jurusan.store') }}';
@@ -157,20 +186,32 @@
                     success: function(response) {
                         $('#modalForm').modal('hide');
                         table.ajax.reload();
-                        alert(response.message);
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: response.message,
+                        });
                     },
                     error: function(xhr) {
-                        let errors = xhr.responseJSON.errors;
-                        let message = 'Error: ';
-                        for (let key in errors) {
-                            message += errors[key][0] + '\n';
+                        let errors = xhr.responseJSON?.errors || {};
+                        let message = xhr.responseJSON?.message ||
+                            'Terjadi kesalahan saat menyimpan data.';
+
+                        if (Object.keys(errors).length > 0) {
+                            message = Object.values(errors).map(function(item) {
+                                return item[0];
+                            }).join('\n');
                         }
-                        alert(message);
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: message,
+                        });
                     }
                 });
             });
 
-            // Import File
             $('#btnImportFile').click(function() {
                 let formData = new FormData($('#formImportJurusan')[0]);
                 $.ajax({
@@ -182,23 +223,32 @@
                     success: function(response) {
                         $('#modalImport').modal('hide');
                         table.ajax.reload();
-                        alert(response.message);
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: response.message,
+                        });
                     },
                     error: function(xhr) {
-                        let response = xhr.responseJSON;
-                        let message = response.message;
+                        let response = xhr.responseJSON || {};
+                        let message = response.message || 'Terjadi kesalahan saat import data.';
+
                         if (response.errors && response.errors.length > 0) {
                             message += '\n\nDetail Error:\n';
                             response.errors.forEach(function(error) {
                                 message += error + '\n';
                             });
                         }
-                        alert(message);
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal import',
+                            text: message,
+                        });
                     }
                 });
             });
 
-            // Edit Data
             $(document).on('click', '.btnEdit', function() {
                 let id = $(this).data('id');
                 $.ajax({
@@ -214,22 +264,41 @@
                 });
             });
 
-            // Hapus Data
             $(document).on('click', '.btnHapus', function() {
                 let id = $(this).data('id');
-                if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+                Swal.fire({
+                    title: 'Hapus data ini?',
+                    text: 'Data yang dihapus tidak bisa dikembalikan.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, hapus',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
                     $.ajax({
                         url: '{{ route('jurusan.destroy', '') }}/' + id,
                         type: 'DELETE',
                         success: function(response) {
                             table.ajax.reload();
-                            alert(response.message);
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: response.message,
+                            });
                         },
                         error: function(xhr) {
-                            alert('Error: ' + xhr.responseJSON.message);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: xhr.responseJSON?.message ||
+                                    'Terjadi kesalahan saat menghapus data.',
+                            });
                         }
                     });
-                }
+                });
             });
         });
     </script>

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FormatsExcelSheets;
 use App\Models\Kelas;
 use App\Models\Jurusan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -12,6 +14,8 @@ use Yajra\DataTables\Facades\DataTables;
 
 class KelasController extends Controller
 {
+    use FormatsExcelSheets;
+
     public function index()
     {
         $jurusan = Jurusan::all();
@@ -47,13 +51,15 @@ class KelasController extends Controller
         $request->validate([
             'nama_kelas' => 'required|string|max:255',
             'jurusan_id' => 'required|exists:jurusan,id',
-            'tingkat' => 'required|integer|between:1,4',
+            'tingkat' => 'required|integer|between:11,13',
+            'jumlah_rombel' => 'required|integer|min:0',
         ]);
 
         Kelas::create([
             'nama_kelas' => $request->nama_kelas,
             'jurusan_id' => $request->jurusan_id,
             'tingkat' => $request->tingkat,
+            'jumlah_rombel' => $request->jumlah_rombel,
         ]);
 
         return response()->json(['message' => 'Data berhasil disimpan']);
@@ -64,13 +70,15 @@ class KelasController extends Controller
         $request->validate([
             'nama_kelas' => 'required|string|max:255',
             'jurusan_id' => 'required|exists:jurusan,id',
-            'tingkat' => 'required|integer|between:1,4',
+            'tingkat' => 'required|integer|between:11,13',
+            'jumlah_rombel' => 'required|integer|min:0',
         ]);
 
         Kelas::findOrFail($id)->update([
             'nama_kelas' => $request->nama_kelas,
             'jurusan_id' => $request->jurusan_id,
             'tingkat' => $request->tingkat,
+            'jumlah_rombel' => $request->jumlah_rombel,
         ]);
 
         return response()->json(['message' => 'Data berhasil diupdate']);
@@ -86,6 +94,16 @@ class KelasController extends Controller
     {
         Kelas::findOrFail($id)->delete();
         return response()->json(['message' => 'Data berhasil dihapus']);
+    }
+
+    public function switchXiToXii()
+    {
+        return $this->switchTingkatKelas(11, 12, 'XI', 'XII');
+    }
+
+    public function switchXiiToXi()
+    {
+        return $this->switchTingkatKelas(12, 11, 'XII', 'XI');
     }
 
     public function import(Request $request)
@@ -106,7 +124,7 @@ class KelasController extends Controller
             $errors = [];
 
             foreach ($rows as $index => $row) {
-                if (empty($row[0]) || empty($row[1]) || empty($row[2])) {
+                if (empty($row[0]) || empty($row[1]) || empty($row[2]) || ($row[3] ?? '') === '') {
                     $errorCount++;
                     $errors[] = "Baris " . ($index + 2) . ": Data tidak lengkap";
                     continue;
@@ -126,14 +144,16 @@ class KelasController extends Controller
                         $existing->update([
                             'nama_kelas' => $row[0],
                             'jurusan_id' => $jurusan->id,
-                            'tingkat' => (int)$row[2]
+                            'tingkat' => (int)$row[2],
+                            'jumlah_rombel' => (int)$row[3],
                         ]);
                     } else {
                         // Create if not exists
                         Kelas::create([
                             'nama_kelas' => $row[0],
                             'jurusan_id' => $jurusan->id,
-                            'tingkat' => (int)$row[2]
+                            'tingkat' => (int)$row[2],
+                            'jumlah_rombel' => (int)$row[3],
                         ]);
                     }
                     $successCount++;
@@ -158,39 +178,58 @@ class KelasController extends Controller
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        
-        // Set header
+
         $sheet->setCellValue('A1', 'Nama Kelas');
         $sheet->setCellValue('B1', 'Nama Jurusan');
         $sheet->setCellValue('C1', 'Tingkat');
-        
-        // Style header
-        $headerStyle = [
-            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '4472C4']],
-            'alignment' => ['horizontal' => 'center', 'vertical' => 'center'],
-        ];
-        $sheet->getStyle('A1:C1')->applyFromArray($headerStyle);
-        
-        // Add sample data
+        $sheet->setCellValue('D1', 'Jumlah Rombel');
+
         $sheet->setCellValue('A2', 'Contoh: X-TI-1');
         $sheet->setCellValue('B2', 'Teknik Informatika');
         $sheet->setCellValue('C2', '1');
-        
-        // Set column width
-        $sheet->getColumnDimension('A')->setWidth(25);
-        $sheet->getColumnDimension('B')->setWidth(30);
-        $sheet->getColumnDimension('C')->setWidth(15);
-        
-        // Create writer and response
+        $sheet->setCellValue('D2', '3');
+
+        $this->applyExcelTableFormatting($sheet, 'D', 2);
+
         $writer = new Xlsx($spreadsheet);
         $fileName = 'template_import_kelas_' . date('d_m_Y_H_i_s') . '.xlsx';
-        
+
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $fileName . '"');
         header('Cache-Control: max-age=0');
-        
+
         $writer->save('php://output');
         exit;
+    }
+
+    private function switchTingkatKelas(int $fromTingkat, int $toTingkat, string $fromLabel, string $toLabel)
+    {
+        $kelasList = Kelas::where('tingkat', $fromTingkat)->get();
+
+        if ($kelasList->isEmpty()) {
+            return response()->json([
+                'message' => "Tidak ada data kelas tingkat {$fromTingkat} yang bisa diubah."
+            ], 422);
+        }
+
+        DB::transaction(function () use ($kelasList, $fromTingkat, $toTingkat, $fromLabel, $toLabel) {
+            foreach ($kelasList as $kelas) {
+                $namaKelasBaru = preg_replace('/\\b' . preg_quote($fromLabel, '/') . '\\b/u', $toLabel, $kelas->nama_kelas);
+
+                if ($namaKelasBaru === $kelas->nama_kelas) {
+                    $namaKelasBaru = preg_replace('/\\b' . $fromTingkat . '\\b/u', (string) $toTingkat, $kelas->nama_kelas);
+                }
+
+                $kelas->update([
+                    'nama_kelas' => $namaKelasBaru,
+                    'tingkat' => $toTingkat,
+                ]);
+            }
+        });
+
+        return response()->json([
+            'message' => "Data kelas {$fromLabel} berhasil diubah menjadi kelas {$toLabel}.",
+            'jumlah' => $kelasList->count(),
+        ]);
     }
 }

@@ -353,6 +353,11 @@ return [
                     'url'  => 'pembimbing-perusahaan',
                     'icon' => 'fas fa-building',
                 ],
+                [
+                    'text' => 'Kelompok Bimbingan',
+                    'url'  => 'kelompok-bimbingan',
+                    'icon' => 'fas fa-layer-group',
+                ],
             ],
         ],
         [
@@ -434,6 +439,130 @@ return [
                     'icon' => 'fas fa-print',
                 ],
 
+            ],
+        ],
+
+        [
+            'text' => 'Pembekalan',
+            'icon' => 'fas fa-chalkboard-teacher',
+            'can'  => ['kepala_program', 'panitia'],
+            'submenu' => [
+                [
+                    'text' => 'Data Materi',
+                    'url'  => 'pembekalan/materi',
+                    'icon' => 'fas fa-book-open',
+                ],
+                [
+                    'text' => 'Data Tugas',
+                    'url'  => 'pembekalan/tugas',
+                    'icon' => 'fas fa-tasks',
+                ],
+                [
+                    'text' => 'Jawaban Siswa',
+                    'url'  => 'pembekalan/jawaban-siswa',
+                    'icon' => 'fas fa-clipboard-list',
+                ],
+                [
+                    'text' => 'Input Absensi',
+                    'url'  => 'pembekalan/absensi/input',
+                    'icon' => 'fas fa-user-check',
+                ],
+                [
+                    'text' => 'Lihat Absensi',
+                    'url'  => 'pembekalan/absensi/riwayat',
+                    'icon' => 'fas fa-user-check',
+                ],
+                [
+                    'text' => 'Input Catatan Sikap',
+                    'url'  => 'pembekalan/sikap/input',
+                    'icon' => 'fas fa-notes-medical',
+                ],
+                [
+                    'text' => 'Lihat Catatan Sikap',
+                    'url'  => 'pembekalan/sikap/riwayat',
+                    'icon' => 'fas fa-notes-medical',
+                ],
+                [
+                    'text' => 'Laporan Pembekalan',
+                    'url'  => 'pembekalan/laporan',
+                    'icon' => 'fas fa-file-alt',
+                ],
+            ],
+        ],
+
+        [
+            'text' => 'Menu Siswa',
+            'icon' => 'fas fa-user-graduate',
+            'can'  => 'siswa',
+            'submenu' => [
+                [
+                    'text' => 'Dashboard Siswa',
+                    'url'  => 'dashboard',
+                    'icon' => 'fas fa-home',
+                ],
+                [
+                    'text' => 'Lihat Absensi',
+                    'url'  => 'dashboard#absensi-siswa',
+                    'icon' => 'fas fa-user-check',
+                ],
+                [
+                    'text' => 'Kerjakan Tugas',
+                    'url'  => 'dashboard#tugas-siswa',
+                    'icon' => 'fas fa-tasks',
+                ],
+                [
+                    'text' => 'Lihat Nilai Tugas',
+                    'url'  => 'dashboard#nilai-siswa',
+                    'icon' => 'fas fa-star',
+                ],
+                [
+                    'text' => 'Catatan Sikap',
+                    'url'  => 'dashboard#sikap-siswa',
+                    'icon' => 'fas fa-notes-medical',
+                ],
+                [
+                    'text' => 'Cetak Sertifikat Pembekalan',
+                    'url'  => 'dashboard/siswa/cetak-sertifikat',
+                    'icon' => 'fas fa-certificate',
+                ],
+            ],
+        ],
+
+        [
+            'text' => 'Menu Pembimbing',
+            'icon' => 'fas fa-user-tie',
+            'can'  => 'pembimbing',
+            'submenu' => [
+                [
+                    'text' => 'Dashboard Pembimbing',
+                    'url'  => 'dashboard',
+                    'icon' => 'fas fa-home',
+                ],
+                [
+                    'text' => 'Tugas Siswa & Nilai',
+                    'url'  => 'pembekalan/jawaban-siswa',
+                    'icon' => 'fas fa-tasks',
+                ],
+                [
+                    'text' => 'Input Absensi Siswa',
+                    'url'  => 'pembekalan/absensi/input',
+                    'icon' => 'fas fa-user-check',
+                ],
+                [
+                    'text' => 'Lihat Absensi Siswa',
+                    'url'  => 'pembekalan/absensi/riwayat',
+                    'icon' => 'fas fa-user-check',
+                ],
+                [
+                    'text' => 'Input Catatan Sikap',
+                    'url'  => 'pembekalan/sikap/input',
+                    'icon' => 'fas fa-notes-medical',
+                ],
+                [
+                    'text' => 'Lihat Catatan Sikap',
+                    'url'  => 'pembekalan/sikap/riwayat',
+                    'icon' => 'fas fa-notes-medical',
+                ],
             ],
         ],
 

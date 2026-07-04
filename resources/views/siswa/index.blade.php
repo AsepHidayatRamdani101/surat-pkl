@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Surat Izin Orang Tua')
+@section('title', 'Data Siswa')
 
 @section('content')
     <div class="container pt-4">
@@ -14,9 +14,17 @@
             <div class="card-header">
                 <h4 class="d-inline">Data Siswa</h4>
                 <div class="float-right">
+                    <select id="filterStatusAkunSiswa" class="form-control form-control-sm d-inline-block"
+                        style="width: 220px; margin-right: 8px;">
+                        <option value="">Semua Status Akun</option>
+                        <option value="without" selected>Belum Punya Akun</option>
+                        <option value="with">Sudah Punya Akun</option>
+                    </select>
+                    <button class="btn btn-sm btn-info" id="btnGenerateAkunSiswa">Generate Akun Siswa</button>
                     <button class="btn btn-sm btn-primary" id="btnTambah">Tambah Data</button>
                     <button class="btn btn-sm btn-success" id="btnImport">Import Data</button>
-                    <button class="btn btn-sm btn-danger" id="btnHapusMultiple" style="display: none;">Hapus Pilihan</button>
+                    <button class="btn btn-sm btn-danger" id="btnHapusMultiple" style="display: none;">Hapus
+                        Pilihan</button>
                 </div>
             </div>
             <div class="card-body">
@@ -30,6 +38,7 @@
                             <th>Kelas</th>
                             <th>Jurusan</th>
                             <th>Status</th>
+                            <th>Status Akun</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -114,25 +123,58 @@
 @endsection
 
 @section('js')
+    @include('sweetalert::alert')
 
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
     <script>
         $(document).ready(function() {
             const dataSiswaUrl = @json(route('siswa.data') . (($statusFilter ?? null) === 'belum_terdaftar' ? '?status=belum_terdaftar' : ''));
 
+            const originalSwalFire = Swal.fire.bind(Swal);
+            Swal.fire = function(options, ...args) {
+                if (typeof options === 'object' && options !== null) {
+                    const merged = {
+                        confirmButtonColor: '#0d6efd',
+                        cancelButtonColor: '#6c757d',
+                        ...options,
+                    };
+
+                    if (merged.showCancelButton) {
+                        merged.confirmButtonText = merged.confirmButtonText || 'Ya, lanjut';
+                        merged.cancelButtonText = merged.cancelButtonText || 'Batal';
+                    } else {
+                        merged.confirmButtonText = merged.confirmButtonText || 'OK';
+                    }
+
+                    if (merged.icon === 'success' && merged.timer === undefined && merged.showConfirmButton ===
+                        undefined) {
+                        merged.timer = 1800;
+                        merged.showConfirmButton = false;
+                    }
+
+                    return originalSwalFire(merged, ...args);
+                }
+
+                return originalSwalFire(options, ...args);
+            };
+
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
-            })
-
-
+            });
 
             let table = $('#siswaTable').DataTable({
                 processing: true,
                 serverSide: true,
-                ajax: dataSiswaUrl,
+                ajax: {
+                    url: dataSiswaUrl,
+                    data: function(d) {
+                        d.account_status = $('#filterStatusAkunSiswa').val();
+                    }
+                },
                 columns: [{
                         data: 'checkbox',
                         name: 'checkbox',
@@ -166,12 +208,22 @@
                         name: 'status'
                     },
                     {
+                        data: 'status_akun',
+                        name: 'status_akun',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
                         data: 'aksi',
                         name: 'aksi',
                         orderable: false,
                         searchable: false
                     },
                 ]
+            });
+
+            $('#filterStatusAkunSiswa').change(function() {
+                table.ajax.reload();
             });
 
             $('#btnTambah').click(function() {
@@ -185,6 +237,7 @@
                 let id = $(this).data('id');
                 let url = '{{ route('siswa.edit', ':id') }}';
                 url = url.replace(':id', id);
+
                 $.get(url, function(response) {
                     $('#modalForm').modal('show');
                     $('#modalFormLabel').html('Edit Data Siswa');
@@ -195,12 +248,49 @@
                     $('#nama_siswa').val(response.nama_siswa);
                     $('#kelas_id').val(response.kelas_id);
                     $('#id').val(response.id);
-
                 });
             });
 
             $('#btnImport').click(function() {
                 $('#modalImport').modal('show');
+            });
+
+            $('#btnGenerateAkunSiswa').click(function() {
+                Swal.fire({
+                    title: 'Generate akun siswa?',
+                    text: 'Username akan menggunakan NIS dan password default siswa12345.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, generate',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    $.ajax({
+                        url: '{{ route('siswa.generate-accounts') }}',
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                        },
+                        success: function(response) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: response.message,
+                            });
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: xhr.responseJSON?.message ||
+                                    'Terjadi kesalahan saat generate akun siswa.',
+                            });
+                        }
+                    });
+                });
             });
 
             $('#btnImportSiswa').click(function() {
@@ -212,37 +302,66 @@
                     contentType: false,
                     processData: false,
                     success: function() {
-
                         $('#modalImport').modal('hide');
                         table.ajax.reload();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: 'Data siswa berhasil diimport.',
+                        });
                     },
-                    error: function(xhr, status, error) {
-                        console.log(xhr.responseText);
-
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal import',
+                            text: xhr.responseJSON?.message ||
+                                'Terjadi kesalahan saat import data siswa.',
+                        });
                     }
                 });
-
-
-
             });
 
             $(document).on('click', '.btnHapus', function() {
                 let id = $(this).data('id');
                 let url = '{{ route('siswa.destroy', ':id') }}';
                 url = url.replace(':id', id);
-                if (confirm('Yakin hapus data ini?')) {
+
+                Swal.fire({
+                    title: 'Hapus data ini?',
+                    text: 'Data yang dihapus tidak bisa dikembalikan.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, hapus',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
                     $.ajax({
                         url: url,
                         type: 'DELETE',
                         success: function() {
                             table.ajax.reload();
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: 'Data siswa berhasil dihapus.',
+                            });
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: xhr.responseJSON?.message ||
+                                    'Gagal menghapus data siswa.',
+                            });
                         }
                     });
-                }
+                });
             });
 
             $(document).on('click', '.btn-simpan', function() {
-
                 let id = $('#id').val();
                 let url = id ? '{{ route('siswa.update', ':id') }}'.replace(':id', id) :
                     '{{ route('siswa.store') }}';
@@ -260,27 +379,39 @@
                     success: function() {
                         $('#modalForm').modal('hide');
                         table.ajax.reload();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: 'Data siswa berhasil disimpan.',
+                        });
                     },
                     error: function(xhr) {
-                        console.log(xhr.responseText);
+                        let message = xhr.responseJSON?.message ||
+                            'Terjadi kesalahan saat menyimpan data siswa.';
+                        if (xhr.responseJSON?.errors) {
+                            message = Object.values(xhr.responseJSON.errors).map(v => v[0])
+                                .join('\n');
+                        }
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: message,
+                        });
                     }
                 });
             });
 
-            // Handle Check All
             $(document).on('click', '#checkAll', function() {
                 const isChecked = $(this).prop('checked');
                 $('.checkbox-siswa').prop('checked', isChecked);
                 updateButtonHapusMultiple();
             });
 
-            // Handle Individual Checkbox
             $(document).on('click', '.checkbox-siswa', function() {
                 updateButtonHapusMultiple();
                 updateCheckAll();
             });
 
-            // Update Button Delete Multiple
             function updateButtonHapusMultiple() {
                 const checkedCount = $('.checkbox-siswa:checked').length;
                 if (checkedCount > 0) {
@@ -290,14 +421,12 @@
                 }
             }
 
-            // Update Check All status
             function updateCheckAll() {
                 const totalCheckbox = $('.checkbox-siswa').length;
                 const checkedCheckbox = $('.checkbox-siswa:checked').length;
                 $('#checkAll').prop('checked', totalCheckbox === checkedCheckbox && totalCheckbox > 0);
             }
 
-            // Handle Hapus Multiple
             $('#btnHapusMultiple').click(function() {
                 const selectedIds = [];
                 $('.checkbox-siswa:checked').each(function() {
@@ -305,11 +434,26 @@
                 });
 
                 if (selectedIds.length === 0) {
-                    alert('Pilih minimal satu data untuk dihapus');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Perhatian',
+                        text: 'Pilih minimal satu data untuk dihapus',
+                    });
                     return;
                 }
 
-                if (confirm('Yakin hapus ' + selectedIds.length + ' data siswa ini?')) {
+                Swal.fire({
+                    title: 'Hapus data terpilih?',
+                    text: 'Yakin hapus ' + selectedIds.length + ' data siswa ini?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, hapus',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
                     $.ajax({
                         url: '{{ route('siswa.destroyMultiple') }}',
                         type: 'DELETE',
@@ -318,17 +462,25 @@
                             ids: selectedIds
                         },
                         success: function(response) {
-                            alert(response.message);
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: response.message,
+                            });
                             table.ajax.reload();
                             $('#btnHapusMultiple').hide();
                         },
                         error: function(xhr) {
-                            alert('Error: ' + (xhr.responseJSON?.message || 'Terjadi kesalahan'));
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: xhr.responseJSON?.message ||
+                                    'Terjadi kesalahan',
+                            });
                         }
                     });
-                }
+                });
             });
-
         });
     </script>
 @endsection

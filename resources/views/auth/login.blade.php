@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -397,6 +398,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="bg-orb left"></div>
     <div class="bg-orb right-top"></div>
@@ -432,32 +434,17 @@
                         @csrf
 
                         <div class="field">
-                            <label for="email">Email</label>
-                            <input
-                                id="email"
-                                class="input"
-                                type="email"
-                                name="email"
-                                value="{{ old('email') }}"
-                                required
-                                autofocus
-                                autocomplete="username"
-                                placeholder="Enter your email address"
-                            >
-                            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                            <label for="login">Username / Email</label>
+                            <input id="login" class="input" type="text" name="login"
+                                value="{{ old('login') }}" required autofocus autocomplete="username"
+                                placeholder="Masukkan username atau email">
+                            <x-input-error :messages="$errors->get('login')" class="mt-2" />
                         </div>
 
                         <div class="field">
                             <label for="password">Password</label>
-                            <input
-                                id="password"
-                                class="input"
-                                type="password"
-                                name="password"
-                                required
-                                autocomplete="current-password"
-                                placeholder="............"
-                            >
+                            <input id="password" class="input" type="password" name="password" required
+                                autocomplete="current-password" placeholder="............">
                             <x-input-error :messages="$errors->get('password')" class="mt-2" />
                         </div>
 
@@ -482,6 +469,7 @@
                 </div>
             </section>
         </section>
-    </div>
+        </div>
 </body>
+
 </html>

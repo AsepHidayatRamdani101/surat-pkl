@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FormatsExcelSheets;
 use App\Models\Jurusan;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -11,6 +12,8 @@ use Yajra\DataTables\Facades\DataTables;
 
 class JurusanController extends Controller
 {
+    use FormatsExcelSheets;
+
     public function index()
     {
         return view('jurusan.index');
@@ -141,35 +144,22 @@ class JurusanController extends Controller
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        
-        // Set header
+
         $sheet->setCellValue('A1', 'Nama Jurusan');
         $sheet->setCellValue('B1', 'Kode Jurusan');
-        
-        // Style header
-        $headerStyle = [
-            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '4472C4']],
-            'alignment' => ['horizontal' => 'center', 'vertical' => 'center'],
-        ];
-        $sheet->getStyle('A1:B1')->applyFromArray($headerStyle);
-        
-        // Add sample data
+
         $sheet->setCellValue('A2', 'Contoh: Teknik Informatika');
         $sheet->setCellValue('B2', 'TI');
-        
-        // Set column width
-        $sheet->getColumnDimension('A')->setWidth(30);
-        $sheet->getColumnDimension('B')->setWidth(20);
-        
-        // Create writer and response
+
+        $this->applyExcelTableFormatting($sheet, 'B', 2);
+
         $writer = new Xlsx($spreadsheet);
         $fileName = 'template_import_jurusan_' . date('d_m_Y_H_i_s') . '.xlsx';
-        
+
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $fileName . '"');
         header('Cache-Control: max-age=0');
-        
+
         $writer->save('php://output');
         exit;
     }

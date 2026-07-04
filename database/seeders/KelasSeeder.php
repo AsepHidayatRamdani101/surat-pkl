@@ -24,60 +24,71 @@ class KelasSeeder extends Seeder
         $tjkt->kelas()->create([
             'nama_kelas' => 'XI TJKT 1',
             'tingkat' => 11,
+            'jumlah_rombel' => 3,
 
         ]);
 
         $tjkt->kelas()->create([
             'nama_kelas' => 'XI TJKT 2',
             'tingkat' => 11,
+            'jumlah_rombel' => 3,
         ]);
 
         $tjkt->kelas()->create([
             'nama_kelas' => 'XI TJKT 3',
             'tingkat' => 11,
+            'jumlah_rombel' => 3,
         ]);
 
         // Membuat kelas untuk jurusan Teknik Kendaraan Ringan
         $tkr->kelas()->create([
             'nama_kelas' => 'XI TKR 1',
             'tingkat' => 11,
+            'jumlah_rombel' => 2,
         ]);
 
         $tkr->kelas()->create([
             'nama_kelas' => 'XI TKR 2',
             'tingkat' => 11,
+            'jumlah_rombel' => 2,
         ]);
 
         $tkr->kelas()->create([
             'nama_kelas' => 'XI TKR 3',
             'tingkat' => 11,
+            'jumlah_rombel' => 2,
         ]);
 
         // Membuat kelas untuk jurusan Desain Komunikasi Visual
         $dkv->kelas()->create([
             'nama_kelas' => 'XI DKV 1',
             'tingkat' => 11,
+            'jumlah_rombel' => 2,
         ]);
 
         $dkv->kelas()->create([
             'nama_kelas' => 'XI DKV 2',
             'tingkat' => 11,
+            'jumlah_rombel' => 2,
         ]);
 
         $dkv->kelas()->create([
             'nama_kelas' => 'XI DKV 3',
             'tingkat' => 11,
+            'jumlah_rombel' => 2,
         ]);
 
         // Membuat kelas untuk jurusan Manajemen Perkantoran dan Layanan Bisnis
         $mplb->kelas()->create([
             'nama_kelas' => 'XI MPLB 1',
             'tingkat' => 11,
+            'jumlah_rombel' => 2,
         ]);
 
         $mplb->kelas()->create([
             'nama_kelas' => 'XI MPLB 2',
             'tingkat' => 11,
+            'jumlah_rombel' => 2,
         ]);
     }
 }

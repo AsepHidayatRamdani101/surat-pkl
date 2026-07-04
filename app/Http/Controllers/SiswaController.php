@@ -2,18 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FormatsExcelSheets;
 use App\Models\Jurusan;
 use App\Models\Kelas;
 use App\Models\Siswa;
+use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Spatie\Permission\Models\Role;
 use Yajra\DataTables\Facades\DataTables;
 
 class SiswaController extends Controller
 {
+    use FormatsExcelSheets;
+
 
 
     public function index()
@@ -36,10 +41,29 @@ class SiswaController extends Controller
             }
 
             $data = $query->get();
+            $existingUsernames = User::query()
+                ->whereIn('username', $data->pluck('nis')->map(fn($nis) => (string) $nis)->all())
+                ->pluck('username')
+                ->flip();
+
+            $accountStatus = $request->input('account_status');
+            if ($accountStatus === 'without') {
+                $data = $data->filter(fn($row) => !isset($existingUsernames[(string) $row->nis]))->values();
+            } elseif ($accountStatus === 'with') {
+                $data = $data->filter(fn($row) => isset($existingUsernames[(string) $row->nis]))->values();
+            }
+
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('checkbox', function ($row) {
                     return '<input type="checkbox" class="form-check checkbox-siswa" value="' . $row->id . '">';
+                })
+                ->addColumn('status_akun', function ($row) use ($existingUsernames) {
+                    $hasAccount = isset($existingUsernames[(string) $row->nis]);
+
+                    return $hasAccount
+                        ? '<span class="badge badge-success">Sudah Ada</span>'
+                        : '<span class="badge badge-secondary">Belum Ada</span>';
                 })
                 ->addColumn('aksi', function ($row) {
                     return '
@@ -51,7 +75,7 @@ class SiswaController extends Controller
                         '">Hapus</button>
                     ';
                 })
-                ->rawColumns(['checkbox', 'aksi'])
+                ->rawColumns(['checkbox', 'status_akun', 'aksi'])
                 ->make(true);
         }
     }
@@ -109,13 +133,13 @@ class SiswaController extends Controller
     {
         try {
             $ids = $request->ids;
-            
+
             if (!is_array($ids) || empty($ids)) {
                 return response()->json(['message' => 'Pilih minimal satu data'], 422);
             }
 
             Siswa::whereIn('id', $ids)->delete();
-            
+
             return response()->json(['message' => 'Data berhasil dihapus (' . count($ids) . ' data)']);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
@@ -144,39 +168,80 @@ class SiswaController extends Controller
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        
-        // Set header
+
         $sheet->setCellValue('A1', 'Nama Siswa');
         $sheet->setCellValue('B1', 'NIS');
         $sheet->setCellValue('C1', 'Kelas ID');
-        
-        // Style header
-        $headerStyle = [
-            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '4472C4']],
-            'alignment' => ['horizontal' => 'center', 'vertical' => 'center'],
-        ];
-        $sheet->getStyle('A1:C1')->applyFromArray($headerStyle);
-        
-        // Add sample data
+
         $sheet->setCellValue('A2', 'Contoh: Budi Santoso');
         $sheet->setCellValue('B2', '2024001');
         $sheet->setCellValue('C2', '1');
-        
-        // Set column width
-        $sheet->getColumnDimension('A')->setWidth(30);
-        $sheet->getColumnDimension('B')->setWidth(15);
-        $sheet->getColumnDimension('C')->setWidth(15);
-        
-        // Create writer and response
+
+        $this->applyExcelTableFormatting($sheet, 'C', 2);
+
         $writer = new Xlsx($spreadsheet);
         $fileName = 'template_import_siswa_' . date('d_m_Y_H_i_s') . '.xlsx';
-        
+
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $fileName . '"');
         header('Cache-Control: max-age=0');
-        
+
         $writer->save('php://output');
         exit;
+    }
+
+    public function generateAccounts()
+    {
+        $siswaList = Siswa::orderBy('nama_siswa')->get();
+
+        if ($siswaList->isEmpty()) {
+            return response()->json(['message' => 'Data siswa belum tersedia.'], 422);
+        }
+
+        $roleName = 'siswa';
+        $role = Role::query()->firstOrCreate([
+            'name' => $roleName,
+            'guard_name' => 'web',
+        ]);
+
+        $password = 'siswa12345';
+        $created = 0;
+        $updated = 0;
+
+        foreach ($siswaList as $siswa) {
+            $username = (string) $siswa->nis;
+            $email = $username . '@siswa.local';
+
+            $user = User::query()
+                ->where('username', $username)
+                ->orWhere('email', $email)
+                ->first();
+
+            if ($user) {
+                $user->update([
+                    'name' => $siswa->nama_siswa,
+                    'username' => $username,
+                    'email' => $email,
+                    'password' => $password,
+                    'role' => $roleName,
+                ]);
+                $updated++;
+            } else {
+                $user = User::create([
+                    'name' => $siswa->nama_siswa,
+                    'username' => $username,
+                    'email' => $email,
+                    'password' => $password,
+                    'role' => $roleName,
+                ]);
+                $created++;
+            }
+
+            $user->syncRoles([$role->name]);
+        }
+
+        return response()->json([
+            'message' => "Generate akun siswa selesai. Baru: {$created}, diperbarui: {$updated}. Username = NIS, password = siswa12345",
+        ]);
     }
 }

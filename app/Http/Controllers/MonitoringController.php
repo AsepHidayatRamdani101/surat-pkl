@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FormatsExcelSheets;
 use App\Models\Monitoring;
 use App\Models\Pembimbing;
 use App\Models\Perusahaan;
@@ -18,6 +19,8 @@ use Yajra\DataTables\Facades\DataTables;
 
 class MonitoringController extends Controller
 {
+    use FormatsExcelSheets;
+
     /**
      * Display a listing of the resource.
      */
@@ -63,7 +66,7 @@ class MonitoringController extends Controller
 
         $siswa = Siswa::orderBy('nama_siswa')->get();
         $perusahaan = Perusahaan::orderBy('nama_perusahaan')->get();
-        $pembimbing = Pembimbing::orderBy('nama_pembimbing')->get();
+        $pembimbing = $this->availablePembimbing()->orderBy('nama_pembimbing')->get();
         //   var_dump($siswa);
         return view('monitoring.index', compact('siswa', 'perusahaan', 'pembimbing'));
     }
@@ -102,7 +105,7 @@ class MonitoringController extends Controller
 
         $siswa = Siswa::all();
         $perusahaan = Perusahaan::all();
-        $pembimbing = Pembimbing::all();
+        $pembimbing = $this->availablePembimbing()->get();
         //   var_dump($siswa);
         return view('monitoring.index_cetak', compact('siswa', 'perusahaan', 'pembimbing'));
     }
@@ -114,6 +117,20 @@ class MonitoringController extends Controller
     public function create()
     {
         return view('monitoring.create');
+    }
+
+    private function availablePembimbing()
+    {
+        $query = Pembimbing::query();
+
+        if (auth()->user()->role === 'panitia' || !auth()->user()?->jurusan_id) {
+            return $query;
+        }
+
+        return $query->where(function ($builder) {
+            $builder->where('jenis_guru', 'adaptif_normatif')
+                ->orWhere('jurusan_id', auth()->user()->jurusan_id);
+        });
     }
 
 
@@ -218,7 +235,6 @@ class MonitoringController extends Controller
         ]);
         $pdf->setOption(['enable_remote' => true, 'isHTML5ParserEnabled' => true]);
         return $pdf->stream('surat-izin-pkl.pdf');
-
     }
 
     public function exportExcel()
@@ -303,32 +319,7 @@ class MonitoringController extends Controller
             }
         }
 
-        // Styling
-        $sheet->setAutoFilter('A1:J1');
-
-        foreach (range('A', 'J') as $columnID) {
-            $sheet->getColumnDimension($columnID)->setAutoSize(true);
-        }
-
-        // Header style
-        $styleHeader = [
-            'font' => ['bold' => true],
-            'alignment' => [
-                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER
-            ],
-            'fill' => [
-                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                'startColor' => ['rgb' => 'D9D9D9']
-            ]
-        ];
-
-        $sheet->getStyle('A1:J1')->applyFromArray($styleHeader);
-
-        // Border all
-        $sheet->getStyle('A1:J' . ($row - 1))
-            ->getBorders()
-            ->getAllBorders()
-            ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $this->applyExcelTableFormatting($sheet, 'J', $row - 1);
 
         // Save file
         $fileName = 'monitoring_pkl_merge_' . now()->format('Y-m-d_H-i-s') . '.xlsx';

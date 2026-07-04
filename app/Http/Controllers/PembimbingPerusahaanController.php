@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FormatsExcelSheets;
 use App\Models\Pembimbing_perusahaan;
 use App\Models\Perusahaan;
 use Illuminate\Http\Request;
@@ -9,13 +10,11 @@ use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
-use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class PembimbingPerusahaanController extends Controller
 {
+    use FormatsExcelSheets;
+
     /**
      * Display a listing of the resource.
      */
@@ -40,21 +39,54 @@ class PembimbingPerusahaanController extends Controller
      */
     public function data(Request $request)
     {
-        $pembimbing_perusahaan = Pembimbing_perusahaan::with('perusahaan')->get();
-        return DataTables::of($pembimbing_perusahaan)
-            ->addIndexColumn()
-            ->addColumn('aksi', function ($pembimbing_perusahaan) {
-                return '<a href="#" class="btn btn-warning btn-sm btnEdit" 
-                data-id="' . $pembimbing_perusahaan->id . '"
-                data-nama="' . $pembimbing_perusahaan->nama_pembimbing . '"
-                data-nip="' . $pembimbing_perusahaan->NIP . '"
-                data-jabatan="' . $pembimbing_perusahaan->jabatan . '"
-                data-jenis="' . $pembimbing_perusahaan->jenis_kelamin . '"
-                data-nohp="' . $pembimbing_perusahaan->nohp . '"
-                data-perusahaan_id="' . $pembimbing_perusahaan->perusahaan_id . '"
+        $rows = Perusahaan::leftJoin('pembimbing_perusahaans as pp', 'perusahaan.id', '=', 'pp.perusahaan_id')
+            ->select(
+                'perusahaan.id as perusahaan_id',
+                'perusahaan.nama_perusahaan',
+                'pp.id',
+                'pp.nama_pembimbing',
+                'pp.NIP',
+                'pp.jabatan',
+                'pp.jenis_kelamin',
+                'pp.nohp'
+            )
+            ->orderBy('perusahaan.nama_perusahaan')
+            ->orderBy('pp.id')
+            ->get();
 
-                >Edit</a>
-                        <a href="#" class="btn btn-danger btn-sm btnHapus" data-id="' . $pembimbing_perusahaan->id . '">Hapus</a>';
+        return DataTables::of($rows)
+            ->addIndexColumn()
+            ->editColumn('nama_pembimbing', function ($row) {
+                return $row->nama_pembimbing ?: '-';
+            })
+            ->editColumn('NIP', function ($row) {
+                return $row->NIP ?: '-';
+            })
+            ->editColumn('jabatan', function ($row) {
+                return $row->jabatan ?: '-';
+            })
+            ->editColumn('nohp', function ($row) {
+                return $row->nohp ?: '-';
+            })
+            ->addColumn('aksi', function ($row) {
+                $btnTambah = '<a href="#" class="btn btn-primary btn-sm btnTambahPerusahaan" 
+                    data-perusahaan_id="' . $row->perusahaan_id . '"
+                    data-nama_perusahaan="' . htmlentities($row->nama_perusahaan) . '">Tambah Pembimbing</a>';
+
+                if (!$row->id) {
+                    return $btnTambah;
+                }
+
+                return $btnTambah . ' <a href="#" class="btn btn-warning btn-sm btnEdit" 
+                    data-id="' . $row->id . '"
+                    data-nama="' . htmlentities($row->nama_pembimbing) . '"
+                    data-nip="' . $row->NIP . '"
+                    data-jabatan="' . htmlentities($row->jabatan) . '"
+                    data-jenis="' . $row->jenis_kelamin . '"
+                    data-nohp="' . $row->nohp . '"
+                    data-perusahaan_id="' . $row->perusahaan_id . '"
+                    data-nama_perusahaan="' . htmlentities($row->nama_perusahaan) . '">Edit</a>
+                    <a href="#" class="btn btn-danger btn-sm btnHapus" data-id="' . $row->id . '">Hapus</a>';
             })
             ->rawColumns(['aksi'])
             ->make(true);
@@ -97,7 +129,7 @@ class PembimbingPerusahaanController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $pembimbing_perusahaan = Pembimbing_perusahaan::where('id_perusahaan', $id)->get();
+        $pembimbing_perusahaan = Pembimbing_perusahaan::where('perusahaan_id', $id)->get();
         return response()->json($pembimbing_perusahaan);
     }
 
@@ -174,6 +206,8 @@ class PembimbingPerusahaanController extends Controller
             $sheet->setCellValue('G' . $row, $pembimbing->nohp);
             $row++;
         }
+
+        $this->applyExcelTableFormatting($sheet, 'G', $row - 1);
 
         $writer = new Xlsx($spreadsheet);
         $filename = 'pembimbing_perusahaan-' . date('Y-m-d') . '.xlsx';

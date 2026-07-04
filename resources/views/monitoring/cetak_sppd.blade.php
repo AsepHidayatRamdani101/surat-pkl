@@ -49,26 +49,14 @@
             <td style="width: 50%;">
                 <table style="width: 100%; border: none;">
                     <tr>
-                        <td style="width: 15%; border: none;">
-                            <img src="{{ public_path('LogoJabar.png') }}" alt="Logo SMKN 8 Garut" style="width: 80px;">
-                        </td>
-                        <td style="width: 85%; border: none;">
-                            <div class="header">
-                                <h4>PEMERINTAH DAERAH PROVINSI JAWA BARAT <br>
-                                    DINAS PENDIDIKAN <br>
-                                    CABANG DINAS PENDIDIKAN WILAYAH XI</h4>
-                                <h2 style="margin-top: -10px;margin-bottom: -5px "><strong>SMK NEGERI 8 GARUT</strong>
-                                </h2>
-                                <p style="text-size: 7pt">JL. RAYA LIMBANGAN-SELAWI KM 12 GARUT <br>
-                                    <i>Website:</i><span style="color: blue">www.smkn8-garut.sch.id</span> ,
-                                    <i>E-mail:</i>
-                                    <span style="color: blue">smknegeri8grt@gmail.com</span> <br>
-                                </p>
-                            </div>
+                        <td style="border: none;" colspan="2">
+                            @include('partials.kop_surat_default', [
+                                'kopOuterStyle' => 'margin-top: 0;',
+                                'kopHrStyle' => 'margin-top: 6px; border: 1px solid black;',
+                            ])
                         </td>
                     </tr>
                 </table>
-                <hr>
                 <br>
                 <div>
                     <table style="border: none; border-collapse: collapse;width: 30%">
@@ -149,16 +137,18 @@
                 </table>
 
                 <br>
-                <div style="margin-left: 240px">
-                    <p>Dikeluarkan di : SMK Negeri 8 Garut<br>
-                        Tanggal : {{ \Carbon\Carbon::parse($tanggal_surat)->translatedFormat('d F Y') }}<br>
-                        KUASA PENGGUNA ANGGARAN<br><br><br><br><br>
-                        <img src="{{ public_path($nama_file_ttd) }}" class="ttd-left" alt="ttd_kepsek" width="140px"
-                            style="margin-top: -70px;margin-bottom: -50px"><br>
-                        <b>{{ $nama_kepala_sekolah }}</b><br>
-                        NIP. {{ $nip_kepala_sekolah }}
-                    </p>
-                </div>
+                @include('partials.ttd_default', [
+                    'ttdTanggal' => 'Dikeluarkan di : SMK Negeri 8 Garut',
+                    'ttdLabel' =>
+                        'Tanggal : ' .
+                        \Carbon\Carbon::parse($tanggal_surat)->translatedFormat('d F Y') .
+                        ' | KUASA PENGGUNA ANGGARAN',
+                    'ttdNama' => $nama_kepala_sekolah,
+                    'ttdNip' => $nip_kepala_sekolah,
+                    'ttdImage' => $nama_file_ttd,
+                    'ttdContainerStyle' => 'margin-left: 240px; margin-top: 4px;',
+                    'ttdAlign' => 'left',
+                ])
             </td>
 
             <!-- Kolom 2 -->
@@ -290,12 +280,15 @@
                                 </tr>
                                 <tr>
                                     <td colspan="2" style="text-align: center;border: none;">
-                                        KUASA PENGGUNA ANGGARAN,
-                                        <br><br><br><br>
-                                        <img src="{{ public_path($nama_file_ttd) }}" class="ttd-left" alt="ttd_kepsek"
-                                            width="140px" style="margin-top: -50px;margin-bottom: -50px"><br>
-                                        <b>{{ $nama_kepala_sekolah }}</b> <br>
-                                        NIP. {{ $nip_kepala_sekolah }}
+                                        @include('partials.ttd_default', [
+                                            'ttdTanggal' => '',
+                                            'ttdLabel' => 'KUASA PENGGUNA ANGGARAN',
+                                            'ttdNama' => $nama_kepala_sekolah,
+                                            'ttdNip' => $nip_kepala_sekolah,
+                                            'ttdImage' => $nama_file_ttd,
+                                            'ttdContainerStyle' => 'margin-top: 0;',
+                                            'ttdAlign' => 'center',
+                                        ])
 
                                     </td>
 

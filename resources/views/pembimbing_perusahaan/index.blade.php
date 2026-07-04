@@ -9,7 +9,6 @@
                 <div class="card">
                     <div class="card-header">
                         <h4>Data Pembimbing Perusahaan</h4>
-                        <button class="btn btn-sm btn-primary ms-auto" id="btnTambah">Tambah Data</button>
                         <a href="{{ route('pembimbing-perusahaan.export-excel') }}" class="btn btn-sm btn-success">Export
                             Excel</a>
                         <button class="btn btn-sm btn-secondary" id="btnImport">Import Excel</button>
@@ -46,17 +45,10 @@
                         <div class="modal-body">
 
                             <input type="hidden" name="id" id="id">
+                            <input type="hidden" name="perusahaan_id" id="perusahaan_id">
                             <div class="form-group">
-                                <div>
-                                    <label for="perusahaan_id">Perusahaan</label>
-                                </div>
-
-                                <select name="perusahaan_id" id="perusahaan_id" class="form-control select2" required>
-                                    <option value="">Pilih Perusahaan</option>
-                                    @foreach ($perusahaan as $pr)
-                                        <option value="{{ $pr->id }}">{{ $pr->nama_perusahaan }}</option>
-                                    @endforeach
-                                </select>
+                                <label for="nama_perusahaan_display">Perusahaan</label>
+                                <input type="text" id="nama_perusahaan_display" class="form-control" readonly>
                             </div>
                             <div class="form-group">
                                 <label for="nama">Nama</label>
@@ -72,87 +64,40 @@
                                     required>
                             </div>
                             <div class="form-group">
+                                
                                 <label for="jenis_kelamin">Jenis Kelamin</label>
                                 <select name="jenis_kelamin" id="jenis_kelamin" class="form-control" required>
                                     <option value="">Pilih Jenis Kelamin</option>
                                     <option value="Laki-Laki">Laki-laki</option>
-                                    <option value="Perempuan">Perempuan</option>
-                                </select>
+                                    <span aria-hidden="true">&times;</span>
+                                    </button>
                             </div>
-                            <div class="form-group">
-                                <label for="no_hp_pembimbing">No HP</label>
-                                <input type="text" name="no_hp_pembimbing" id="no_hp_pembimbing" class="form-control"
-                                    required>
+                            <div class="modal-body">
+                                <form action="{{ route('pembimbing-perusahaan.import') }}" method="post"
+                                    enctype="multipart/form-data">
+                                    @csrf
+                                    <div class="form-group">
+                                        <label for="file">File Excel</label>
+                                        <input type="file" name="file" id="file" class="form-control" required>
+                                    </div>
                             </div>
-
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-success btn-simpan">Simpan</button>
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                        </div>
-                    </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Import</button>
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                 </form>
             </div>
         </div>
     </div>
-
-    <div class="modal fade" id="modalImport" tabindex="-1" role="dialog" aria-labelledby="modalImportLabel"
-        aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalImportLabel">Import Data Pembimbing Perusahaan</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form action="{{ route('pembimbing-perusahaan.import') }}" method="post" enctype="multipart/form-data">
-                        @csrf
-                        <div class="form-group">
-                            <label for="file">File Excel</label>
-                            <input type="file" name="file" id="file" class="form-control" required>
-                        </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Import</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                    </form>
-                </div>
-            </div>
-        </div>
     </div>
 @endsection
 
 @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     <style>
-        /* Fix select2 search tidak bisa diklik di dalam modal */
-        .select2-container {
-            z-index: 99999 !important;
-        }
-
-        /* Biar select2 presisi seperti input bootstrap */
-        .select2-container .select2-selection--single {
-            height: calc(2.25rem + 2px);
-            /* sama seperti form-control bootstrap */
-            padding: 0.375rem 0.75rem;
-            font-size: 1rem;
-            line-height: 1.5;
-            border: 1px solid #ced4da;
-            border-radius: 0.375rem;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 2.25rem;
-            /* bikin text di tengah kotak */
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: calc(2.25rem + 2px);
-            right: 10px;
+        #pembimbingTable .btn {
+            margin-right: 4px;
+            margin-bottom: 4px;
         }
     </style>
 @endsection
@@ -162,20 +107,36 @@
     @include('sweetalert::alert')
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.full.min.js"></script>
 
     <script>
         $(document).ready(function() {
-            console.log("Select2 found:", $('.select2').length);
+            const originalSwalFire = Swal.fire.bind(Swal);
+            Swal.fire = function(options, ...args) {
+                if (typeof options === 'object' && options !== null) {
+                    const merged = {
+                        confirmButtonColor: '#0d6efd',
+                        cancelButtonColor: '#6c757d',
+                        ...options,
+                    };
 
-            $('#modalForm').on('shown.bs.modal', function() {
-                $(this).find('.select2').select2({
-                    placeholder: "Pilih Perusahaan",
-                    allowClear: true,
-                    width: '100%',
-                    dropdownParent: $('#modalForm')
-                });
-            });
+                    if (merged.showCancelButton) {
+                        merged.confirmButtonText = merged.confirmButtonText || 'Ya, lanjut';
+                        merged.cancelButtonText = merged.cancelButtonText || 'Batal';
+                    } else {
+                        merged.confirmButtonText = merged.confirmButtonText || 'OK';
+                    }
+
+                    if (merged.icon === 'success' && merged.timer === undefined && merged.showConfirmButton ===
+                        undefined) {
+                        merged.timer = 1800;
+                        merged.showConfirmButton = false;
+                    }
+
+                    return originalSwalFire(merged, ...args);
+                }
+
+                return originalSwalFire(options, ...args);
+            };
 
             $('#btnImport').click(function() {
                 $('#modalImport').modal('show');
@@ -191,8 +152,8 @@
                         searchable: false
                     },
                     {
-                        data: 'perusahaan.nama_perusahaan',
-                        name: 'perusahaan.nama_perusahaan'
+                        data: 'nama_perusahaan',
+                        name: 'nama_perusahaan'
                     },
                     {
                         data: 'nama_pembimbing',
@@ -219,26 +180,26 @@
                 ]
             });
 
-            $('#btnTambah').click(function() {
+            $(document).on('click', '.btnTambahPerusahaan', function() {
+                let data = $(this).data();
                 $('#modalForm').modal('show');
                 $('#modalFormLabel').html('Tambah Data Pembimbing');
                 $('#formPembimbing').trigger('reset');
-                $('#perusahaan_id').select2({
-                    placeholder: 'Pilih Perusahaan',
-                    allowClear: true
-                });
+                $('#id').val('');
+                $('#perusahaan_id').val(data.perusahaan_id);
+                $('#nama_perusahaan_display').val(data.nama_perusahaan);
             });
 
             $(document).on('click', '.btnEdit', function() {
                 let data = $(this).data();
-                alert(data.jabatan);
                 $('#nama').val(data.nama);
                 $('#nip').val(data.nip);
                 $('#id').val(data.id);
                 $('#jabatan_pembimbing').val(data.jabatan);
                 $('#jenis_kelamin').val(data.jenis);
                 $('#no_hp_pembimbing').val(data.nohp);
-                $('#perusahaan_id').val(data.perusahaan_id).trigger('change');
+                $('#perusahaan_id').val(data.perusahaan_id);
+                $('#nama_perusahaan_display').val(data.nama_perusahaan);
                 $('#modalForm').modal('show');
                 $('#modalFormLabel').html('Edit Data Pembimbing');
             });

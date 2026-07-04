@@ -128,12 +128,11 @@
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         @include('sweetalert::alert')
         <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        
 
 
         <script>
             $(document).ready(function() {
-
-
 
                 let table = $('#izin-table').DataTable({
                     processing: true,
@@ -197,10 +196,18 @@
                     let siswa = $(this).data('siswa');
                     console.log(siswa);
 
+                    Swal.fire({
+                        title: 'Hapus data ini?',
+                        text: 'Data yang dihapus tidak bisa dikembalikan.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, hapus',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (!result.isConfirmed) {
+                            return;
+                        }
 
-
-
-                    if (confirm('Yakin hapus data ini?')) {
                         $.ajax({
                             url: `/izin-ortu/${$(this).data('id')}`,
                             type: 'DELETE',
@@ -209,12 +216,10 @@
                                 siswa_id: siswa
                             },
                             success: function(data) {
-                                // console.log(data);
-
                                 table.ajax.reload();
                             }
                         });
-                    }
+                    });
                 });
 
                 $(document).on('click', '.btn-simpan', function() {

@@ -21,4 +21,9 @@ class Siswa extends Model
     {
         return $this->hasOne(TempatPkl::class);
     }
+
+    public function kelompokBimbingan()
+    {
+        return $this->belongsToMany(KelompokBimbingan::class, 'kelompok_bimbingan_siswa', 'siswa_id', 'kelompok_bimbingan_id');
+    }
 }

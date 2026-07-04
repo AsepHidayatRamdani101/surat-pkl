@@ -11,7 +11,8 @@ class SekolahController extends Controller
 {
     public function index()
     {
-        return view('sekolah.index');
+        $sekolah = Sekolah::orderBy('created_at', 'desc')->first();
+        return view('sekolah.index', compact('sekolah'));
     }
 
     public function data()

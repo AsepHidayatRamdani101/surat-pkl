@@ -53,29 +53,7 @@
 <body>
 
     <div style="page-break-after: always;">
-        <div style="margin-top: -50px">
-            <table>
-                <tr>
-                    <td><img src="{{ public_path('LogoJabar.png') }}" class="logo" alt="logo" width="100px"
-                            style="margin-right: 20px"></td>
-                    <td>
-                        <div class="text-kop">
-                            <h4>PEMERINTAH DAERAH PROVINSI JAWA BARAT <br>
-                                DINAS PENDIDIKAN <br>
-                                CABANG DINAS PENDIDIKAN WILAYAH XI</h4>
-                            <h3 style="margin-top: -20px;margin-bottom: -15px "><strong>SMK NEGERI 8 GARUT</strong></h3>
-                            <p style="text-size: 7pt">JL. RAYA LIMBANGAN-SELAWI KM 12 GARUT <br>
-                                <i>Website:</i><span style="color: blue">www.smkn8-garut.sch.id</span> , <i>E-mail:</i>
-                                <span style="color: blue">smknegeri8grt@gmail.com</span> <br>
-                            </p>
-                        </div>
-                    </td>
-                   
-                </tr>
-            </table>
-        </div>
-
-        <hr style="margin-top: -10px">
+        @include('partials.kop_surat_default')
 
 
         <p>Nomor&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {{ $nomor_surat }}<br>
@@ -93,7 +71,8 @@
             <p>Berdasarkan Program Kurikulum SMK Negeri 8 Garut yang mengharuskan setiap siswa SMK melaksanakan kegiatan
                 Praktik Kerja Baik di Dunia Usaha, Dunia Industri, maupun Dunia Kerja,
                 maka bersama surat ini kami mengajukan permohonan
-                tempat pelaksanaan PRAKERIN bagi siswa kami mulai tanggal {{ $tanggal_mulai }} sampai {{ $tanggal_selesai }}.</p>
+                tempat pelaksanaan PRAKERIN bagi siswa kami mulai tanggal {{ $tanggal_mulai }} sampai
+                {{ $tanggal_selesai }}.</p>
 
             <p>Adapun nama siswa terlampir.</p>
 
@@ -103,45 +82,22 @@
                 perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.</p>
         </div>
 
-        <div style="margin-left: 350px">
-            Garut, {{ $tanggal_surat }}<br>
-            Kepala Sekolah,<br>
-            @if ($school && $school->ttd_kepala_sekolah_path)
-                <img src="{{ public_path('storage/' . $school->ttd_kepala_sekolah_path) }}"
-                    class="ttd-left" alt="ttd_kepsek" width="180px"
-                    style="margin-top: -10px;margin-bottom: -20px"><br>
-            @endif
-            <strong><u>{{ optional($school)->nama_kepala_sekolah ?? 'MOH. ROFIK ZEN, S.Pd., M.M.Pd.' }}</u></strong><br>
-            NIP. {{ optional($school)->nip_kepala_sekolah ?? '196906131994121002' }}
-        </div>
+        @include('partials.ttd_default', [
+            'ttdTanggal' => 'Garut, ' . $tanggal_surat,
+            'ttdLabel' => 'Kepala Sekolah',
+            'ttdNama' => optional($school)->nama_kepala_sekolah ?? 'MOH. ROFIK ZEN, S.Pd., M.M.Pd.',
+            'ttdNip' => optional($school)->nip_kepala_sekolah ?? '196906131994121002',
+            'ttdImage' =>
+                $school && $school->ttd_kepala_sekolah_path ? 'storage/' . $school->ttd_kepala_sekolah_path : null,
+            'ttdContainerStyle' => 'margin-left: 350px; margin-top: 6px;',
+            'ttdAlign' => 'left',
+        ])
 
     </div>
 
 
     <div style="page-break-after: always;">
-
-        <div style="margin-top: -50px">
-            <table>
-                <tr>
-                    <td><img src="{{ public_path('LogoJabar.png') }}" class="logo" alt="logo" width="100px"
-                            style="margin-right: 20px"></td>
-                    <td>
-                        <div class="text-kop">
-                            <h4>PEMERINTAH DAERAH PROVINSI JAWA BARAT <br>
-                                DINAS PENDIDIKAN <br>
-                                CABANG DINAS PENDIDIKAN WILAYAH XI</h4>
-                            <h2 style="margin-top: -20px;margin-bottom: -15px "><strong>SMK NEGERI 8 GARUT</strong></h2>
-                            <p>JL. RAYA LIMBANGAN-SELAWI KM 12 GARUT <br>
-                                <i>Website:</i><span style="color: blue">www.smkn8-garut.sch.id</span> , <i>E-mail:</i>
-                                <span style="color: blue">smknegeri8grt@gmail.com</span> <br>
-                            </p>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        </div>
-
-        <hr style="margin-top: -10px">
+        @include('partials.kop_surat_default')
 
 
         <p><i>lampiran I</i> <br>
@@ -175,17 +131,16 @@
             </tbody>
         </table>
         <br><br>
-        <div style="margin-left: 350px">
-            Garut, {{ $tanggal_surat }}<br>
-            Kepala Sekolah,<br>
-            @if ($school && $school->ttd_kepala_sekolah_path)
-                <img src="{{ public_path('storage/' . $school->ttd_kepala_sekolah_path) }}"
-                    class="ttd-left" alt="ttd_kepsek" width="180px"
-                    style="margin-top: -10px;margin-bottom: -20px"><br>
-            @endif
-            <strong><u>{{ optional($school)->nama_kepala_sekolah ?? 'MOH. ROFIK ZEN, S.Pd., M.M.Pd.' }}</u></strong><br>
-            NIP. {{ optional($school)->nip_kepala_sekolah ?? '196906131994121002' }}
-        </div>
+        @include('partials.ttd_default', [
+            'ttdTanggal' => 'Garut, ' . $tanggal_surat,
+            'ttdLabel' => 'Kepala Sekolah',
+            'ttdNama' => optional($school)->nama_kepala_sekolah ?? 'MOH. ROFIK ZEN, S.Pd., M.M.Pd.',
+            'ttdNip' => optional($school)->nip_kepala_sekolah ?? '196906131994121002',
+            'ttdImage' =>
+                $school && $school->ttd_kepala_sekolah_path ? 'storage/' . $school->ttd_kepala_sekolah_path : null,
+            'ttdContainerStyle' => 'margin-left: 350px; margin-top: 6px;',
+            'ttdAlign' => 'left',
+        ])
 
     </div>
 
@@ -220,7 +175,7 @@
             <td>No. Telp/HP</td>
             <td>: ______________________________________________________________</td>
         </tr>
-        
+
     </table>
 
     <p style="text-align: justify">

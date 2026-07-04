@@ -167,28 +167,7 @@
 <body>
 
     <div style="page-break-after: always;">
-        <div style="margin-top: -50px">
-            <table>
-                <tr>
-                    <td><img src="file:///{{ str_replace("\\", "/", public_path('LogoJabar.png')) }}" class="logo" alt="logo" width="100px"
-                            style="margin-right: 20px"></td>
-                    <td>
-                        <div class="text-kop">
-                            <h4>PEMERINTAH DAERAH PROVINSI JAWA BARAT <br>
-                                DINAS PENDIDIKAN <br>
-                                CABANG DINAS PENDIDIKAN WILAYAH XI</h4>
-                            <h3 style="margin-top: -20px;margin-bottom: -15px "><strong>SMK NEGERI 8 GARUT</strong></h3>
-                            <p style="text-size: 7pt">JL. RAYA LIMBANGAN-SELAWI KM 12 GARUT <br>
-                                <i>Website:</i><span style="color: blue">www.smkn8-garut.sch.id</span> , <i>E-mail:</i>
-                                <span style="color: blue">smknegeri8grt@gmail.com</span> <br>
-                            </p>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        </div>
-
-        <hr style="margin-top: -10px">
+        @include('partials.kop_surat_default')
 
 
         <div style="text-align: center">
@@ -242,21 +221,20 @@
 
         <div class="section">
             <div class="table-like">
-                <p>
-                    Tugas ini dilaksanakan sebagai bagian dari program kerjasama pendidikan antara
-                    SMK Negeri 8 Garut dengan Dunia Usaha/Dunia Industri.
-                </p>
-                <p>Demikian surat tugas ini dibuat untuk dilaksanakan dengan penuh tanggung jawab.</p>
-            </div>
-        </div>
-
-
-
+                        @include('partials.ttd_default', [
+                            'ttdTanggal' => 'Garut, ' . \\Carbon\\Carbon::parse($tanggal_surat)->translatedFormat('d F Y'),
+                            'ttdLabel' => 'Kepala Sekolah',
+                            'ttdNama' => $nama_kepala_sekolah,
+                            'ttdNip' => $nip_kepala_sekolah,
+                            'ttdImage' => $nama_file_ttd,
+                            'ttdContainerStyle' => 'margin-left: 300px; margin-top: 6px;',
+                            'ttdAlign' => 'left'
+                        ])
         <div style="margin-left: 300px">
             Garut, {{ \Carbon\Carbon::parse($tanggal_surat)->translatedFormat('d F Y') }}<br>
             Kepala Sekolah,<br>
-            <img src="file:///{{ str_replace("\\", "/", public_path($nama_file_ttd)) }}" class="ttd-left" alt="ttd_kepsek" width="180px"
-                style="margin-top: -10px;margin-bottom: -20px"><br>
+            <img src="file:///{{ str_replace('\\', '/', public_path($nama_file_ttd)) }}" class="ttd-left"
+                alt="ttd_kepsek" width="180px" style="margin-top: -10px;margin-bottom: -20px"><br>
             <strong><u>{{ $nama_kepala_sekolah }}</u></strong><br>
             NIP. {{ $nip_kepala_sekolah }}
         </div>
@@ -267,39 +245,15 @@
 
 
         {{-- Bagian Notulen Monitoring --}}
-        @php
-            $tahunPelajaran = $surat->tahun_pelajaran ?? '2025/2026';
-
-        @endphp
-
-        <div style="margin-top: -50px">
-            <table>
-                <tr>
-                    <td><img src="file:///{{ str_replace("\\", "/", public_path('LogoJabar.png')) }}" class="logo" alt="logo" width="100px"
-                            style="margin-right: 20px"></td>
-                    <td>
-                        <div class="text-kop">
-                            <h4>PEMERINTAH DAERAH PROVINSI JAWA BARAT <br>
-                                DINAS PENDIDIKAN <br>
-                                CABANG DINAS PENDIDIKAN WILAYAH XI</h4>
-                            <h3 style="margin-top: -20px;margin-bottom: -15px "><strong>SMK NEGERI 8 GARUT</strong></h3>
-                            <p style="text-size: 7pt">JL. RAYA LIMBANGAN-SELAWI KM 12 GARUT <br>
-                                <i>Website:</i><span style="color: blue">www.smkn8-garut.sch.id</span> , <i>E-mail:</i>
-                                <span style="color: blue">smknegeri8grt@gmail.com</span> <br>
-                            </p>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        </div>
-
-        <hr style="margin-top: -10px">
-
-        <div style="text-align: center"><b>NOTULEN MONITORING PKL</b></div>
-        <div class="nomor">SMKN 8 GARUT<br>Tahun Pelajaran {{ $tahunPelajaran }}</div>
-
-        <table style="border: none">
-            <tr>
+                @include('partials.ttd_default', [
+                    'ttdTanggal' => 'Garut, ' . \\Carbon\\Carbon::parse($tanggal_berangkat)->translatedFormat('d F Y'),
+                    'ttdLabel' => 'Pembimbing',
+                    'ttdNama' => $data->first()->pembimbing->nama_pembimbing,
+                    'ttdNip' => $data->first()->pembimbing->nip_pembimbing,
+                    'ttdImage' => null,
+                    'ttdContainerStyle' => 'margin-left: 300px; margin-top: 10px;',
+                    'ttdAlign' => 'left'
+                ])
                 <td style="border: none" width="150px"><span class="label">Hari/Tanggal</span></td>
                 <td style="border: none">: {{ \Carbon\Carbon::parse($tanggal_berangkat)->translatedFormat('d F Y') }}
                 </td>

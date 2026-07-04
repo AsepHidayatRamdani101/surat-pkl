@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FormatsExcelSheets;
 use App\Models\TempatPkl;
 use App\Models\Siswa;
 use App\Models\Perusahaan;
@@ -16,14 +17,12 @@ use PhpOffice\PhpWord\PhpWord;
 use Yajra\DataTables\Facades\DataTables;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
-use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 
 class TempatPklController extends Controller
 {
+    use FormatsExcelSheets;
+
     public function index(Request $request)
     {
         if ($request->ajax()) {
@@ -64,7 +63,7 @@ class TempatPklController extends Controller
         }
 
         $siswa = Siswa::where('status', '!=', 'belum_terdaftar')->get();
-        
+
         $perusahaan = Perusahaan::orderBy('nama_perusahaan')->get();
         //   var_dump($siswa);
         return view('tempat_pkl.index', compact('siswa', 'perusahaan'));
@@ -107,32 +106,7 @@ class TempatPklController extends Controller
             $row++;
         }
 
-        // Autofilter
-        $sheet->setAutoFilter('A1:F1');
-
-        // Autosize kolom
-        foreach (range('A', 'F') as $columnID) {
-            $sheet->getColumnDimension($columnID)->setAutoSize(true);
-        }
-
-        // Style header
-        $headerStyle = [
-            'font' => ['bold' => true],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => 'D9D9D9']
-            ],
-            'borders' => [
-                'allBorders' => ['borderStyle' => Border::BORDER_THIN]
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER
-            ]
-        ];
-        $sheet->getStyle('A1:F1')->applyFromArray($headerStyle);
-
-        // Border seluruh data
-        $sheet->getStyle('A1:F' . ($row - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $this->applyExcelTableFormatting($sheet, 'F', $row - 1);
 
         // Simpan dan download
         $fileName = 'data_tempat_pkl_' . now()->format('Y-m-d_H-i-s') . '.xlsx';

@@ -7,26 +7,90 @@ use App\Models\Pembimbing;
 use App\Models\Siswa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class KelompokBimbinganController extends Controller
 {
     public function index()
     {
-        $pembimbing = Pembimbing::with('jurusan')
+        $authUser = auth()->user();
+        $isPembimbing = $authUser && (Gate::forUser($authUser)->allows('pembimbing') || $authUser->role === 'pembimbing');
+        $canManageKelompok = !$isPembimbing;
+        $pembimbingAuthId = null;
+
+        if ($isPembimbing) {
+            $pembimbingAuthId = Pembimbing::query()
+                ->where('nip_pembimbing', (string) $authUser->username)
+                ->value('id');
+        }
+
+        $pembimbingQuery = Pembimbing::with('jurusan')
             ->orderByRaw("CASE WHEN jenis_guru = 'guru_produktif' THEN 0 ELSE 1 END")
-            ->orderBy('nama_pembimbing')
-            ->get();
+            ->orderBy('nama_pembimbing');
+        if ($isPembimbing) {
+            if (empty($pembimbingAuthId)) {
+                $pembimbingQuery->whereRaw('1 = 0');
+            } else {
+                $pembimbingQuery->whereKey($pembimbingAuthId);
+            }
+        }
+        $pembimbing = $pembimbingQuery->get();
 
-        $siswa = Siswa::with('kelas.jurusan')
-            ->orderBy('nama_siswa')
-            ->get();
+        $siswaQuery = Siswa::with('kelas.jurusan')
+            ->orderBy('nama_siswa');
+        if ($isPembimbing) {
+            if (empty($pembimbingAuthId)) {
+                $siswaQuery->whereRaw('1 = 0');
+            } else {
+                $siswaQuery->whereHas('kelompokBimbingan', function ($query) use ($pembimbingAuthId) {
+                    $query->where('kelompok_bimbingan.pembimbing_id', $pembimbingAuthId);
+                });
+            }
+        }
+        $siswa = $siswaQuery->get();
 
-        $kelompok = KelompokBimbingan::with(['pembimbing.jurusan', 'siswa.kelas.jurusan'])
+        $kelompokQuery = KelompokBimbingan::with(['pembimbing.jurusan', 'siswa.kelas.jurusan', 'siswa.suratIzin.perusahaan'])
             ->withCount('siswa')
-            ->latest()
-            ->get();
+            ->latest();
+        if ($isPembimbing) {
+            if (empty($pembimbingAuthId)) {
+                $kelompokQuery->whereRaw('1 = 0');
+            } else {
+                $kelompokQuery->where('pembimbing_id', $pembimbingAuthId);
+            }
+        }
+        $filters = [
+            'kelompok_id' => request('kelompok_id'),
+            'pembimbing_id' => request('pembimbing_id'),
+            'keyword' => request('keyword'),
+        ];
 
-        return view('kelompok_bimbingan.index', compact('pembimbing', 'siswa', 'kelompok'));
+        if (!empty($filters['kelompok_id'])) {
+            $kelompokQuery->whereKey($filters['kelompok_id']);
+        }
+
+        if (!empty($filters['pembimbing_id'])) {
+            $kelompokQuery->where('pembimbing_id', $filters['pembimbing_id']);
+        }
+
+        if (!empty($filters['keyword'])) {
+            $keyword = trim((string) $filters['keyword']);
+            $kelompokQuery->where(function ($query) use ($keyword) {
+                $query->where('nama_kelompok', 'like', '%' . $keyword . '%')
+                    ->orWhereHas('pembimbing', function ($pembimbingQuery) use ($keyword) {
+                        $pembimbingQuery->where('nama_pembimbing', 'like', '%' . $keyword . '%');
+                    })
+                    ->orWhereHas('siswa', function ($siswaQuery) use ($keyword) {
+                        $siswaQuery->where('nama_siswa', 'like', '%' . $keyword . '%')
+                            ->orWhereHas('kelas', function ($kelasQuery) use ($keyword) {
+                                $kelasQuery->where('nama_kelas', 'like', '%' . $keyword . '%');
+                            });
+                    });
+            });
+        }
+        $kelompok = $kelompokQuery->get();
+
+        return view('kelompok_bimbingan.index', compact('pembimbing', 'siswa', 'kelompok', 'canManageKelompok', 'filters'));
     }
 
     public function storeManual(Request $request)

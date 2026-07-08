@@ -223,82 +223,36 @@
     </div>
 @endsection
 
+
 @section('plugins.Datatables', true)
 
 @section('js')
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(function() {
-            const originalSwalFire = Swal.fire.bind(Swal);
-            Swal.fire = function(options, ...args) {
-                if (typeof options === 'object' && options !== null) {
-                    const merged = {
-                        confirmButtonColor: '#0d6efd',
-                        cancelButtonColor: '#6c757d',
-                        ...options,
-                    };
-
-                    if (merged.showCancelButton) {
-                        merged.confirmButtonText = merged.confirmButtonText || 'Ya, lanjut';
-                        merged.cancelButtonText = merged.cancelButtonText || 'Batal';
-                    } else {
-                        merged.confirmButtonText = merged.confirmButtonText || 'OK';
-                    }
-
-                    if (merged.icon === 'success' && merged.timer === undefined && merged.showConfirmButton ===
-                        undefined) {
-                        merged.timer = 1800;
-                        merged.showConfirmButton = false;
-                    }
-
-                    return originalSwalFire(merged, ...args);
+            /* ---- DataTables ---- */
+            if ($.fn.DataTable) {
+                if ($.fn.DataTable.isDataTable('.datatable-tugas')) {
+                    $('.datatable-tugas').DataTable().destroy();
                 }
+                $('.datatable-tugas').DataTable({
+                    pageLength: 10,
+                    lengthChange: true,
+                    ordering: true,
+                    searching: true,
+                    responsive: true,
+                    autoWidth: false,
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json',
+                        emptyTable: 'Belum ada data tugas pembekalan.'
+                    }
+                });
+            }
 
-                return originalSwalFire(options, ...args);
-            };
-
-            const tugasForm = $('#tugasForm');
-            const tugasModal = $('#tugasModal');
-            const tugasTitle = $('#tugasModalLabel');
-            const submitBtn = $('#btnSubmitTugas');
-            const methodInput = $('#tugasFormMethod');
-            const editIdInput = $('#edit_id');
-            const storeUrl = @json(route('pembekalan.tugas.store'));
-            const updateUrlTemplate = @json(route('pembekalan.tugas.update', ['tugasPembekalan' => '__ID__']));
+            /* ---- Alerts ---- */
             const successMessage = @json(session('success'));
             const errorMessages = @json($errors->all());
             const oldSoalEssay = @json(old('soal_essay', []));
-
-            function soalEssayInputHtml(index, value = '') {
-                const escaped = String(value || '').replace(/"/g, '&quot;');
-                return `
-                    <div class="input-group input-group-sm mb-2 soal-essay-item">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Soal ${index + 1}</span>
-                        </div>
-                        <input type="text" name="soal_essay[]" class="form-control" value="${escaped}" placeholder="Masukkan pertanyaan essay" required>
-                        <div class="input-group-append">
-                            <button type="button" class="btn btn-outline-danger btn-remove-soal">Hapus</button>
-                        </div>
-                    </div>
-                `;
-            }
-
-            function renderSoalEssay(values = []) {
-                const normalized = (Array.isArray(values) ? values : []).filter(v => String(v || '').trim() !== '');
-                const finalValues = normalized.length >= 2 ? normalized : ['', ''];
-                $('#soalEssayWrap').empty();
-                finalValues.forEach((value, index) => {
-                    $('#soalEssayWrap').append(soalEssayInputHtml(index, value));
-                });
-                reindexSoalEssay();
-            }
-
-            function reindexSoalEssay() {
-                $('#soalEssayWrap .soal-essay-item').each(function(index) {
-                    $(this).find('.input-group-text').text('Soal ' + (index + 1));
-                });
-            }
 
             if (successMessage) {
                 Swal.fire({
@@ -309,57 +263,98 @@
                     showConfirmButton: false
                 });
             }
-
             if (errorMessages.length > 0) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Gagal menyimpan tugas',
-                    html: errorMessages.join('<br>'),
+                    html: errorMessages.join('<br>')
                 });
             }
 
-            function setValue(name, value) {
-                const el = tugasForm.find('[name="' + name + '"]');
-                el.val(value || '');
+            /* ---- Soal Essay helpers ---- */
+            function soalEssayInputHtml(index, value) {
+                const escaped = String(value || '').replace(/"/g, '&quot;');
+                return `<div class="input-group input-group-sm mb-2 soal-essay-item">
+                    <div class="input-group-prepend"><span class="input-group-text">Soal ${index + 1}</span></div>
+                    <input type="text" name="soal_essay[]" class="form-control" value="${escaped}" placeholder="Masukkan pertanyaan essay" required>
+                    <div class="input-group-append"><button type="button" class="btn btn-outline-danger btn-remove-soal">Hapus</button></div>
+                </div>`;
             }
 
-            function resetModalToAdd() {
-                tugasTitle.text('Tambah Tugas Pembekalan');
-                submitBtn.text('Tambah Tugas');
-                tugasForm.attr('action', storeUrl);
-                methodInput.val('POST');
-                editIdInput.val('');
-
-                if (!@json($errors->any())) {
-                    tugasForm[0].reset();
-                    setValue('tanggal_tugas', @json(now()->toDateString()));
-                    renderSoalEssay(['', '']);
-                }
+            function reindexSoalEssay() {
+                $('#soalEssayWrap .soal-essay-item').each(function(i) {
+                    $(this).find('.input-group-text').text('Soal ' + (i + 1));
+                });
             }
 
-            function setModalToEdit(data) {
-                tugasTitle.text('Edit Tugas Pembekalan');
-                submitBtn.text('Simpan Perubahan');
-                tugasForm.attr('action', updateUrlTemplate.replace('__ID__', data.id));
-                methodInput.val('PUT');
-                editIdInput.val(data.id);
+            function renderSoalEssay(values) {
+                const normalized = (Array.isArray(values) ? values : []).filter(v => String(v || '').trim() !== '');
+                const final = normalized.length >= 2 ? normalized : ['', ''];
+                $('#soalEssayWrap').empty();
+                final.forEach((v, i) => $('#soalEssayWrap').append(soalEssayInputHtml(i, v)));
+            }
 
-                setValue('materi_id', data.materi_id || '');
-                setValue('tanggal_tugas', data.tanggal_tugas || '');
-                setValue('judul_tugas', data.judul_tugas || '');
-                setValue('deskripsi_tugas', data.deskripsi_tugas || '');
-                setValue('deadline', data.deadline || '');
+            /* ---- Modal helpers ---- */
+            const storeUrl = @json(route('pembekalan.tugas.store'));
+            const updateUrlTpl = @json(route('pembekalan.tugas.update', ['tugasPembekalan' => '__ID__']));
+
+            function openAddModal() {
+                $('#tugasModalLabel').text('Tambah Tugas Pembekalan');
+                $('#btnSubmitTugas').text('Tambah Tugas');
+                $('#tugasForm').attr('action', storeUrl);
+                $('#tugasFormMethod').val('POST');
+                $('#edit_id').val('');
+                $('#tugasForm')[0].reset();
+                $('#tugasForm [name="tanggal_tugas"]').val(@json(now()->toDateString()));
+                renderSoalEssay(['', '']);
+            }
+
+            function openEditModal(data) {
+                $('#tugasModalLabel').text('Edit Tugas Pembekalan');
+                $('#btnSubmitTugas').text('Simpan Perubahan');
+                $('#tugasForm').attr('action', updateUrlTpl.replace('__ID__', data.id));
+                $('#tugasFormMethod').val('PUT');
+                $('#edit_id').val(data.id);
+                $('#tugasForm [name="materi_id"]').val(data.materi_id || '');
+                $('#tugasForm [name="tanggal_tugas"]').val(data.tanggal_tugas || '');
+                $('#tugasForm [name="judul_tugas"]').val(data.judul_tugas || '');
+                $('#tugasForm [name="deskripsi_tugas"]').val(data.deskripsi_tugas || '');
+                $('#tugasForm [name="deadline"]').val(data.deadline || '');
                 renderSoalEssay(data.soal_essay || ['', '']);
             }
 
+            /* ---- Restore on validation error ---- */
+            @can('panitia')
+                @if ($errors->any())
+                    if ($('#edit_id').val()) {
+                        openEditModal({
+                            id: $('#edit_id').val(),
+                            tanggal_tugas: $('#tugasForm [name="tanggal_tugas"]').val(),
+                            judul_tugas: $('#tugasForm [name="judul_tugas"]').val(),
+                            deskripsi_tugas: $('#tugasForm [name="deskripsi_tugas"]').val(),
+                            deadline: $('#tugasForm [name="deadline"]').val(),
+                            soal_essay: oldSoalEssay
+                        });
+                    } else {
+                        renderSoalEssay(oldSoalEssay.length ? oldSoalEssay : ['', '']);
+                    }
+                    $('#tugasModal').modal('show');
+                @else
+                    renderSoalEssay(['', '']);
+                @endif
+            @else
+                renderSoalEssay(['', '']);
+            @endcan
+
+            /* ---- Events ---- */
             $('#btnOpenTugasModal').on('click', function() {
-                resetModalToAdd();
-                tugasModal.modal('show');
+                openAddModal();
+                $('#tugasModal').modal('show');
             });
 
             $(document).on('click', '.btn-edit-tugas', function() {
                 const btn = $(this);
-                setModalToEdit({
+                openEditModal({
                     id: btn.data('id'),
                     materi_id: btn.data('materi_id'),
                     tanggal_tugas: btn.data('tanggal_tugas') || '',
@@ -368,26 +363,24 @@
                     deskripsi_tugas: btn.data('deskripsi_tugas') || '',
                     deadline: btn.data('deadline') || ''
                 });
-                tugasModal.modal('show');
+                $('#tugasModal').modal('show');
             });
 
             $('#btnAddSoalEssay').on('click', function() {
-                const index = $('#soalEssayWrap .soal-essay-item').length;
-                $('#soalEssayWrap').append(soalEssayInputHtml(index, ''));
+                const idx = $('#soalEssayWrap .soal-essay-item').length;
+                $('#soalEssayWrap').append(soalEssayInputHtml(idx, ''));
                 reindexSoalEssay();
             });
 
             $(document).on('click', '.btn-remove-soal', function() {
-                const total = $('#soalEssayWrap .soal-essay-item').length;
-                if (total <= 2) {
+                if ($('#soalEssayWrap .soal-essay-item').length <= 2) {
                     Swal.fire({
                         icon: 'warning',
                         title: 'Minimal 2 soal',
-                        text: 'Tugas essay harus berisi minimal 2 soal.',
+                        text: 'Tugas essay harus berisi minimal 2 soal.'
                     });
                     return;
                 }
-
                 $(this).closest('.soal-essay-item').remove();
                 reindexSoalEssay();
             });
@@ -395,7 +388,6 @@
             $(document).on('submit', '.form-delete-tugas', function(e) {
                 e.preventDefault();
                 const form = this;
-
                 Swal.fire({
                     title: 'Hapus tugas?',
                     text: 'Data yang dihapus tidak bisa dikembalikan.',
@@ -403,44 +395,9 @@
                     showCancelButton: true,
                     confirmButtonText: 'Ya, hapus',
                     cancelButtonText: 'Batal'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
+                }).then(r => {
+                    if (r.isConfirmed) form.submit();
                 });
-            });
-
-            @can('panitia')
-                @if ($errors->any())
-                    if ($('#edit_id').val()) {
-                        tugasTitle.text('Edit Tugas Pembekalan');
-                        submitBtn.text('Simpan Perubahan');
-                        methodInput.val('PUT');
-                        tugasForm.attr('action', updateUrlTemplate.replace('__ID__', $('#edit_id').val()));
-                    } else {
-                        resetModalToAdd();
-                    }
-                    $('#tugasModal').modal('show');
-                @endif
-            @endcan
-
-            if (@json($errors->any())) {
-                renderSoalEssay(oldSoalEssay);
-            } else {
-                renderSoalEssay(['', '']);
-            }
-
-            $('.datatable-tugas').DataTable({
-                pageLength: 10,
-                lengthChange: true,
-                ordering: true,
-                searching: true,
-                responsive: true,
-                autoWidth: false,
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json',
-                    emptyTable: 'Belum ada data tugas pembekalan.'
-                }
             });
         });
     </script>

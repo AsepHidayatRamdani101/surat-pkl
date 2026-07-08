@@ -502,22 +502,27 @@ return [
                 ],
                 [
                     'text' => 'Lihat Absensi',
-                    'url'  => 'dashboard#absensi-siswa',
+                    'url'  => 'dashboard/siswa/absensi',
                     'icon' => 'fas fa-user-check',
                 ],
                 [
+                    'text' => 'Materi Pembekalan',
+                    'url'  => 'dashboard/siswa/materi',
+                    'icon' => 'fas fa-book-open',
+                ],
+                [
                     'text' => 'Kerjakan Tugas',
-                    'url'  => 'dashboard#tugas-siswa',
+                    'url'  => 'dashboard/siswa/tugas',
                     'icon' => 'fas fa-tasks',
                 ],
                 [
                     'text' => 'Lihat Nilai Tugas',
-                    'url'  => 'dashboard#nilai-siswa',
+                    'url'  => 'dashboard/siswa/nilai',
                     'icon' => 'fas fa-star',
                 ],
                 [
                     'text' => 'Catatan Sikap',
-                    'url'  => 'dashboard#sikap-siswa',
+                    'url'  => 'dashboard/siswa/sikap',
                     'icon' => 'fas fa-notes-medical',
                 ],
                 [
@@ -529,14 +534,21 @@ return [
         ],
 
         [
-            'text' => 'Menu Pembimbing',
+            'text' => 'Dashboard Pembimbing',
+            'url'  => 'dashboard',
+            'icon' => 'fas fa-home',
+            'can'  => 'pembimbing',
+        ],
+
+        [
+            'text' => 'Pembekalan PKL',
             'icon' => 'fas fa-user-tie',
             'can'  => 'pembimbing',
             'submenu' => [
                 [
-                    'text' => 'Dashboard Pembimbing',
-                    'url'  => 'dashboard',
-                    'icon' => 'fas fa-home',
+                    'text' => 'Kelompok Bimbingan',
+                    'url'  => 'kelompok-bimbingan',
+                    'icon' => 'fas fa-layer-group',
                 ],
                 [
                     'text' => 'Tugas Siswa & Nilai',
@@ -562,6 +574,42 @@ return [
                     'text' => 'Lihat Catatan Sikap',
                     'url'  => 'pembekalan/sikap/riwayat',
                     'icon' => 'fas fa-notes-medical',
+                ],
+            ],
+        ],
+
+        [
+            'text' => 'Monitoring',
+            'icon' => 'fas fa-clipboard-check',
+            'can'  => 'pembimbing',
+            'submenu' => [
+                [
+                    'text' => 'Data Monitoring',
+                    'url'  => 'monitoring',
+                    'icon' => 'fas fa-tasks',
+                ],
+                [
+                    'text' => 'Cetak Monitoring',
+                    'url'  => 'monitoring/cetak',
+                    'icon' => 'fas fa-print',
+                ],
+            ],
+        ],
+
+        [
+            'text' => 'Evaluasi',
+            'icon' => 'fas fa-chart-line',
+            'can'  => 'pembimbing',
+            'submenu' => [
+                [
+                    'text' => 'Penilaian Jurnal',
+                    'url'  => 'evaluasi/jurnal',
+                    'icon' => 'fas fa-book-reader',
+                ],
+                [
+                    'text' => 'Penilaian Laporan PPT',
+                    'url'  => 'evaluasi/laporan-ppt',
+                    'icon' => 'fas fa-file-powerpoint',
                 ],
             ],
         ],

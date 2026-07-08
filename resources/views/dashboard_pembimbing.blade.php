@@ -23,14 +23,16 @@
                     <div class="d-flex flex-wrap align-items-center justify-content-between">
                         <div class="mb-2 mb-md-0">
                             <h5 class="mb-1">Selamat datang, {{ $pembimbing->nama_pembimbing }}</h5>
-                            <small class="text-muted">Kelola progres bimbingan siswa, nilai tugas, absensi, dan catatan
-                                sikap dari satu halaman.</small>
+                            <small class="text-muted">Pantau kelompok bimbingan dan buka modul tugas, absensi, serta catatan
+                                sikap dari dashboard ini.</small>
                         </div>
                         <div class="dashboard-anchor-nav">
                             <a href="#kelompok-pembimbing" class="btn btn-sm btn-outline-primary mb-1">Kelompok</a>
                             <a href="{{ url('pembekalan/jawaban-siswa') }}"
                                 class="btn btn-sm btn-outline-success mb-1">Tugas & Nilai</a>
-                            <a href="#evaluasi-siswa-pembimbing" class="btn btn-sm btn-outline-info mb-1">Absensi &
+                            <a href="{{ url('pembekalan/absensi/input') }}" class="btn btn-sm btn-outline-info mb-1">Input
+                                Absensi</a>
+                            <a href="{{ url('pembekalan/sikap/input') }}" class="btn btn-sm btn-outline-warning mb-1">Input
                                 Sikap</a>
                         </div>
                     </div>
@@ -122,182 +124,87 @@
                 </div>
             </div>
 
-            <div class="card shadow-sm border-0 mb-3" id="kelompok-pembimbing">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="fas fa-layer-group mr-1 text-primary"></i>Daftar Kelompok Bimbingan</h5>
-                </div>
-                <div class="card-body table-responsive">
-                    <table class="table table-bordered table-striped table-sm">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Kelompok</th>
-                                <th>Metode</th>
-                                <th>Jumlah Siswa</th>
-                                <th>Anggota</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($kelompok as $index => $item)
-                                <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td>{{ $item->nama_kelompok }}</td>
-                                    <td>{{ ucfirst($item->metode) }}</td>
-                                    <td>{{ $item->siswa_count }}</td>
-                                    <td>
-                                        @foreach ($item->siswa as $anggota)
-                                            <div>{{ $anggota->nama_siswa }} - {{ $anggota->kelas->nama_kelas ?? '-' }}
-                                            </div>
-                                        @endforeach
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center">Belum ada kelompok bimbingan.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
             <div class="card shadow-sm border-0 mb-3" id="tugas-siswa-pembimbing">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="fas fa-tasks mr-1 text-success"></i>Guru Melihat Tugas Siswa & Input Nilai
-                    </h5>
+                    <h5 class="mb-0"><i class="fas fa-th-large mr-1 text-success"></i>Akses Cepat Modul Pembimbing</h5>
                 </div>
-                <div class="card-body table-responsive">
-                    <table class="table table-bordered table-striped table-sm">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Tanggal</th>
-                                <th>Siswa</th>
-                                <th>Topik</th>
-                                <th>Tugas</th>
-                                <th>Jawaban Siswa</th>
-                                <th>Nilai</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($tugasSiswa as $index => $item)
-                                <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td>{{ $item->tanggal_bimbingan ? \Carbon\Carbon::parse($item->tanggal_bimbingan)->format('d-m-Y') : '-' }}
-                                    </td>
-                                    <td>
-                                        <strong>{{ $item->siswa->nama_siswa ?? '-' }}</strong><br>
-                                        <small>{{ $item->siswa->kelas->nama_kelas ?? '-' }}</small>
-                                    </td>
-                                    <td>{{ $item->topik_pembekalan ?? '-' }}</td>
-                                    <td>{{ $item->tugas ?? '-' }}</td>
-                                    <td>{{ $item->tugas_siswa ?? 'Belum dikumpulkan' }}</td>
-                                    <td style="min-width: 180px;">
-                                        <form action="{{ route('dashboard.pembimbing.update-nilai', $item->id) }}"
-                                            method="POST" class="d-flex align-items-center">
-                                            @csrf
-                                            <input type="number" name="nilai_tugas"
-                                                class="form-control form-control-sm mr-2" min="0" max="100"
-                                                step="0.01" value="{{ old('nilai_tugas', $item->nilai_tugas) }}"
-                                                required>
-                                            <button type="submit" class="btn btn-sm btn-primary">Simpan</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="text-center">Belum ada data tugas siswa pada sesi bimbingan.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3 d-flex">
+                            <div class="border rounded p-3 w-100 h-100">
+                                <h6 class="mb-2">Tugas Siswa & Nilai</h6>
+                                <p class="text-muted small mb-3">Lihat jawaban siswa dan input nilai tugas pada modul
+                                    pembekalan.</p>
+                                <a href="{{ url('pembekalan/jawaban-siswa') }}" class="btn btn-sm btn-success">Buka
+                                    Modul</a>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3 d-flex">
+                            <div class="border rounded p-3 w-100 h-100">
+                                <h6 class="mb-2">Input Absensi</h6>
+                                <p class="text-muted small mb-3">Isi absensi kelompok secara multiple sesuai kelompok
+                                    bimbingan.</p>
+                                <a href="{{ url('pembekalan/absensi/input') }}" class="btn btn-sm btn-info">Buka Modul</a>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3 d-flex">
+                            <div class="border rounded p-3 w-100 h-100">
+                                <h6 class="mb-2">Riwayat Absensi</h6>
+                                <p class="text-muted small mb-3">Lihat riwayat absensi siswa dengan filter pembimbing dan
+                                    kelompok.</p>
+                                <a href="{{ url('pembekalan/absensi/riwayat') }}" class="btn btn-sm btn-outline-info">Buka
+                                    Riwayat</a>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3 d-flex">
+                            <div class="border rounded p-3 w-100 h-100">
+                                <h6 class="mb-2">Input Catatan Sikap</h6>
+                                <p class="text-muted small mb-3">Isi catatan sikap kelompok secara multiple pada modul
+                                    sikap.</p>
+                                <a href="{{ url('pembekalan/sikap/input') }}" class="btn btn-sm btn-warning">Buka
+                                    Modul</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="card shadow-sm border-0 mb-3" id="evaluasi-siswa-pembimbing">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="fas fa-clipboard-check mr-1 text-info"></i>Guru Input Absensi & Catatan
-                        Sikap Siswa</h5>
+                    <h5 class="mb-0"><i class="fas fa-clipboard-check mr-1 text-info"></i>Ringkasan Aktivitas Pembimbing
+                    </h5>
                 </div>
-                <div class="card-body table-responsive">
-                    <table class="table table-bordered table-striped table-sm">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Tanggal</th>
-                                <th>Siswa</th>
-                                <th>Topik</th>
-                                <th>Absensi</th>
-                                <th>Penilaian Sikap</th>
-                                <th>Catatan Sikap</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($bimbinganPembimbing as $index => $item)
-                                <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td>{{ $item->tanggal_bimbingan ? \Carbon\Carbon::parse($item->tanggal_bimbingan)->format('d-m-Y') : '-' }}
-                                    </td>
-                                    <td>
-                                        <strong>{{ $item->siswa->nama_siswa ?? '-' }}</strong><br>
-                                        <small>{{ $item->siswa->kelas->nama_kelas ?? '-' }}</small>
-                                    </td>
-                                    <td>{{ $item->topik_pembekalan ?? '-' }}</td>
-                                    <td style="min-width: 150px;">
-                                        <select name="status_absensi" form="evaluasi-form-{{ $item->id }}"
-                                            class="form-control form-control-sm mb-2" required>
-                                            <option value="hadir"
-                                                {{ old('status_absensi', $item->status_absensi) === 'hadir' ? 'selected' : '' }}>
-                                                Hadir</option>
-                                            <option value="izin"
-                                                {{ old('status_absensi', $item->status_absensi) === 'izin' ? 'selected' : '' }}>
-                                                Izin</option>
-                                            <option value="alpa"
-                                                {{ old('status_absensi', $item->status_absensi) === 'alpa' ? 'selected' : '' }}>
-                                                Alpa</option>
-                                        </select>
-                                    </td>
-                                    <td style="min-width: 160px;">
-                                        <select name="penilaian_sikap" form="evaluasi-form-{{ $item->id }}"
-                                            class="form-control form-control-sm">
-                                            <option value="">- Pilih -</option>
-                                            <option value="sangat_baik"
-                                                {{ old('penilaian_sikap', $item->penilaian_sikap) === 'sangat_baik' ? 'selected' : '' }}>
-                                                Sangat Baik</option>
-                                            <option value="baik"
-                                                {{ old('penilaian_sikap', $item->penilaian_sikap) === 'baik' ? 'selected' : '' }}>
-                                                Baik</option>
-                                            <option value="cukup"
-                                                {{ old('penilaian_sikap', $item->penilaian_sikap) === 'cukup' ? 'selected' : '' }}>
-                                                Cukup</option>
-                                            <option value="kurang"
-                                                {{ old('penilaian_sikap', $item->penilaian_sikap) === 'kurang' ? 'selected' : '' }}>
-                                                Kurang</option>
-                                        </select>
-                                    </td>
-                                    <td style="min-width: 220px;">
-                                        <textarea name="catatan" form="evaluasi-form-{{ $item->id }}" rows="2"
-                                            class="form-control form-control-sm" placeholder="Masukkan catatan sikap siswa...">{{ old('catatan', $item->catatan) }}</textarea>
-                                    </td>
-                                    <td>
-                                        <form id="evaluasi-form-{{ $item->id }}"
-                                            action="{{ route('dashboard.pembimbing.update-evaluasi', $item->id) }}"
-                                            method="POST">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm btn-info">Simpan</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8" class="text-center">Belum ada data sesi bimbingan untuk evaluasi.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-6 mb-3">
+                            <div class="border rounded p-3 h-100">
+                                <h6 class="mb-2">Status Operasional</h6>
+                                <ul class="list-unstyled mb-0 text-muted small">
+                                    <li class="mb-2">Kelompok bimbingan aktif: <strong>{{ $jumlahKelompok }}</strong>
+                                    </li>
+                                    <li class="mb-2">Siswa bimbingan terdata:
+                                        <strong>{{ $jumlahSiswaBimbingan }}</strong>
+                                    </li>
+                                    <li class="mb-2">Tugas terkumpul:
+                                        <strong>{{ $summaryPembimbing['tugas_terkumpul'] }}</strong>
+                                    </li>
+                                    <li>Total hadir pembekalan tercatat: <strong>{{ $summaryPembimbing['hadir'] }}</strong>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 mb-3">
+                            <div class="border rounded p-3 h-100">
+                                <h6 class="mb-2">Riwayat Penilaian</h6>
+                                <p class="text-muted small mb-3">Gunakan halaman riwayat untuk meninjau catatan sikap dan
+                                    absensi yang sudah tersimpan.</p>
+                                <a href="{{ url('pembekalan/sikap/riwayat') }}"
+                                    class="btn btn-sm btn-outline-warning mr-2 mb-1">Riwayat Sikap</a>
+                                <a href="{{ url('pembekalan/absensi/riwayat') }}"
+                                    class="btn btn-sm btn-outline-info mb-1">Riwayat Absensi</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         @endif
@@ -337,6 +244,12 @@
 
         .card-header h5 {
             font-weight: 600;
+        }
+
+        .kelompok-divider-row td {
+            background: #f4f8ff;
+            font-weight: 600;
+            border-top: 2px solid #d6e4ff;
         }
     </style>
 @endsection

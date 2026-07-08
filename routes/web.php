@@ -40,6 +40,14 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth'])->name('dashboard');
+Route::get('/dashboard/siswa/absensi', [DashboardController::class, 'siswaAbsensi'])->middleware(['auth'])->name('dashboard.siswa.absensi');
+Route::get('/dashboard/siswa/materi', [DashboardController::class, 'siswaMateri'])->middleware(['auth'])->name('dashboard.siswa.materi');
+Route::get('/dashboard/siswa/materi/{materi}', [DashboardController::class, 'siswaMateriDetail'])->middleware(['auth'])->name('dashboard.siswa.materi.detail');
+Route::get('/dashboard/siswa/tugas', [DashboardController::class, 'siswaTugas'])->middleware(['auth'])->name('dashboard.siswa.tugas');
+Route::get('/dashboard/siswa/kerjakan-tugas', [DashboardController::class, 'siswaKerjakanTugas'])->middleware(['auth'])->name('dashboard.siswa.kerjakan-tugas');
+Route::post('/dashboard/siswa/kerjakan-tugas', [DashboardController::class, 'siswaKerjakanTugasStore'])->middleware(['auth'])->name('dashboard.siswa.kerjakan-tugas.store');
+Route::get('/dashboard/siswa/nilai', [DashboardController::class, 'siswaNilai'])->middleware(['auth'])->name('dashboard.siswa.nilai');
+Route::get('/dashboard/siswa/sikap', [DashboardController::class, 'siswaSikap'])->middleware(['auth'])->name('dashboard.siswa.sikap');
 Route::post('/dashboard/siswa/bimbingan/{id}/submit-tugas', [DashboardController::class, 'submitTugas'])->middleware(['auth'])->name('dashboard.siswa.submit-tugas');
 Route::get('/dashboard/siswa/cetak-sertifikat', [DashboardController::class, 'cetakSertifikatPembekalan'])->middleware(['auth'])->name('dashboard.siswa.cetak-sertifikat');
 Route::get('/dashboard/siswa/cetak-sertifikat/download', [DashboardController::class, 'downloadSertifikatPembekalan'])->middleware(['auth'])->name('dashboard.siswa.download-sertifikat');
@@ -47,6 +55,9 @@ Route::post('/dashboard/pembimbing/bimbingan/{id}/update-nilai', [DashboardContr
 Route::post('/dashboard/pembimbing/bimbingan/{id}/update-evaluasi', [DashboardController::class, 'updateEvaluasiSiswaPembimbing'])->middleware(['auth'])->name('dashboard.pembimbing.update-evaluasi');
 
 Route::middleware('auth')->group(function () {
+    Route::view('/evaluasi/jurnal', 'evaluasi.penilaian_jurnal')->name('evaluasi.jurnal');
+    Route::view('/evaluasi/laporan-ppt', 'evaluasi.penilaian_laporan_ppt')->name('evaluasi.laporan-ppt');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

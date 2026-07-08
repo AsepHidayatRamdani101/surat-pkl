@@ -14,10 +14,16 @@ class NilaiSikapPembekalan extends Model
     protected $fillable = [
         'pembimbing_id',
         'siswa_id',
+        'materi_id',
         'tanggal_penilaian',
         'nilai_sikap',
         'catatan',
     ];
+
+    public function materi()
+    {
+        return $this->belongsTo(Materi::class, 'materi_id');
+    }
 
     public function pembimbing()
     {

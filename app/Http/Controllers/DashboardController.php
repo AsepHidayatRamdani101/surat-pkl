@@ -8,6 +8,7 @@ use App\Models\Bimbingan;
 use App\Models\JawabanTugasSiswa;
 use App\Models\KelompokBimbingan;
 use App\Models\Materi;
+use App\Models\NilaiSikapPembekalan;
 use App\Models\Pembimbing;
 use App\Models\TugasPembekalan;
 use App\Models\Siswa;
@@ -164,6 +165,7 @@ class DashboardController extends Controller
         $pembimbing = null;
         $pembimbingPerusahaan = null;
         $bimbingan = collect();
+        $nilaiSikapPembekalan = collect();
         $summary = [
             'total_sesi' => 0,
             'hadir' => 0,
@@ -176,7 +178,12 @@ class DashboardController extends Controller
         ];
         $chartLabels = [];
         $chartProgres = [];
-        $materi = Materi::query()->latest('tanggal_materi')->latest('id')->get();
+        $materi = Materi::with([
+            'tugasPembekalan',
+            'tugasPembekalan.jawabanSiswa' => fn($q) => $q->where('siswa_id', (int) ($siswa?->id ?? 0)),
+            'tugasPembekalan.jawabanSiswa.nilaiTugas',
+        ])
+            ->latest('tanggal_materi')->latest('id')->get();
 
         $siswaId = $siswa?->id;
         $tugasPembekalan = TugasPembekalan::with([
@@ -199,6 +206,16 @@ class DashboardController extends Controller
             $bimbingan = Bimbingan::with('pembimbing')
                 ->where('siswa_id', $siswa->id)
                 ->orderByDesc('tanggal_bimbingan')
+                ->orderByDesc('id')
+                ->get();
+
+            $nilaiSikapPembekalan = NilaiSikapPembekalan::with([
+                'pembimbing',
+                'materi.tugasPembekalan',
+                'materi.tugasPembekalan.jawabanSiswa' => fn($q) => $q->where('siswa_id', $siswa->id),
+            ])
+                ->where('siswa_id', $siswa->id)
+                ->orderByDesc('tanggal_penilaian')
                 ->orderByDesc('id')
                 ->get();
 
@@ -247,6 +264,7 @@ class DashboardController extends Controller
             'pembimbing',
             'pembimbingPerusahaan',
             'bimbingan',
+            'nilaiSikapPembekalan',
             'materi',
             'tugasPembekalan',
             'summary',

@@ -21,7 +21,7 @@
                 <div class="card-body">
                     <form id="filterInputSikapForm" class="mb-3" onsubmit="return false;">
                         <div class="form-row align-items-end">
-                            <div class="col-md-6 mb-2">
+                            <div class="col-md-4 mb-2">
                                 <label class="mb-1">Kelompok Bimbingan</label>
                                 <select id="kelompokSikapSelect" name="kelompok_id_input"
                                     class="form-control form-control-sm" required>
@@ -44,9 +44,22 @@
                                     class="form-control form-control-sm" value="{{ $bulkInput['tanggal_penilaian'] }}"
                                     required>
                             </div>
-                            <div class="col-md-3 mb-2">
-                                <div class="alert alert-light border py-2 mb-0 text-muted text-center">Tabel tampil otomatis
-                                </div>
+                            <div class="col-md-4 mb-2">
+                                <label class="mb-1">Materi Pembekalan <small class="text-muted">(opsional)</small></label>
+                                <select id="materiSikapSelect" name="materi_id_input" class="form-control form-control-sm">
+                                    <option value="">— Pilih Materi —</option>
+                                    @foreach ($materis as $materi)
+                                        <option value="{{ $materi->id }}"
+                                            {{ (string) ($bulkInput['materi_id'] ?? '') === (string) $materi->id ? 'selected' : '' }}>
+                                            {{ \Carbon\Carbon::parse($materi->tanggal_materi)->format('d/m/Y') }} —
+                                            {{ $materi->topik }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-1 mb-2 d-flex align-items-end">
+                                <div class="alert alert-light border py-2 mb-0 text-muted text-center w-100"
+                                    style="font-size:0.75rem;">Auto</div>
                             </div>
                         </div>
                     </form>
@@ -62,6 +75,7 @@
                         @csrf
                         <input type="hidden" name="kelompok_id" id="bulkSikapKelompokId">
                         <input type="hidden" name="tanggal_penilaian" id="bulkSikapTanggalPenilaian">
+                        <input type="hidden" name="materi_id" id="bulkSikapMateriId">
 
                         <div class="table-responsive">
                             <table id="inputSikapTable" class="table table-bordered table-striped table-sm mb-2">
@@ -151,10 +165,24 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-9">
+                            <div class="col-md-3 mb-2">
+                                <label class="mb-1">Materi</label>
+                                <select name="materi_id" class="form-control form-control-sm">
+                                    <option value="">Semua Materi</option>
+                                    @foreach ($materis as $materi)
+                                        <option value="{{ $materi->id }}"
+                                            {{ (string) ($filters['materi_id'] ?? '') === (string) $materi->id ? 'selected' : '' }}>
+                                            {{ \Carbon\Carbon::parse($materi->tanggal_materi)->format('d/m/Y') }} —
+                                            {{ $materi->topik }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-9 mt-2">
                                 <label class="mb-1">Cari Data</label>
                                 <input type="text" name="keyword" class="form-control form-control-sm"
-                                    placeholder="Cari siswa, pembimbing, atau catatan" value="{{ $filters['keyword'] }}">
+                                    placeholder="Cari siswa, pembimbing, materi, atau catatan"
+                                    value="{{ $filters['keyword'] }}">
                             </div>
                         </div>
                     </form>
@@ -175,7 +203,8 @@
                                 <th style="width: 95px;">Tanggal</th>
                                 <th style="width: 220px;">Siswa</th>
                                 <th style="width: 180px;">Kelompok</th>
-                                <th style="width: 220px;">Pembimbing</th>
+                                <th style="width: 180px;">Materi</th>
+                                <th style="width: 180px;">Pembimbing</th>
                                 <th style="width: 140px;">Nilai Sikap</th>
                                 <th>Catatan</th>
                                 @if ($canManageSikap)
@@ -194,6 +223,16 @@
                                         @endif
                                     </td>
                                     <td>{{ optional(optional($item->siswa)->kelompokBimbingan)->pluck('nama_kelompok')->first() ?? '-' }}
+                                    </td>
+                                    <td>
+                                        @if ($item->materi)
+                                            <span class="d-block"
+                                                style="font-size:0.85rem;">{{ $item->materi->topik }}</span>
+                                            <small
+                                                class="text-muted">{{ \Carbon\Carbon::parse($item->materi->tanggal_materi)->format('d/m/Y') }}</small>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
                                     </td>
                                     <td>{{ $item->pembimbing->nama_pembimbing ?? '-' }}</td>
                                     <td>
@@ -541,9 +580,11 @@
             const endpoint = @json(route('pembekalan.sikap.input.students'));
             const $kelompok = $('#kelompokSikapSelect');
             const $tanggal = $('#tanggalSikapSelect');
+            const $materi = $('#materiSikapSelect');
             const $bulkForm = $('#bulkSikapForm');
             const $bulkKelompokId = $('#bulkSikapKelompokId');
             const $bulkTanggal = $('#bulkSikapTanggalPenilaian');
+            const $bulkMateriId = $('#bulkSikapMateriId');
             const $inputInfo = $('#inputSikapInfo');
             const $inputWarning = $('#inputSikapWarning');
             const $inputLoading = $('#inputSikapLoading');
@@ -665,6 +706,7 @@
                 $tbody.empty();
                 $bulkKelompokId.val('');
                 $bulkTanggal.val('');
+                $bulkMateriId.val('');
                 clearInfo();
                 $checkAll.prop('checked', false);
                 setupInputDataTable('Pilih kelompok bimbingan untuk menampilkan data siswa.');
@@ -701,6 +743,7 @@
 
                         $bulkKelompokId.val(response.kelompok.id);
                         $bulkTanggal.val(response.tanggal_penilaian);
+                        $bulkMateriId.val($materi.val() || '');
                         buildRows(students);
                         setupInputDataTable();
                         setInfo(response.kelompok.nama_kelompok, response.kelompok.pembimbing);
@@ -739,6 +782,9 @@
 
             $kelompok.on('change', loadStudents);
             $tanggal.on('change', loadStudents);
+            $materi.on('change', function() {
+                $bulkMateriId.val($materi.val() || '');
+            });
 
             resetInputTable();
             if ($kelompok.val()) {

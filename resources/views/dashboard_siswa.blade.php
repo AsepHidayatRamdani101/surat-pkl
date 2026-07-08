@@ -315,6 +315,8 @@
                                 'fa-rocket',
                                 'fa-book',
                             ];
+                            // Index catatan sikap by materi_id for quick lookup
+                            $sikapByMateri = $nilaiSikapPembekalan->keyBy('materi_id');
                         @endphp
                         @forelse ($materi as $i => $item)
                             @php
@@ -331,6 +333,33 @@
                                     $types[] = 'VIDEO';
                                 }
                                 $typesStr = count($types) ? implode(' + ', $types) : 'KONTEN';
+
+                                // Linked tugas
+                                $linkedTugas = $item->tugasPembekalan ?? null;
+                                $linkedJawaban = $linkedTugas?->jawabanSiswa->first();
+                                $tugasDijawab = $linkedJawaban && $linkedJawaban->submitted_at;
+                                $tugasDeadlinePassed =
+                                    $linkedTugas?->deadline && \Carbon\Carbon::parse($linkedTugas->deadline)->isPast();
+
+                                // Linked catatan sikap
+                                $linkedSikap = $sikapByMateri->get($item->id);
+                                $sikapBadgeColor = $linkedSikap
+                                    ? [
+                                            'sangat_baik' => 'success',
+                                            'baik' => 'primary',
+                                            'cukup' => 'warning',
+                                            'perlu_bimbingan' => 'danger',
+                                        ][$linkedSikap->nilai_sikap] ?? 'secondary'
+                                    : null;
+                                $sikapLabel = $linkedSikap
+                                    ? [
+                                            'sangat_baik' => 'Sangat Baik',
+                                            'baik' => 'Baik',
+                                            'cukup' => 'Cukup',
+                                            'perlu_bimbingan' => 'Perlu Bimbingan',
+                                        ][$linkedSikap->nilai_sikap] ??
+                                        ucwords(str_replace('_', ' ', $linkedSikap->nilai_sikap))
+                                    : null;
                             @endphp
                             <div class="col-lg-4 col-md-6 mb-4 materi-card"
                                 data-search="{{ strtolower(trim($item->topik . ' ' . ($item->isi_materi ?? '') . ' ' . ($item->catatan ?? ''))) }}">
@@ -349,14 +378,39 @@
 
                                         @if (!empty($item->isi_materi))
                                             <p class="elearning-card-desc">
-                                                {{ \Illuminate\Support\Str::limit($item->isi_materi, 120) }}</p>
+                                                {{ \Illuminate\Support\Str::limit($item->isi_materi, 100) }}</p>
                                         @elseif(!empty($item->catatan))
                                             <p class="elearning-card-desc">
-                                                {{ \Illuminate\Support\Str::limit($item->catatan, 120) }}</p>
+                                                {{ \Illuminate\Support\Str::limit($item->catatan, 100) }}</p>
                                         @else
                                             <p class="elearning-card-desc text-muted">Klik akses materi untuk melihat
                                                 konten lengkap.</p>
                                         @endif
+
+                                        {{-- Linked tugas & sikap badges --}}
+                                        <div class="d-flex flex-wrap align-items-center mb-2" style="gap:4px;">
+                                            @if ($linkedTugas)
+                                                <span
+                                                    class="badge {{ $tugasDijawab ? 'badge-success' : ($tugasDeadlinePassed ? 'badge-danger' : 'badge-warning') }}"
+                                                    title="Tugas: {{ $linkedTugas->judul_tugas }}">
+                                                    <i
+                                                        class="fas fa-tasks mr-1"></i>{{ $tugasDijawab ? 'Tugas ✓' : ($tugasDeadlinePassed ? 'Deadline Lewat' : 'Tugas Belum Dikerjakan') }}
+                                                </span>
+                                            @else
+                                                <span class="badge badge-light border text-muted"><i
+                                                        class="fas fa-tasks mr-1"></i>Belum ada tugas</span>
+                                            @endif
+
+                                            @if ($linkedSikap)
+                                                <span class="badge badge-{{ $sikapBadgeColor }}"
+                                                    title="Catatan Sikap: {{ $linkedSikap->catatan ?? '-' }}">
+                                                    <i class="fas fa-user-shield mr-1"></i>{{ $sikapLabel }}
+                                                </span>
+                                            @else
+                                                <span class="badge badge-light border text-muted"><i
+                                                        class="fas fa-user-shield mr-1"></i>Belum ada sikap</span>
+                                            @endif
+                                        </div>
 
                                         <div class="elearning-card-actions">
                                             <a href="{{ route('dashboard.siswa.materi.detail', $item->id) }}"
@@ -526,43 +580,106 @@
             @endif
 
             @if ($showSikap)
-                <div class="card shadow-sm border-0 mb-3" id="sikap-siswa">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0"><i class="fas fa-notes-medical mr-1 text-info"></i>Lihat Catatan Sikap</h5>
-                        <small class="text-muted">Catatan pembimbing terkait sikap, kedisiplinan, dan perkembangan selama
-                            pembekalan.</small>
+                <div class="elearning-section mb-4" id="sikap-siswa">
+                    <div class="elearning-section-header mb-4">
+                        <div>
+                            <h4 class="elearning-section-title"><i class="fas fa-notes-medical mr-2 text-info"></i>Catatan
+                                Sikap</h4>
+                            <p class="elearning-section-desc">Catatan pembimbing terkait sikap, kedisiplinan, dan
+                                perkembangan selama pembekalan.</p>
+                        </div>
                     </div>
-                    <div class="card-body table-responsive">
-                        <table id="sikapTable" class="table table-bordered table-striped table-sm">
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th>Tanggal</th>
-                                    <th>Pembimbing</th>
-                                    <th>Penilaian Sikap</th>
-                                    <th>Catatan</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($bimbingan->filter(fn($row) => !empty($row->penilaian_sikap) || !empty($row->catatan))->values() as $index => $item)
-                                    <tr>
-                                        <td>{{ $index + 1 }}</td>
-                                        <td>{{ $item->tanggal_bimbingan ? \Carbon\Carbon::parse($item->tanggal_bimbingan)->format('d-m-Y') : '-' }}
-                                        </td>
-                                        <td>{{ $item->pembimbing->nama_pembimbing ?? '-' }}</td>
-                                        <td>
-                                            @if ($item->penilaian_sikap)
+                    <div class="row">
+                        @forelse ($nilaiSikapPembekalan as $index => $item)
+                            @php
+                                $badgeColor =
+                                    [
+                                        'sangat_baik' => 'success',
+                                        'baik' => 'primary',
+                                        'cukup' => 'warning',
+                                        'perlu_bimbingan' => 'danger',
+                                    ][$item->nilai_sikap] ?? 'secondary';
+                                $labelSikap =
+                                    [
+                                        'sangat_baik' => 'Sangat Baik',
+                                        'baik' => 'Baik',
+                                        'cukup' => 'Cukup',
+                                        'perlu_bimbingan' => 'Perlu Bimbingan',
+                                    ][$item->nilai_sikap] ?? ucwords(str_replace('_', ' ', $item->nilai_sikap ?? '-'));
+                                $gradients = [
+                                    'sangat_baik' => 'linear-gradient(135deg,#10b981,#3b82f6)',
+                                    'baik' => 'linear-gradient(135deg,#3b82f6,#6366f1)',
+                                    'cukup' => 'linear-gradient(135deg,#f59e0b,#ef4444)',
+                                    'perlu_bimbingan' => 'linear-gradient(135deg,#ef4444,#991b1b)',
+                                ];
+                                $gradient = $gradients[$item->nilai_sikap] ?? 'linear-gradient(135deg,#64748b,#334155)';
+
+                                // Linked materi & tugas
+                                $linkedMateri = $item->materi;
+                                $linkedTugasFromMateri = $linkedMateri?->tugasPembekalan ?? null;
+                                $linkedJawabanFromMateri = $linkedTugasFromMateri?->jawabanSiswa->first();
+                                $tugasSikapDijawab = $linkedJawabanFromMateri && $linkedJawabanFromMateri->submitted_at;
+                            @endphp
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="elearning-card">
+                                    <div class="elearning-cover" style="background: {{ $gradient }};">
+                                        <i class="fas fa-user-shield elearning-cover-icon"></i>
+                                        <div class="elearning-cover-overlay"></div>
+                                        <div class="elearning-cover-meta">
+                                            <span class="elearning-type-badge">{{ $labelSikap }}</span>
+                                            <span class="elearning-date-badge">
+                                                <i class="fas fa-calendar-alt mr-1"></i>
+                                                {{ $item->tanggal_penilaian ? \Carbon\Carbon::parse($item->tanggal_penilaian)->format('d M Y') : '-' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="elearning-card-body">
+                                        <h5 class="elearning-card-title">
+                                            <span class="badge badge-{{ $badgeColor }} mr-1">{{ $labelSikap }}</span>
+                                        </h5>
+                                        <p class="elearning-card-desc mb-1" style="font-size:0.82rem; color:#64748b;">
+                                            <i class="fas fa-chalkboard-teacher mr-1"></i>
+                                            {{ $item->pembimbing->nama_pembimbing ?? '-' }}
+                                        </p>
+
+                                        {{-- Linked materi --}}
+                                        @if ($linkedMateri)
+                                            <p class="elearning-card-desc mb-1" style="font-size:0.82rem; color:#64748b;">
+                                                <i class="fas fa-book-open mr-1 text-primary"></i>
+                                                <strong>Materi:</strong> {{ $linkedMateri->topik }}
+                                            </p>
+                                        @endif
+
+                                        {{-- Linked tugas --}}
+                                        @if ($linkedTugasFromMateri)
+                                            <p class="elearning-card-desc mb-1" style="font-size:0.82rem; color:#64748b;">
+                                                <i class="fas fa-tasks mr-1 text-success"></i>
+                                                <strong>Tugas:</strong> {{ $linkedTugasFromMateri->judul_tugas }}
                                                 <span
-                                                    class="badge badge-info">{{ ucwords(str_replace('_', ' ', $item->penilaian_sikap)) }}</span>
-                                            @else
-                                                -
-                                            @endif
-                                        </td>
-                                        <td>{{ $item->catatan ?? '-' }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                                                    class="badge {{ $tugasSikapDijawab ? 'badge-success' : 'badge-warning' }} ml-1">
+                                                    {{ $tugasSikapDijawab ? '✓ Dijawab' : 'Belum' }}
+                                                </span>
+                                            </p>
+                                        @endif
+
+                                        @if (!empty($item->catatan))
+                                            <p class="elearning-card-desc mt-1">
+                                                {{ \Illuminate\Support\Str::limit($item->catatan, 100) }}
+                                            </p>
+                                        @else
+                                            <p class="elearning-card-desc text-muted">Tidak ada catatan tambahan.</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="col-12">
+                                <div class="elearning-empty-state">
+                                    <i class="fas fa-notes-medical"></i>
+                                    <p>Belum ada catatan sikap dari pembimbing.</p>
+                                </div>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
             @endif

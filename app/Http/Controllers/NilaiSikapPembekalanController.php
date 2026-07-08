@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\NilaiSikapPembekalan;
 use App\Models\KelompokBimbingan;
+use App\Models\Materi;
 use App\Models\Pembimbing;
 use App\Models\Siswa;
 use Illuminate\Http\Request;
@@ -110,6 +111,7 @@ class NilaiSikapPembekalanController extends Controller
             'tanggal_akhir' => $request->get('tanggal_akhir'),
             'pembimbing_id' => $request->get('pembimbing_id'),
             'kelompok_id' => $request->get('kelompok_id'),
+            'materi_id' => $request->get('materi_id'),
             'nilai_sikap' => $request->get('nilai_sikap'),
             'keyword' => $request->get('keyword'),
         ];
@@ -117,13 +119,14 @@ class NilaiSikapPembekalanController extends Controller
         $bulkInput = [
             'kelompok_id' => $request->get('kelompok_id_input'),
             'tanggal_penilaian' => $request->get('tanggal_penilaian_input', now()->toDateString()),
+            'materi_id' => $request->get('materi_id_input'),
         ];
 
         if ($isPembimbing && !empty($pembimbingAuthId)) {
             $filters['pembimbing_id'] = (string) $pembimbingAuthId;
         }
 
-        $query = NilaiSikapPembekalan::with(['pembimbing', 'siswa.kelas', 'siswa.kelompokBimbingan'])
+        $query = NilaiSikapPembekalan::with(['pembimbing', 'materi', 'siswa.kelas', 'siswa.kelompokBimbingan'])
             ->latest('tanggal_penilaian')
             ->latest('id');
 
@@ -153,6 +156,10 @@ class NilaiSikapPembekalanController extends Controller
             });
         }
 
+        if (!empty($filters['materi_id'])) {
+            $query->where('materi_id', $filters['materi_id']);
+        }
+
         if (!empty($filters['nilai_sikap'])) {
             $query->where('nilai_sikap', $filters['nilai_sikap']);
         }
@@ -166,6 +173,9 @@ class NilaiSikapPembekalanController extends Controller
                     })
                     ->orWhereHas('pembimbing', function ($pq) use ($keyword) {
                         $pq->where('nama_pembimbing', 'like', '%' . $keyword . '%');
+                    })
+                    ->orWhereHas('materi', function ($mq) use ($keyword) {
+                        $mq->where('topik', 'like', '%' . $keyword . '%');
                     })
                     ->orWhereHas('siswa.kelompokBimbingan', function ($kq) use ($keyword) {
                         $kq->where('nama_kelompok', 'like', '%' . $keyword . '%');
@@ -210,12 +220,15 @@ class NilaiSikapPembekalanController extends Controller
         }
         $kelompokOptions = $kelompokOptionsQuery->get();
 
+        $materis = Materi::orderBy('tanggal_materi', 'desc')->orderBy('id', 'desc')->get(['id', 'topik', 'tanggal_materi']);
+
         return view('pembekalan.sikap', compact(
             'nilaiSikap',
             'filters',
             'pembimbingOptions',
             'siswaOptions',
             'kelompokOptions',
+            'materis',
             'bulkInput',
             'canManageSikap',
             'showInputSection',
@@ -230,6 +243,7 @@ class NilaiSikapPembekalanController extends Controller
         $validated = $request->validate([
             'kelompok_id' => ['required', 'exists:kelompok_bimbingan,id'],
             'tanggal_penilaian' => ['required', 'date'],
+            'materi_id' => ['nullable', 'exists:materis,id'],
             'siswa_ids' => ['required', 'array', 'min:1'],
             'siswa_ids.*' => ['required', 'exists:siswa,id'],
             'nilai_sikap_values' => ['required', 'array'],
@@ -274,6 +288,7 @@ class NilaiSikapPembekalanController extends Controller
                 ],
                 [
                     'pembimbing_id' => $pembimbingIdToSave,
+                    'materi_id' => $validated['materi_id'] ?? null,
                     'nilai_sikap' => $nilaiSikap,
                     'catatan' => $validated['catatans'][$siswaId] ?? null,
                 ]
@@ -291,6 +306,7 @@ class NilaiSikapPembekalanController extends Controller
         return redirect()->route('pembekalan.sikap.input', [
             'kelompok_id_input' => $validated['kelompok_id'],
             'tanggal_penilaian_input' => $validated['tanggal_penilaian'],
+            'materi_id_input' => $validated['materi_id'] ?? null,
         ])->with('success', $message);
     }
 

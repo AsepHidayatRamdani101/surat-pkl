@@ -9,10 +9,6 @@
                 <div class="card">
                     <div class="card-header">
                         <h4>Data Pembimbing Perusahaan</h4>
-                        <a href="{{ route('pembimbing-perusahaan.export-excel') }}" class="btn btn-sm btn-success">Export
-                            Excel</a>
-                        <button class="btn btn-sm btn-secondary" id="btnImport">Import Excel</button>
-
                     </div>
                     <div class="card-body">
                         <table id="pembimbingTable" class="table table-bordered">
@@ -33,19 +29,21 @@
             </div>
         </div>
 
-        <div class="modal fade" id="modalForm" tabindex="-1" role="dialog">
-            <div class="modal-dialog">
-                <form id="formPembimbing" enctype="multipart/form-data">
+        <div class="modal fade" id="modalForm" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <form id="formPembimbing">
                     @csrf
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="modalFormLabel">Form Pembimbing</h5>
-                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
                         </div>
                         <div class="modal-body">
-
                             <input type="hidden" name="id" id="id">
                             <input type="hidden" name="perusahaan_id" id="perusahaan_id">
+
                             <div class="form-group">
                                 <label for="nama_perusahaan_display">Perusahaan</label>
                                 <input type="text" id="nama_perusahaan_display" class="form-control" readonly>
@@ -64,30 +62,27 @@
                                     required>
                             </div>
                             <div class="form-group">
-                                
                                 <label for="jenis_kelamin">Jenis Kelamin</label>
                                 <select name="jenis_kelamin" id="jenis_kelamin" class="form-control" required>
                                     <option value="">Pilih Jenis Kelamin</option>
                                     <option value="Laki-Laki">Laki-laki</option>
-                                    <span aria-hidden="true">&times;</span>
-                                    </button>
+                                    <option value="Perempuan">Perempuan</option>
+                                </select>
                             </div>
-                            <div class="modal-body">
-                                <form action="{{ route('pembimbing-perusahaan.import') }}" method="post"
-                                    enctype="multipart/form-data">
-                                    @csrf
-                                    <div class="form-group">
-                                        <label for="file">File Excel</label>
-                                        <input type="file" name="file" id="file" class="form-control" required>
-                                    </div>
+                            <div class="form-group mb-0">
+                                <label for="no_hp_pembimbing">No HP</label>
+                                <input type="text" name="no_hp_pembimbing" id="no_hp_pembimbing" class="form-control"
+                                    required>
                             </div>
-                            <div class="modal-footer">
-                                <button type="submit" class="btn btn-primary">Import</button>
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-primary btn-simpan">Simpan</button>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>
-    </div>
     </div>
 @endsection
 
@@ -101,7 +96,6 @@
         }
     </style>
 @endsection
-
 
 @section('js')
     @include('sweetalert::alert')
@@ -137,11 +131,6 @@
 
                 return originalSwalFire(options, ...args);
             };
-
-            $('#btnImport').click(function() {
-                $('#modalImport').modal('show');
-            });
-
 
             let table = $('#pembimbingTable').DataTable({
                 ajax: '{{ route('pembimbing-perusahaan.data') }}',
@@ -182,16 +171,18 @@
 
             $(document).on('click', '.btnTambahPerusahaan', function() {
                 let data = $(this).data();
-                $('#modalForm').modal('show');
-                $('#modalFormLabel').html('Tambah Data Pembimbing');
+
                 $('#formPembimbing').trigger('reset');
                 $('#id').val('');
                 $('#perusahaan_id').val(data.perusahaan_id);
                 $('#nama_perusahaan_display').val(data.nama_perusahaan);
+                $('#modalFormLabel').html('Tambah Data Pembimbing');
+                $('#modalForm').modal('show');
             });
 
             $(document).on('click', '.btnEdit', function() {
                 let data = $(this).data();
+
                 $('#nama').val(data.nama);
                 $('#nip').val(data.nip);
                 $('#id').val(data.id);
@@ -200,23 +191,22 @@
                 $('#no_hp_pembimbing').val(data.nohp);
                 $('#perusahaan_id').val(data.perusahaan_id);
                 $('#nama_perusahaan_display').val(data.nama_perusahaan);
-                $('#modalForm').modal('show');
                 $('#modalFormLabel').html('Edit Data Pembimbing');
+                $('#modalForm').modal('show');
             });
 
             $('#no_hp_pembimbing').on('keypress', function(e) {
                 if (e.which === 13) {
                     e.preventDefault();
-                    Simpan();
+                    simpan();
                 }
             });
 
             $(document).on('click', '.btn-simpan', function() {
-
-                Simpan();
+                simpan();
             });
 
-            function Simpan() {
+            function simpan() {
                 let id = $('#id').val();
                 let url = id ? `/pembimbing-perusahaan/${id}` : '{{ route('pembimbing-perusahaan.store') }}';
                 let method = id ? 'PUT' : 'POST';
@@ -255,11 +245,11 @@
                 });
             }
 
-            //btnHapus
             $(document).on('click', '.btnHapus', function() {
                 let id = $(this).data('id');
                 let url = '{{ route('pembimbing-perusahaan.destroy', ':id') }}';
                 url = url.replace(':id', id);
+
                 Swal.fire({
                     title: 'Yakin hapus data ini?',
                     icon: 'warning',

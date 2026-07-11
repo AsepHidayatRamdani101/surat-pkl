@@ -20,24 +20,26 @@
                         <a href="{{ route('pembimbing.export-excel') }}" class="btn btn-sm btn-success">Export Excel</a>
                         <button class="btn btn-sm btn-secondary" id="btnImport">Import Excel</button>
                     </div>
-                    <div class="card-body">
-                        <table id="pembimbingTable" class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th>Nama</th>
-                                    <th>NIP</th>
-                                    <th>Jabatan</th>
-                                    <th>Jenis Guru</th>
-                                    <th>Jurusan</th>
-                                    <th>Jumlah Jam</th>
-                                    <th>Jumlah Siswa</th>
-                                    <th>No HP</th>
-                                    <th>Status Akun</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                        </table>
+                    <div class="card-body ">
+                        <div class="table-responsive">
+                            <table id="pembimbingTable" class="table table-bordered table-responsive">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Nama</th>
+                                        <th>NIP</th>
+                                        <th>Jabatan</th>
+                                        <th>Jenis Guru</th>
+                                        <th>Jurusan</th>
+                                        <th>Jumlah Jam</th>
+                                        <th>Jumlah Siswa</th>
+                                        <th>No HP</th>
+                                        <th>Status Akun</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

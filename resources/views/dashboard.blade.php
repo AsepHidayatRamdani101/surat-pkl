@@ -22,14 +22,18 @@
         })->count();
         $jurusanSuratIzin = \App\Models\SuratIzinOrtu::whereHas('siswa.kelas.jurusan', function ($query) {
             $query->where('id', auth()->user()->jurusan_id);
-        })->count();
+        })
+            ->distinct('siswa_id')
+            ->count('siswa_id');
         $jurusanTempatPkl = \App\Models\TempatPkl::whereHas('siswa.kelas.jurusan', function ($query) {
             $query->where('id', auth()->user()->jurusan_id);
-        })->count();
+        })
+            ->distinct('siswa_id')
+            ->count('siswa_id');
 
         $totalPerusahaan = \App\Models\Perusahaan::count();
-        $totalSuratIzin = \App\Models\SuratIzinOrtu::count();
-        $totalTempatPkl = \App\Models\TempatPkl::count();
+        $totalSuratIzin = \App\Models\SuratIzinOrtu::distinct('siswa_id')->count('siswa_id');
+        $totalTempatPkl = \App\Models\TempatPkl::distinct('siswa_id')->count('siswa_id');
         $totalPembimbing = \App\Models\Pembimbing::count();
         $totalKelompokBimbingan = \App\Models\KelompokBimbingan::count();
         $totalSesiBimbingan = \App\Models\Bimbingan::count();
@@ -37,7 +41,7 @@
             (float) (\App\Models\Bimbingan::whereNotNull('nilai_tugas')->avg('nilai_tugas') ?? 0),
             2,
         );
-        $siswaBelumTempat = \App\Models\Siswa::whereDoesntHave('suratIzin')->count();
+        $siswaBelumTempat = max(0, $totalSiswa - $totalTempatPkl);
 
         $selectedJurusanId = request('jurusan_id');
         $selectedKelasId = request('kelas_id');

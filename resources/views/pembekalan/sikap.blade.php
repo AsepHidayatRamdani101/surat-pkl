@@ -15,8 +15,15 @@
         @if ($showInputSection && $canManageSikap)
             <div class="card shadow-sm border-0 mb-3" id="input-sikap">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0">Input Catatan Sikap Kelompok (Multiple)</h5>
-                    <small class="text-muted">Pilih kelompok, lalu isi catatan sikap siswa sekaligus.</small>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">Input Catatan Sikap Kelompok (Multiple)</h5>
+                            <small class="text-muted">Pilih kelompok, lalu isi catatan sikap siswa sekaligus.</small>
+                        </div>
+                        <a href="{{ route('pembekalan.pembinaan') }}" class="btn btn-sm btn-outline-warning mt-2 mt-md-0">
+                            <i class="fas fa-user-shield mr-1"></i> Pembinaan
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <form id="filterInputSikapForm" class="mb-3" onsubmit="return false;">
@@ -105,6 +112,11 @@
         @if ($showRiwayatSection)
             <div class="card shadow-sm border-0 mb-3" id="lihat-sikap">
                 <div class="card-body py-3">
+                    <div class="d-flex justify-content-end mb-2">
+                        <a href="{{ route('pembekalan.pembinaan') }}" class="btn btn-sm btn-outline-warning">
+                            <i class="fas fa-user-shield mr-1"></i> Pembinaan
+                        </a>
+                    </div>
                     <form method="GET" action="{{ route('pembekalan.sikap.riwayat') }}">
                         <div class="form-row align-items-end">
                             <div class="col-md-3 mb-2">

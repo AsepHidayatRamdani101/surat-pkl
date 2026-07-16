@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\AbsensiPembekalan;
 use App\Models\KelompokBimbingan;
 use App\Models\Pembimbing;
@@ -26,6 +27,24 @@ class AbsensiPembekalanController extends Controller
     public function pageRiwayat(Request $request)
     {
         return $this->renderPage($request, 'riwayat');
+    }
+
+    public function pageFormulir(Request $request)
+    {
+        $data = $this->resolveFormulirData($request);
+
+        return view('pembekalan.formulir_kehadiran', $data);
+    }
+
+    public function pageFormulirPdf(Request $request)
+    {
+        $data = $this->resolveFormulirData($request);
+        $filename = 'formulir-kehadiran-pembekalan-' . $data['filters']['tanggal_formulir'] . '.pdf';
+
+        $pdf = Pdf::loadView('pembekalan.formulir_kehadiran_pdf', $data)
+            ->setPaper('A4', 'portrait');
+
+        return $pdf->stream($filename);
     }
 
     public function pageInputStudents(Request $request)
@@ -182,7 +201,7 @@ class AbsensiPembekalanController extends Controller
                 $pembimbingOptionsQuery->whereKey($pembimbingAuthId);
             }
         }
-        $pembimbingOptions = $pembimbingOptionsQuery->get(['id', 'nama_pembimbing']);
+        $pembimbingOptions = $pembimbingOptionsQuery->get(['id', 'nama_pembimbing', 'nip_pembimbing']);
 
         $siswaOptionsQuery = Siswa::with(['kelas', 'kelompokBimbingan.pembimbing'])
             ->orderBy('nama_siswa');
@@ -533,5 +552,86 @@ class AbsensiPembekalanController extends Controller
         }
 
         throw new UnauthorizedException('Anda tidak memiliki akses ke modul absensi ini.');
+    }
+
+    private function resolveFormulirData(Request $request): array
+    {
+        $pembimbingAuthId = $this->getAuthorizedPembimbingForAbsensiPage();
+
+        $validated = $request->validate([
+            'pembimbing_id' => ['nullable', 'exists:pembimbings,id'],
+            'kelompok_id' => ['nullable', 'exists:kelompok_bimbingan,id'],
+            'tanggal_formulir' => ['nullable', 'date'],
+        ]);
+
+        $authUser = auth()->user();
+        $isPanitia = $authUser && Gate::forUser($authUser)->allows('panitia');
+
+        $filters = [
+            'pembimbing_id' => $validated['pembimbing_id'] ?? null,
+            'kelompok_id' => $validated['kelompok_id'] ?? null,
+            'tanggal_formulir' => $validated['tanggal_formulir'] ?? now()->toDateString(),
+        ];
+
+        if (!empty($pembimbingAuthId)) {
+            $filters['pembimbing_id'] = (string) $pembimbingAuthId;
+        }
+
+        $pembimbingOptionsQuery = Pembimbing::query()->orderBy('nama_pembimbing');
+        if (!empty($pembimbingAuthId)) {
+            $pembimbingOptionsQuery->whereKey($pembimbingAuthId);
+        }
+        $pembimbingOptions = $pembimbingOptionsQuery->get(['id', 'nama_pembimbing']);
+
+        $kelompokOptionsQuery = KelompokBimbingan::with('pembimbing')
+            ->withCount('siswa')
+            ->orderBy('nama_kelompok');
+
+        if (!empty($pembimbingAuthId)) {
+            $kelompokOptionsQuery->where('pembimbing_id', $pembimbingAuthId);
+        } elseif (!empty($filters['pembimbing_id'])) {
+            $kelompokOptionsQuery->where('pembimbing_id', $filters['pembimbing_id']);
+        }
+
+        $kelompokOptions = $kelompokOptionsQuery->get();
+
+        $selectedKelompok = null;
+        $students = collect();
+
+        if (!empty($filters['kelompok_id'])) {
+            $selectedKelompokQuery = KelompokBimbingan::with(['pembimbing', 'siswa.kelas'])
+                ->whereKey($filters['kelompok_id']);
+
+            if (!empty($pembimbingAuthId)) {
+                $selectedKelompokQuery->where('pembimbing_id', $pembimbingAuthId);
+            }
+
+            $selectedKelompok = $selectedKelompokQuery->first();
+
+            if (!$selectedKelompok) {
+                throw ValidationException::withMessages([
+                    'kelompok_id' => 'Kelompok tidak ditemukan atau tidak dapat diakses.',
+                ]);
+            }
+
+            $students = $selectedKelompok->siswa
+                ->sortBy('nama_siswa')
+                ->values();
+        }
+
+        $selectedPembimbing = null;
+        if (!empty($filters['pembimbing_id'])) {
+            $selectedPembimbing = $pembimbingOptions->firstWhere('id', (int) $filters['pembimbing_id']);
+        }
+
+        return [
+            'filters' => $filters,
+            'pembimbingOptions' => $pembimbingOptions,
+            'kelompokOptions' => $kelompokOptions,
+            'selectedKelompok' => $selectedKelompok,
+            'students' => $students,
+            'isPanitia' => $isPanitia,
+            'selectedPembimbing' => $selectedPembimbing,
+        ];
     }
 }

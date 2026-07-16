@@ -7,6 +7,7 @@ use App\Models\Jurusan;
 use App\Models\Kelas;
 use App\Models\Siswa;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -243,5 +244,45 @@ class SiswaController extends Controller
         return response()->json([
             'message' => "Generate akun siswa selesai. Baru: {$created}, diperbarui: {$updated}. Username = NIS, password = siswa12345",
         ]);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $siswa = Siswa::with('kelas.jurusan')
+            ->orderBy('nama_siswa')
+            ->get();
+
+        $existingUsernames = User::query()
+            ->whereIn('username', $siswa->pluck('nis')->map(fn($nis) => (string) $nis)->all())
+            ->pluck('username')
+            ->flip();
+
+        $accountStatus = $request->input('account_status');
+        if ($accountStatus === 'without') {
+            $siswa = $siswa->filter(fn($row) => !isset($existingUsernames[(string) $row->nis]))->values();
+        } elseif ($accountStatus === 'with') {
+            $siswa = $siswa->filter(fn($row) => isset($existingUsernames[(string) $row->nis]))->values();
+        }
+
+        $rows = $siswa->map(function ($item) use ($existingUsernames) {
+            $hasAccount = isset($existingUsernames[(string) $item->nis]);
+
+            return [
+                'nis' => (string) $item->nis,
+                'nama_siswa' => (string) $item->nama_siswa,
+                'kelas' => (string) (optional($item->kelas)->nama_kelas ?? '-'),
+                'jurusan' => (string) (optional(optional($item->kelas)->jurusan)->nama_jurusan ?? '-'),
+                'status' => (string) ($item->status ?? '-'),
+                'status_akun' => $hasAccount ? 'Sudah Ada' : 'Belum Ada',
+                'username_akun' => $hasAccount ? (string) $item->nis : '-',
+            ];
+        })->values();
+
+        $pdf = Pdf::loadView('siswa.export_pdf', [
+            'rows' => $rows,
+            'generatedAt' => now()->format('d-m-Y H:i'),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('siswa-' . now()->format('Ymd_His') . '.pdf');
     }
 }

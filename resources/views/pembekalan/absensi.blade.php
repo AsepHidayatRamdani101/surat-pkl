@@ -15,8 +15,21 @@
         @if ($showInputSection && $canManageAbsensi)
             <div class="card shadow-sm border-0 mb-3" id="input-absensi">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0">Input Absensi Kelompok (Multiple)</h5>
-                    <small class="text-muted">Pilih kelompok, tabel siswa akan muncul otomatis dalam halaman ini.</small>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">Input Absensi Kelompok (Multiple)</h5>
+                            <small class="text-muted">Pilih kelompok, tabel siswa akan muncul otomatis dalam halaman
+                                ini.</small>
+                        </div>
+                        <a href="{{ route('pembekalan.absensi.formulir') }}"
+                            class="btn btn-sm btn-outline-primary mt-2 mt-md-0">
+                            <i class="fas fa-print mr-1"></i> Formulir Print
+                        </a>
+                        <a href="{{ route('pembekalan.pembinaan') }}"
+                            class="btn btn-sm btn-outline-warning mt-2 mt-md-0 ml-md-2">
+                            <i class="fas fa-user-shield mr-1"></i> Pembinaan
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <form id="filterInputAbsensiForm" class="mb-3" onsubmit="return false;">
@@ -92,6 +105,14 @@
         @if ($showRiwayatSection)
             <div class="card shadow-sm border-0 mb-3" id="lihat-absensi">
                 <div class="card-body py-3">
+                    <div class="d-flex justify-content-end mb-2">
+                        <a href="{{ route('pembekalan.absensi.formulir') }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-print mr-1"></i> Formulir Print
+                        </a>
+                        <a href="{{ route('pembekalan.pembinaan') }}" class="btn btn-sm btn-outline-warning ml-2">
+                            <i class="fas fa-user-shield mr-1"></i> Pembinaan
+                        </a>
+                    </div>
                     <form method="GET" action="{{ route('pembekalan.absensi.riwayat') }}">
                         <div class="form-row align-items-end">
                             <div class="col-md-3 mb-2">

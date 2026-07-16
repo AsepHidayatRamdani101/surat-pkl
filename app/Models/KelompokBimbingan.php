@@ -23,6 +23,16 @@ class KelompokBimbingan extends Model
         return $this->belongsTo(Pembimbing::class, 'pembimbing_id');
     }
 
+    public function pembimbings()
+    {
+        return $this->belongsToMany(
+            Pembimbing::class,
+            'kelompok_bimbingan_pembimbing',
+            'kelompok_bimbingan_id',
+            'pembimbing_id'
+        )->withTimestamps();
+    }
+
     public function siswa()
     {
         return $this->belongsToMany(Siswa::class, 'kelompok_bimbingan_siswa', 'kelompok_bimbingan_id', 'siswa_id');

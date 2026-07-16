@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\FormatsExcelSheets;
+use App\Models\Kelas;
 use App\Models\Jurusan;
 use App\Models\Pembimbing;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use Spatie\Permission\Models\Role;
@@ -25,7 +27,16 @@ class PembimbingController extends Controller
     {
         $pembimbing = Pembimbing::all();
         $jurusan = Jurusan::orderBy('nama_jurusan')->get();
-        return view('pembimbing.index', compact('pembimbing', 'jurusan'));
+        $kelas = Kelas::orderBy('nama_kelas')->get();
+        $kelasOptions = $kelas->map(function ($item) {
+            return [
+                'id' => (string) $item->id,
+                'text' => $item->nama_kelas,
+                'jurusan_id' => $item->jurusan_id ? (string) $item->jurusan_id : null,
+            ];
+        })->values()->all();
+
+        return view('pembimbing.index', compact('pembimbing', 'jurusan', 'kelas', 'kelasOptions'));
     }
 
     /**
@@ -63,8 +74,37 @@ class PembimbingController extends Controller
                     : 'Guru Produktif';
             })
             ->addColumn('jumlah_siswa', function ($perusahaan) {
-                $hasil = (36 / 44) * (int) $perusahaan->jumlah_jam;
-                return (int) round($hasil);
+                return (int) ($perusahaan->jumlah_siswa ?? 0);
+            })
+            ->addColumn('kelas_nama', function ($perusahaan) {
+                $kelasIds = $perusahaan->kelas_ids ?? [];
+
+                if (empty($kelasIds) || in_array('all', $kelasIds, true)) {
+                    return '<span class="badge badge-info">Semua Kelas</span>';
+                }
+
+                $kelasLabels = Kelas::whereIn('id', $kelasIds)
+                    ->orderBy('nama_kelas')
+                    ->pluck('nama_kelas')
+                    ->all();
+
+                if (empty($kelasLabels)) {
+                    return '-';
+                }
+
+                $visibleLabels = array_slice($kelasLabels, 0, 3);
+                $remainingCount = count($kelasLabels) - count($visibleLabels);
+
+                $html = collect($visibleLabels)
+                    ->map(fn($namaKelas) => '<span class="badge badge-secondary mr-1 mb-1">' . e($namaKelas) . '</span>')
+                    ->implode(' ');
+
+                if ($remainingCount > 0) {
+                    $html .= ' <span class="badge badge-light border mr-1 mb-1" title="' . e(implode(', ', $kelasLabels)) . '">+'
+                        . $remainingCount . ' lainnya</span>';
+                }
+
+                return $html;
             })
             ->addColumn('status_akun', function ($perusahaan) use ($existingUsernames) {
                 $hasAccount = isset($existingUsernames[(string) $perusahaan->nip_pembimbing]);
@@ -84,13 +124,15 @@ class PembimbingController extends Controller
                                             data-nohp="' . $perusahaan->no_hp_pembimbing . '"
                                             data-jumlah-jam="' . $perusahaan->jumlah_jam . '"
                                             data-jenis-guru="' . $perusahaan->jenis_guru . '"
-                                            data-jurusan-id="' . $perusahaan->jurusan_id . '"                  
+                                            data-jurusan-id="' . $perusahaan->jurusan_id . '"
+                                            data-kelas-ids="' . e(json_encode($perusahaan->kelas_ids ?? [])) . '"
+                                            data-jumlah-siswa="' . $perusahaan->jumlah_siswa . '"
                     >Edit</a>
                     <a href="javascript:void(0)" class="btn btn-sm btn-danger btnHapus" data-id="' . $perusahaan->id . '">Hapus</a>
                 ';
             })
             ->addIndexColumn()
-            ->rawColumns(['status_akun', 'aksi'])
+                ->rawColumns(['status_akun', 'aksi', 'kelas_nama'])
             ->make(true);
     }
 
@@ -106,8 +148,11 @@ class PembimbingController extends Controller
             'jabatan_pembimbing' => 'required',
             'no_hp_pembimbing' => 'required',
             'jumlah_jam' => 'required|integer|min:0',
+            'jumlah_siswa' => 'required|integer|min:0',
             'jenis_guru' => 'required|in:adaptif_normatif,guru_produktif',
             'jurusan_id' => 'nullable|exists:jurusan,id|required_if:jenis_guru,guru_produktif',
+            'kelas_ids' => 'required_if:jenis_guru,guru_produktif|array',
+            'kelas_ids.*' => 'nullable',
         ]);
 
         $jenisKelamin = $this->normalizeJenisKelamin($request->jenis_kelamin);
@@ -123,8 +168,10 @@ class PembimbingController extends Controller
             'jabatan_pembimbing' => $request->jabatan_pembimbing,
             'no_hp_pembimbing' => $request->no_hp_pembimbing,
             'jumlah_jam' => $request->jumlah_jam,
+            'jumlah_siswa' => $request->jumlah_siswa,
             'jenis_guru' => $request->jenis_guru,
             'jurusan_id' => $request->jenis_guru === 'adaptif_normatif' ? null : $request->jurusan_id,
+            'kelas_ids' => $this->normalizeKelasIds($request->kelas_ids, $request->jenis_guru),
 
         ]);
 
@@ -218,6 +265,52 @@ class PembimbingController extends Controller
         return response()->download('pembimbing.xlsx')->deleteFileAfterSend(true);
     }
 
+    public function exportPdf(Request $request)
+    {
+        $pembimbing = Pembimbing::with('jurusan')
+            ->orderBy('nama_pembimbing')
+            ->get();
+
+        $existingUsernames = User::query()
+            ->whereIn('username', $pembimbing->pluck('nip_pembimbing')->map(fn($nip) => (string) $nip)->all())
+            ->pluck('username')
+            ->flip();
+
+        $accountStatus = $request->input('account_status');
+        if ($accountStatus === 'without') {
+            $pembimbing = $pembimbing->filter(fn($row) => !isset($existingUsernames[(string) $row->nip_pembimbing]))->values();
+        } elseif ($accountStatus === 'with') {
+            $pembimbing = $pembimbing->filter(fn($row) => isset($existingUsernames[(string) $row->nip_pembimbing]))->values();
+        }
+
+        $rows = $pembimbing->map(function ($item) use ($existingUsernames) {
+            $hasAccount = isset($existingUsernames[(string) $item->nip_pembimbing]);
+
+            return [
+                'nama' => (string) $item->nama_pembimbing,
+                'nip' => (string) $item->nip_pembimbing,
+                'jenis_kelamin' => (string) ($item->jenis_kelamin ?? '-'),
+                'jabatan' => (string) ($item->jabatan_pembimbing ?? '-'),
+                'no_hp' => (string) ($item->no_hp_pembimbing ?? '-'),
+                'jumlah_jam' => (int) ($item->jumlah_jam ?? 0),
+                'jumlah_siswa' => (int) ($item->jumlah_siswa ?? 0),
+                'jenis_guru' => $this->friendlyJenisGuru($item->jenis_guru),
+                'jurusan' => $item->jenis_guru === 'adaptif_normatif'
+                    ? 'Semua Jurusan'
+                    : (string) ($item->jurusan->nama_jurusan ?? '-'),
+                'status_akun' => $hasAccount ? 'Sudah Ada' : 'Belum Ada',
+                'username_akun' => $hasAccount ? (string) $item->nip_pembimbing : '-',
+            ];
+        })->values();
+
+        $pdf = Pdf::loadView('pembimbing.export_pdf', [
+            'rows' => $rows,
+            'generatedAt' => now()->format('d-m-Y H:i'),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('pembimbing-' . now()->format('Ymd_His') . '.pdf');
+    }
+
     public function downloadTemplate()
     {
         $spreadsheet = new Spreadsheet();
@@ -276,8 +369,11 @@ class PembimbingController extends Controller
             'jabatan_pembimbing' => 'required',
             'no_hp_pembimbing' => 'required',
             'jumlah_jam' => 'required|integer|min:0',
+            'jumlah_siswa' => 'required|integer|min:0',
             'jenis_guru' => 'required|in:adaptif_normatif,guru_produktif',
             'jurusan_id' => 'nullable|exists:jurusan,id|required_if:jenis_guru,guru_produktif',
+            'kelas_ids' => 'required_if:jenis_guru,guru_produktif|array',
+            'kelas_ids.*' => 'nullable',
         ]);
 
         $jenisKelamin = $this->normalizeJenisKelamin($request->jenis_kelamin);
@@ -294,8 +390,10 @@ class PembimbingController extends Controller
             'jabatan_pembimbing' => $request->jabatan_pembimbing,
             'no_hp_pembimbing' => $request->no_hp_pembimbing,
             'jumlah_jam' => $request->jumlah_jam,
+            'jumlah_siswa' => $request->jumlah_siswa,
             'jenis_guru' => $request->jenis_guru,
             'jurusan_id' => $request->jenis_guru === 'adaptif_normatif' ? null : $request->jurusan_id,
+            'kelas_ids' => $this->normalizeKelasIds($request->kelas_ids, $request->jenis_guru),
         ]);
 
         return response()->json(['success' => 'Data Pembimbing Berhasil Diupdate']);
@@ -337,6 +435,35 @@ class PembimbingController extends Controller
     private function friendlyJenisGuru(string $value): string
     {
         return $value === 'guru_produktif' ? 'Guru Produktif' : 'Adaptif Normatif';
+    }
+
+    private function normalizeKelasIds($kelasIds, string $jenisGuru): array
+    {
+        if (is_string($kelasIds)) {
+            $decoded = json_decode($kelasIds, true);
+            $kelasIds = json_last_error() === JSON_ERROR_NONE ? $decoded : [$kelasIds];
+        }
+
+        $kelasIds = collect(is_array($kelasIds) ? $kelasIds : [$kelasIds])
+            ->filter(fn($value) => $value !== null && $value !== '')
+            ->map(fn($value) => (string) $value)
+            ->values()
+            ->all();
+
+        if (in_array('all', $kelasIds, true)) {
+            return ['all'];
+        }
+
+        $validKelasIds = Kelas::whereIn('id', $kelasIds)
+            ->pluck('id')
+            ->map(fn($id) => (string) $id)
+            ->all();
+
+        if ($jenisGuru === 'adaptif_normatif' && empty($validKelasIds)) {
+            return ['all'];
+        }
+
+        return $validKelasIds;
     }
 
     public function generateAccounts()

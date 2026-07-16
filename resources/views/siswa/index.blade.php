@@ -22,6 +22,7 @@
                     </select>
                     <button class="btn btn-sm btn-info" id="btnGenerateAkunSiswa">Generate Akun Siswa</button>
                     <button class="btn btn-sm btn-primary" id="btnTambah">Tambah Data</button>
+                    <a href="{{ route('siswa.export-pdf') }}" class="btn btn-sm btn-danger">Export PDF</a>
                     <button class="btn btn-sm btn-success" id="btnImport">Import Data</button>
                     <button class="btn btn-sm btn-danger" id="btnHapusMultiple" style="display: none;">Hapus
                         Pilihan</button>
@@ -160,6 +161,19 @@
                 return originalSwalFire(options, ...args);
             };
 
+            function showGenerateLoading(titleText) {
+                Swal.fire({
+                    title: titleText,
+                    text: 'Mohon tunggu, proses sedang berjalan...',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            }
+
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -267,6 +281,8 @@
                     if (!result.isConfirmed) {
                         return;
                     }
+
+                    showGenerateLoading('Sedang generate akun siswa');
 
                     $.ajax({
                         url: '{{ route('siswa.generate-accounts') }}',

@@ -26,4 +26,9 @@ class Siswa extends Model
     {
         return $this->belongsToMany(KelompokBimbingan::class, 'kelompok_bimbingan_siswa', 'siswa_id', 'kelompok_bimbingan_id');
     }
+
+    public function pembimbingBimbingan()
+    {
+        return $this->belongsToMany(Pembimbing::class, 'pembimbing_siswa', 'siswa_id', 'pembimbing_id')->withTimestamps();
+    }
 }

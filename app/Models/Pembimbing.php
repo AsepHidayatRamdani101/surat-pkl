@@ -18,8 +18,14 @@ class Pembimbing extends Model
         'nip_pembimbing',
         'no_hp_pembimbing',
         'jumlah_jam',
+        'jumlah_siswa',
         'jenis_guru',
         'jurusan_id',
+        'kelas_ids',
+    ];
+
+    protected $casts = [
+        'kelas_ids' => 'array',
     ];
 
     public function jurusan()
@@ -35,5 +41,20 @@ class Pembimbing extends Model
     public function kelompokBimbingan()
     {
         return $this->hasMany(KelompokBimbingan::class, 'pembimbing_id');
+    }
+
+    public function kelompokBimbinganMulti()
+    {
+        return $this->belongsToMany(
+            KelompokBimbingan::class,
+            'kelompok_bimbingan_pembimbing',
+            'pembimbing_id',
+            'kelompok_bimbingan_id'
+        )->withTimestamps();
+    }
+
+    public function siswaBimbingan()
+    {
+        return $this->belongsToMany(Siswa::class, 'pembimbing_siswa', 'pembimbing_id', 'siswa_id')->withTimestamps();
     }
 }

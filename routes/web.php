@@ -12,6 +12,7 @@ use App\Http\Controllers\PembekalanController;
 use App\Http\Controllers\MateriController;
 use App\Http\Controllers\TugasPembekalanController;
 use App\Http\Controllers\AbsensiPembekalanController;
+use App\Http\Controllers\PembinaanPembekalanController;
 use App\Http\Controllers\JawabanTugasSiswaController;
 use App\Http\Controllers\NilaiTugasPembekalanController;
 use App\Http\Controllers\NilaiSikapPembekalanController;
@@ -132,6 +133,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/siswa/{id}', [SiswaController::class, 'destroy'])->name('siswa.destroy');
     Route::delete('/siswa', [SiswaController::class, 'destroyMultiple'])->name('siswa.destroyMultiple');
     Route::post('/siswa/import', [SiswaController::class, 'import'])->name('siswa.import');
+    Route::get('/siswa/export-pdf', [SiswaController::class, 'exportPdf'])->name('siswa.export-pdf');
     Route::get('/siswa/download/template', [SiswaController::class, 'downloadTemplate'])->name('siswa.downloadTemplate');
 });
 
@@ -153,8 +155,16 @@ Route::middleware(['auth'])->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/kelompok-bimbingan', [KelompokBimbinganController::class, 'index'])->name('kelompok-bimbingan.index');
+    Route::get('/kelompok-bimbingan/penentuan', function () {
+        return redirect()->route('kelompok-bimbingan.index');
+    })->name('kelompok-bimbingan.penentuan');
+    Route::post('/kelompok-bimbingan/generate-kelompok', [KelompokBimbinganController::class, 'generateKelompokKosong'])->name('kelompok-bimbingan.generate-kelompok');
     Route::post('/kelompok-bimbingan/otomatis', [KelompokBimbinganController::class, 'generateAutomatic'])->name('kelompok-bimbingan.generate-automatic');
     Route::post('/kelompok-bimbingan/manual', [KelompokBimbinganController::class, 'storeManual'])->name('kelompok-bimbingan.store-manual');
+    Route::get('/kelompok-bimbingan/export-excel', [KelompokBimbinganController::class, 'exportExcel'])->name('kelompok-bimbingan.export-excel');
+    Route::get('/kelompok-bimbingan/export-pdf', [KelompokBimbinganController::class, 'exportPdf'])->name('kelompok-bimbingan.export-pdf');
+    Route::post('/kelompok-bimbingan/{id}/tambah-anggota', [KelompokBimbinganController::class, 'addAnggota'])->name('kelompok-bimbingan.add-anggota');
+    Route::post('/kelompok-bimbingan/{id}/keluarkan-siswa', [KelompokBimbinganController::class, 'removeAnggota'])->name('kelompok-bimbingan.remove-anggota');
     Route::delete('/kelompok-bimbingan/reset', [KelompokBimbinganController::class, 'reset'])->name('kelompok-bimbingan.reset');
     Route::delete('/kelompok-bimbingan/{id}', [KelompokBimbinganController::class, 'destroy'])->name('kelompok-bimbingan.destroy');
 });
@@ -168,6 +178,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/pembimbing/{id}', [PembimbingController::class, 'update'])->name('pembimbing.update');
     Route::delete('/pembimbing/{id}', [PembimbingController::class, 'destroy'])->name('pembimbing.destroy');
     Route::get('/pembimbing/export-excel', [PembimbingController::class, 'exportExcel'])->name('pembimbing.export-excel');
+    Route::get('/pembimbing/export-pdf', [PembimbingController::class, 'exportPdf'])->name('pembimbing.export-pdf');
     Route::get('/pembimbing/download-template', [PembimbingController::class, 'downloadTemplate'])->name('pembimbing.download-template');
     Route::post('/pembimbing/import', [PembimbingController::class, 'import'])->name('pembimbing.import');
 });
@@ -197,6 +208,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pembekalan/absensi/input', [AbsensiPembekalanController::class, 'pageInput'])->name('pembekalan.absensi.input');
     Route::get('/pembekalan/absensi/input/students', [AbsensiPembekalanController::class, 'pageInputStudents'])->name('pembekalan.absensi.input.students');
     Route::get('/pembekalan/absensi/riwayat', [AbsensiPembekalanController::class, 'pageRiwayat'])->name('pembekalan.absensi.riwayat');
+    Route::get('/pembekalan/absensi/formulir', [AbsensiPembekalanController::class, 'pageFormulir'])->name('pembekalan.absensi.formulir');
+    Route::get('/pembekalan/absensi/formulir/pdf', [AbsensiPembekalanController::class, 'pageFormulirPdf'])->name('pembekalan.absensi.formulir.pdf');
+    Route::get('/pembekalan/pembinaan', [PembinaanPembekalanController::class, 'index'])->name('pembekalan.pembinaan');
+    Route::get('/pembekalan/pembinaan/export-excel', [PembinaanPembekalanController::class, 'exportExcel'])->name('pembekalan.pembinaan.export-excel');
+    Route::get('/pembekalan/pembinaan/export-pdf', [PembinaanPembekalanController::class, 'exportPdf'])->name('pembekalan.pembinaan.export-pdf');
+    Route::post('/pembekalan/pembinaan', [PembinaanPembekalanController::class, 'store'])->name('pembekalan.pembinaan.store');
+    Route::put('/pembekalan/pembinaan/{pembinaanPembekalan}', [PembinaanPembekalanController::class, 'update'])->name('pembekalan.pembinaan.update');
+    Route::delete('/pembekalan/pembinaan/{pembinaanPembekalan}', [PembinaanPembekalanController::class, 'destroy'])->name('pembekalan.pembinaan.destroy');
+    Route::get('/pembekalan/pembinaan/{pembinaanPembekalan}/print', [PembinaanPembekalanController::class, 'print'])->name('pembekalan.pembinaan.print');
+    Route::get('/pembekalan/pembinaan/{pembinaanPembekalan}/pdf', [PembinaanPembekalanController::class, 'pdf'])->name('pembekalan.pembinaan.pdf');
     Route::post('/pembekalan/absensi/bulk', [AbsensiPembekalanController::class, 'pageBulkStore'])->name('pembekalan.absensi.bulk-store');
     Route::post('/pembekalan/absensi', [AbsensiPembekalanController::class, 'pageStore'])->name('pembekalan.absensi.store');
     Route::put('/pembekalan/absensi/{absensiPembekalan}', [AbsensiPembekalanController::class, 'pageUpdate'])->name('pembekalan.absensi.update');

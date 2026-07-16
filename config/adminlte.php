@@ -483,6 +483,11 @@ return [
                     'icon' => 'fas fa-notes-medical',
                 ],
                 [
+                    'text' => 'Pembinaan',
+                    'url'  => 'pembekalan/pembinaan',
+                    'icon' => 'fas fa-user-shield',
+                ],
+                [
                     'text' => 'Laporan Pembekalan',
                     'url'  => 'pembekalan/laporan',
                     'icon' => 'fas fa-file-alt',
@@ -574,6 +579,11 @@ return [
                     'text' => 'Lihat Catatan Sikap',
                     'url'  => 'pembekalan/sikap/riwayat',
                     'icon' => 'fas fa-notes-medical',
+                ],
+                [
+                    'text' => 'Pembinaan',
+                    'url'  => 'pembekalan/pembinaan',
+                    'icon' => 'fas fa-user-shield',
                 ],
             ],
         ],

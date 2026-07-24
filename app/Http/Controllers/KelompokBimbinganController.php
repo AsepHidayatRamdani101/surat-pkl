@@ -632,11 +632,11 @@ class KelompokBimbinganController extends Controller
             'Nama Kelompok',
             'Metode',
             'Pembimbing',
-            'No HP Pembimbing',
             'Jumlah Siswa',
             'Siswa per Kelas',
             'Daftar Anggota',
             'No HP Siswa',
+            'No HP Orang Tua',
         ];
 
         $col = 'A';
@@ -668,11 +668,11 @@ class KelompokBimbinganController extends Controller
         $sheet->getColumnDimension('A')->setWidth(6);
         $sheet->getColumnDimension('B')->setWidth(20);
         $sheet->getColumnDimension('C')->setWidth(14);
-        $sheet->getColumnDimension('D')->setWidth(28);
-        $sheet->getColumnDimension('E')->setWidth(18);
-        $sheet->getColumnDimension('F')->setWidth(12);
-        $sheet->getColumnDimension('G')->setWidth(24);
-        $sheet->getColumnDimension('H')->setWidth(34);
+        $sheet->getColumnDimension('D')->setWidth(26);
+        $sheet->getColumnDimension('E')->setWidth(12);
+        $sheet->getColumnDimension('F')->setWidth(24);
+        $sheet->getColumnDimension('G')->setWidth(34);
+        $sheet->getColumnDimension('H')->setWidth(18);
         $sheet->getColumnDimension('I')->setWidth(18);
 
         $rowNum = 2;
@@ -684,20 +684,20 @@ class KelompokBimbinganController extends Controller
             $sheet->setCellValue('B' . $startRow, $group['nama_kelompok']);
             $sheet->setCellValue('C' . $startRow, $group['metode']);
             $sheet->setCellValue('D' . $startRow, $group['pembimbing']);
-            $sheet->setCellValue('E' . $startRow, $group['no_hp_pembimbing']);
-            $sheet->setCellValue('F' . $startRow, $group['jumlah_siswa']);
+            $sheet->setCellValue('E' . $startRow, $group['jumlah_siswa']);
 
             if ($group['rowspan'] > 1) {
-                foreach (['A', 'B', 'C', 'D', 'E', 'F'] as $columnLetter) {
+                foreach (['A', 'B', 'C', 'D', 'E'] as $columnLetter) {
                     $sheet->mergeCells($columnLetter . $startRow . ':' . $columnLetter . $endRow);
                 }
             }
 
             foreach ($group['kelas_rows'] as $kelasRowIndex => $kelasRow) {
                 $currentRow = $startRow + $kelasRowIndex;
-                $sheet->setCellValue('G' . $currentRow, $kelasRow['siswa_per_kelas']);
-                $sheet->setCellValue('H' . $currentRow, implode("\n", $kelasRow['daftar_anggota']));
-                $sheet->setCellValue('I' . $currentRow, implode("\n", $kelasRow['daftar_no_hp_siswa']));
+                $sheet->setCellValue('F' . $currentRow, $kelasRow['siswa_per_kelas']);
+                $sheet->setCellValue('G' . $currentRow, implode("\n", $kelasRow['daftar_anggota']));
+                $sheet->setCellValue('H' . $currentRow, implode("\n", $kelasRow['daftar_no_hp_siswa']));
+                $sheet->setCellValue('I' . $currentRow, implode("\n", $kelasRow['daftar_no_hp_ortu']));
 
                 $anggotaCount = max(1, count($kelasRow['daftar_anggota']));
                 $sheet->getRowDimension($currentRow)->setRowHeight(max(24, 18 * $anggotaCount));
@@ -731,8 +731,7 @@ class KelompokBimbinganController extends Controller
         ]);
 
         $sheet->getStyle('A2:F' . $lastDataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('G2:G' . $lastDataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('H2:I' . $lastDataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+        $sheet->getStyle('G2:I' . $lastDataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
         $sheet->freezePane('A2');
 
         $fileName = 'kelompok-bimbingan-' . now()->format('Ymd_His') . '.xlsx';
@@ -958,6 +957,10 @@ class KelompokBimbinganController extends Controller
                             ->map(fn($anggota) => (string) ($anggota->no_hp_siswa ?: '-'))
                             ->values()
                             ->all(),
+                        'daftar_no_hp_ortu' => $anggotaByKelas
+                            ->map(fn($anggota) => (string) ($anggota->no_hp_ortu ?: '-'))
+                            ->values()
+                            ->all(),
                     ];
                 })
                 ->sortBy('siswa_per_kelas')
@@ -968,6 +971,7 @@ class KelompokBimbinganController extends Controller
                     'siswa_per_kelas' => '-',
                     'daftar_anggota' => ['-'],
                     'daftar_no_hp_siswa' => ['-'],
+                    'daftar_no_hp_ortu' => ['-'],
                 ]]);
             }
 

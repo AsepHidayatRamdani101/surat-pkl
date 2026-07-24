@@ -97,11 +97,11 @@
                 <th style="width: 11%;">Nama Kelompok</th>
                 <th style="width: 7%;">Metode</th>
                 <th style="width: 14%;">Pembimbing</th>
-                <th style="width: 11%;">No HP Pembimbing</th>
                 <th style="width: 6%;">Jumlah Siswa</th>
                 <th style="width: 14%;">Siswa per Kelas</th>
-                <th style="width: 21%;">Daftar Anggota</th>
+                <th style="width: 20%;">Daftar Anggota</th>
                 <th style="width: 12%;">No HP Siswa</th>
+                <th style="width: 12%;">No HP Orang Tua</th>
             </tr>
         </thead>
         <tbody>
@@ -118,8 +118,6 @@
                             <td rowspan="{{ $group['rowspan'] }}" class="main-cell">
                                 {{ $group['pembimbing'] }}</td>
                             <td rowspan="{{ $group['rowspan'] }}" class="main-cell">
-                                {{ $group['no_hp_pembimbing'] }}</td>
-                            <td rowspan="{{ $group['rowspan'] }}" class="main-cell">
                                 {{ $group['jumlah_siswa'] }}</td>
                         @endif
                         <td class="class-cell">{{ $kelasRow['siswa_per_kelas'] }}</td>
@@ -131,6 +129,11 @@
                         <td>
                             @foreach ($kelasRow['daftar_no_hp_siswa'] as $noHpSiswa)
                                 <div class="member-item">{{ $noHpSiswa }}</div>
+                            @endforeach
+                        </td>
+                        <td>
+                            @foreach ($kelasRow['daftar_no_hp_ortu'] as $noHpOrtu)
+                                <div class="member-item">{{ $noHpOrtu }}</div>
                             @endforeach
                         </td>
                     </tr>

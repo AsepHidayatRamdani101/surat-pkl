@@ -30,6 +30,10 @@ class UserManagementController extends Controller
         if ($request->ajax()) {
             $users = User::query()->with('jurusan')->orderBy('name');
 
+            if ($request->filled('role')) {
+                $users->where('role', $request->input('role'));
+            }
+
             return DataTables::of($users)
                 ->addIndexColumn()
                 ->addColumn('aksi', function ($row) {

@@ -12,6 +12,15 @@
                 </div>
             </div>
             <div class="card-body">
+                <div class="mb-3">
+                    <label class="mr-2 font-weight-bold">Filter Role:</label>
+                    <select id="filterRole" class="form-control d-inline-block w-auto">
+                        <option value="">Semua Role</option>
+                        @foreach ($roles as $role)
+                            <option value="{{ $role }}">{{ $role }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <table id="userTable" class="table table-bordered table-striped">
                     <thead>
                         <tr>
@@ -134,7 +143,12 @@
             const table = $('#userTable').DataTable({
                 processing: true,
                 serverSide: true,
-                ajax: '{{ route('user-management.data') }}',
+                ajax: {
+                    url: '{{ route('user-management.data') }}',
+                    data: function(d) {
+                        d.role = $('#filterRole').val();
+                    }
+                },
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
@@ -164,6 +178,10 @@
                         searchable: false
                     }
                 ]
+            });
+
+            $('#filterRole').on('change', function() {
+                table.ajax.reload();
             });
 
             $('#btnTambah').click(function() {

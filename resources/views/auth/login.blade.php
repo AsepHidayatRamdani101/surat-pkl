@@ -462,10 +462,7 @@
                         <button class="btn-login" type="submit">Login</button>
                     </form>
 
-                    <p class="footer-text">
-                        Dont Have an account?
-                        <a href="{{ route('register') }}">Create Account</a>
-                    </p>
+
                 </div>
             </section>
         </section>

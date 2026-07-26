@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\JurusanController;
 use App\Http\Controllers\KelasController;
+use App\Http\Controllers\KelengkapanSiswaItemController;
 use App\Http\Controllers\KelompokBimbinganController;
+use App\Http\Controllers\CekKelengkapanSiswaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\PembimbingController;
@@ -210,6 +212,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pembekalan/absensi/riwayat', [AbsensiPembekalanController::class, 'pageRiwayat'])->name('pembekalan.absensi.riwayat');
     Route::get('/pembekalan/absensi/formulir', [AbsensiPembekalanController::class, 'pageFormulir'])->name('pembekalan.absensi.formulir');
     Route::get('/pembekalan/absensi/formulir/pdf', [AbsensiPembekalanController::class, 'pageFormulirPdf'])->name('pembekalan.absensi.formulir.pdf');
+    Route::get('/pembekalan/kelengkapan-siswa', [CekKelengkapanSiswaController::class, 'index'])->name('pembekalan.kelengkapan');
+    Route::get('/pembekalan/kelengkapan-siswa/input/students', [CekKelengkapanSiswaController::class, 'inputStudents'])->name('pembekalan.kelengkapan.input.students');
+    Route::post('/pembekalan/kelengkapan-siswa/bulk', [CekKelengkapanSiswaController::class, 'bulkStore'])->name('pembekalan.kelengkapan.bulk-store');
+    Route::get('/pembekalan/kelengkapan-master', [KelengkapanSiswaItemController::class, 'index'])->middleware('can:panitia')->name('pembekalan.kelengkapan.master');
+    Route::post('/pembekalan/kelengkapan-master', [KelengkapanSiswaItemController::class, 'store'])->middleware('can:panitia')->name('pembekalan.kelengkapan.master.store');
+    Route::put('/pembekalan/kelengkapan-master/{kelengkapanSiswaItem}', [KelengkapanSiswaItemController::class, 'update'])->middleware('can:panitia')->name('pembekalan.kelengkapan.master.update');
+    Route::delete('/pembekalan/kelengkapan-master/{kelengkapanSiswaItem}', [KelengkapanSiswaItemController::class, 'destroy'])->middleware('can:panitia')->name('pembekalan.kelengkapan.master.destroy');
     Route::get('/pembekalan/pembinaan', [PembinaanPembekalanController::class, 'index'])->name('pembekalan.pembinaan');
     Route::get('/pembekalan/pembinaan/export-excel', [PembinaanPembekalanController::class, 'exportExcel'])->name('pembekalan.pembinaan.export-excel');
     Route::get('/pembekalan/pembinaan/export-pdf', [PembinaanPembekalanController::class, 'exportPdf'])->name('pembekalan.pembinaan.export-pdf');

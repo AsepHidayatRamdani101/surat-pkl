@@ -54,6 +54,7 @@ class AbsensiPembekalanController extends Controller
         $validated = $request->validate([
             'kelompok_id' => ['required', 'exists:kelompok_bimbingan,id'],
             'tanggal_absensi' => ['required', 'date'],
+            'sesi_absensi' => ['required', 'in:datang,pulang'],
         ]);
 
         $selectedKelompokQuery = KelompokBimbingan::with(['pembimbing', 'siswa.kelas'])
@@ -75,6 +76,7 @@ class AbsensiPembekalanController extends Controller
 
         $existingAbsensi = AbsensiPembekalan::query()
             ->whereDate('tanggal_absensi', $validated['tanggal_absensi'])
+            ->where('sesi_absensi', $validated['sesi_absensi'])
             ->whereIn('siswa_id', $studentIds)
             ->get()
             ->keyBy('siswa_id');
@@ -104,6 +106,7 @@ class AbsensiPembekalanController extends Controller
                     : null,
             ],
             'tanggal_absensi' => (string) $validated['tanggal_absensi'],
+            'sesi_absensi' => (string) $validated['sesi_absensi'],
             'students' => $students,
         ]);
     }
@@ -130,12 +133,14 @@ class AbsensiPembekalanController extends Controller
             'pembimbing_id' => $request->get('pembimbing_id'),
             'kelompok_id' => $request->get('kelompok_id'),
             'status' => $request->get('status'),
+            'sesi_absensi' => $request->get('sesi_absensi'),
             'keyword' => $request->get('keyword'),
         ];
 
         $bulkInput = [
             'kelompok_id' => $request->get('kelompok_id_input'),
             'tanggal_absensi' => $request->get('tanggal_absensi_input', now()->toDateString()),
+            'sesi_absensi' => $request->get('sesi_absensi_input', 'datang'),
         ];
 
         if ($isPembimbing && !empty($pembimbingAuthId)) {
@@ -174,6 +179,10 @@ class AbsensiPembekalanController extends Controller
 
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['sesi_absensi'])) {
+            $query->where('sesi_absensi', $filters['sesi_absensi']);
         }
 
         if (!empty($filters['keyword'])) {
@@ -248,6 +257,7 @@ class AbsensiPembekalanController extends Controller
 
                 $existingAbsensi = AbsensiPembekalan::query()
                     ->whereDate('tanggal_absensi', $bulkInput['tanggal_absensi'])
+                    ->where('sesi_absensi', $bulkInput['sesi_absensi'])
                     ->whereIn('siswa_id', $studentIds)
                     ->get()
                     ->keyBy('siswa_id');
@@ -286,6 +296,7 @@ class AbsensiPembekalanController extends Controller
         $validated = $request->validate([
             'kelompok_id' => ['required', 'exists:kelompok_bimbingan,id'],
             'tanggal_absensi' => ['required', 'date'],
+            'sesi_absensi' => ['required', 'in:datang,pulang'],
             'siswa_ids' => ['required', 'array', 'min:1'],
             'siswa_ids.*' => ['required', 'exists:siswa,id'],
             'statuses' => ['required', 'array'],
@@ -328,6 +339,7 @@ class AbsensiPembekalanController extends Controller
                 [
                     'siswa_id' => $siswaId,
                     'tanggal_absensi' => $validated['tanggal_absensi'],
+                    'sesi_absensi' => $validated['sesi_absensi'],
                 ],
                 [
                     'pembimbing_id' => $pembimbingIdToSave,
@@ -343,11 +355,12 @@ class AbsensiPembekalanController extends Controller
             }
         }
 
-        $message = "Absensi kelompok berhasil disimpan. {$createdCount} data ditambahkan, {$updatedCount} data diperbarui.";
+        $message = 'Absensi kelompok sesi ' . $validated['sesi_absensi'] . " berhasil disimpan. {$createdCount} data ditambahkan, {$updatedCount} data diperbarui.";
 
         return redirect()->route('pembekalan.absensi.input', [
             'kelompok_id_input' => $validated['kelompok_id'],
             'tanggal_absensi_input' => $validated['tanggal_absensi'],
+            'sesi_absensi_input' => $validated['sesi_absensi'],
         ])->with('success', $message);
     }
 
@@ -359,7 +372,9 @@ class AbsensiPembekalanController extends Controller
             'pembimbing_id' => ['required', 'exists:pembimbings,id'],
             'siswa_id' => ['required', 'exists:siswa,id'],
             'tanggal_absensi' => ['required', 'date'],
+            'sesi_absensi' => ['required', 'in:datang,pulang'],
             'status' => ['required', 'in:hadir,izin,alpa'],
+            'atribut_lengkap' => ['nullable', 'boolean'],
             'keterangan' => ['nullable', 'string'],
         ]);
 
@@ -373,6 +388,7 @@ class AbsensiPembekalanController extends Controller
             [
                 'siswa_id' => $validated['siswa_id'],
                 'tanggal_absensi' => $validated['tanggal_absensi'],
+                'sesi_absensi' => $validated['sesi_absensi'],
             ],
             $validated
         );
@@ -392,7 +408,9 @@ class AbsensiPembekalanController extends Controller
             'pembimbing_id' => ['required', 'exists:pembimbings,id'],
             'siswa_id' => ['required', 'exists:siswa,id'],
             'tanggal_absensi' => ['required', 'date'],
+            'sesi_absensi' => ['required', 'in:datang,pulang'],
             'status' => ['required', 'in:hadir,izin,alpa'],
+            'atribut_lengkap' => ['nullable', 'boolean'],
             'keterangan' => ['nullable', 'string'],
         ]);
 
@@ -408,6 +426,7 @@ class AbsensiPembekalanController extends Controller
         $existsConflict = AbsensiPembekalan::query()
             ->where('siswa_id', $validated['siswa_id'])
             ->whereDate('tanggal_absensi', $validated['tanggal_absensi'])
+            ->where('sesi_absensi', $validated['sesi_absensi'])
             ->whereKeyNot($absensiPembekalan->id)
             ->exists();
 
@@ -455,7 +474,9 @@ class AbsensiPembekalanController extends Controller
             'pembimbing_id' => ['required', 'exists:pembimbings,id'],
             'siswa_id' => ['required', 'exists:siswa,id'],
             'tanggal_absensi' => ['required', 'date'],
+            'sesi_absensi' => ['required', 'in:datang,pulang'],
             'status' => ['required', 'in:hadir,izin,alpa'],
+            'atribut_lengkap' => ['nullable', 'boolean'],
             'keterangan' => ['nullable', 'string'],
         ]);
 
@@ -465,6 +486,7 @@ class AbsensiPembekalanController extends Controller
             [
                 'siswa_id' => $validated['siswa_id'],
                 'tanggal_absensi' => $validated['tanggal_absensi'],
+                'sesi_absensi' => $validated['sesi_absensi'],
             ],
             $validated
         );
@@ -483,7 +505,9 @@ class AbsensiPembekalanController extends Controller
             'pembimbing_id' => ['required', 'exists:pembimbings,id'],
             'siswa_id' => ['required', 'exists:siswa,id'],
             'tanggal_absensi' => ['required', 'date'],
+            'sesi_absensi' => ['required', 'in:datang,pulang'],
             'status' => ['required', 'in:hadir,izin,alpa'],
+            'atribut_lengkap' => ['nullable', 'boolean'],
             'keterangan' => ['nullable', 'string'],
         ]);
 

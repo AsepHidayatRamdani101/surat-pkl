@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\AbsensiPembekalan;
 use App\Models\Bimbingan;
+use App\Models\CekKelengkapanSiswa;
 use App\Models\JawabanTugasSiswa;
 use App\Models\KelompokBimbingan;
 use App\Models\Materi;
@@ -46,7 +47,11 @@ class DashboardController extends Controller
                 'tugas_terkumpul' => 0,
                 'belum_dinilai' => 0,
                 'hadir' => 0,
+                'total_cek_kelengkapan' => 0,
+                'lengkap' => 0,
+                'belum_lengkap' => 0,
             ];
+            $kelengkapanTerbaru = collect();
 
             if ($pembimbing) {
                 $jumlahKelompok = KelompokBimbingan::where('pembimbing_id', $pembimbing->id)->count();
@@ -77,15 +82,41 @@ class DashboardController extends Controller
                         ->whereIn('siswa_id', $siswaBimbinganIds)
                         ->get();
 
+                    $cekKelengkapanPembimbing = CekKelengkapanSiswa::with(['siswa.kelas'])
+                        ->where('pembimbing_id', $pembimbing->id)
+                        ->whereIn('siswa_id', $siswaBimbinganIds)
+                        ->orderByDesc('tanggal_cek')
+                        ->orderByDesc('id')
+                        ->get();
+
                     $tugasSiswa = $bimbinganPembimbing
                         ->filter(fn($item) => !empty($item->tugas))
                         ->values();
+
+                    $kelengkapanTerbaru = $cekKelengkapanPembimbing
+                        ->groupBy('siswa_id')
+                        ->map(function ($records) {
+                            $latest = $records->sortByDesc(fn($item) => optional($item->tanggal_cek)?->format('Y-m-d') . '-' . $item->id)->first();
+                            $missingItems = collect($latest?->item_checks ?? [])->filter(fn($check) => empty($check['is_checked']))->values();
+
+                            return (object) [
+                                'record' => $latest,
+                                'missing_count' => $missingItems->count(),
+                                'missing_names' => $missingItems->pluck('nama_item')->take(3)->join(', '),
+                            ];
+                        })
+                        ->sortByDesc('missing_count')
+                        ->values()
+                        ->take(6);
 
                     $summaryPembimbing = [
                         'total_sesi' => $bimbinganPembimbing->count(),
                         'tugas_terkumpul' => $tugasSiswa->filter(fn($item) => !empty($item->tugas_siswa))->count(),
                         'belum_dinilai' => $tugasSiswa->whereNull('nilai_tugas')->count(),
                         'hadir' => $absensiPembekalanPembimbing->where('status', 'hadir')->count(),
+                        'total_cek_kelengkapan' => $cekKelengkapanPembimbing->count(),
+                        'lengkap' => $cekKelengkapanPembimbing->where('is_lengkap', true)->count(),
+                        'belum_lengkap' => $cekKelengkapanPembimbing->where('is_lengkap', false)->count(),
                     ];
                 }
             }
@@ -97,7 +128,8 @@ class DashboardController extends Controller
                 'kelompok',
                 'bimbinganPembimbing',
                 'tugasSiswa',
-                'summaryPembimbing'
+                'summaryPembimbing',
+                'kelengkapanTerbaru'
             ));
         }
 

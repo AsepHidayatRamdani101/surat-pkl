@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Kelas;
 use App\Models\Siswa;
 use App\Models\SuratIzinOrtu;
+use App\Models\TempatPkl;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -78,13 +79,17 @@ class SuratIzinOrtuController extends Controller
 
         SuratIzinOrtu::create($request->all());
 
-        Siswa::where('id', $request->siswa_id)->update([
+        $hasTempatPkl = TempatPkl::where('siswa_id', $request->siswa_id)->exists();
+        $updateData = [
             'nama_ortu' => $request->nama_ortu,
             'alamat_ortu' => $request->alamat_ortu,
             'no_hp_ortu' => $request->no_hp_ortu,
             'no_hp_siswa' => $request->no_hp_siswa,
-            'status' => 'cetak_surat_izin_ortu',
-        ]);
+        ];
+        if (!$hasTempatPkl) {
+            $updateData['status'] = 'cetak_surat_izin_ortu';
+        }
+        Siswa::where('id', $request->siswa_id)->update($updateData);
 
         return response()->json(['message' => 'Surat Izin ditambahkan']);
     }
@@ -105,13 +110,17 @@ class SuratIzinOrtuController extends Controller
 
         $izin->update($request->all());
 
-        Siswa::where('id', $request->siswa_id)->update([
+        $hasTempatPkl = TempatPkl::where('siswa_id', $request->siswa_id)->exists();
+        $updateData = [
             'nama_ortu' => $request->nama_ortu,
             'alamat_ortu' => $request->alamat_ortu,
             'no_hp_ortu' => $request->no_hp_ortu,
             'no_hp_siswa' => $request->no_hp_siswa,
-            'status' => 'cetak_surat_izin_ortu',
-        ]);
+        ];
+        if (!$hasTempatPkl) {
+            $updateData['status'] = 'cetak_surat_izin_ortu';
+        }
+        Siswa::where('id', $request->siswa_id)->update($updateData);
 
         return response()->json(['message' => 'Surat Izin diperbarui']);
     }

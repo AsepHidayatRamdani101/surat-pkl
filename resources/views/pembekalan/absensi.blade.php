@@ -34,7 +34,7 @@
                 <div class="card-body">
                     <form id="filterInputAbsensiForm" class="mb-3" onsubmit="return false;">
                         <div class="form-row align-items-end">
-                            <div class="col-md-6 mb-2">
+                            <div class="col-md-5 mb-2">
                                 <label class="mb-1">Kelompok Bimbingan</label>
                                 <select id="kelompokInputSelect" name="kelompok_id_input"
                                     class="form-control form-control-sm" required>
@@ -57,7 +57,19 @@
                                     class="form-control form-control-sm" value="{{ $bulkInput['tanggal_absensi'] }}"
                                     required>
                             </div>
-                            <div class="col-md-3 mb-2">
+                            <div class="col-md-2 mb-2">
+                                <label class="mb-1">Sesi</label>
+                                <select id="sesiInputSelect" name="sesi_absensi_input" class="form-control form-control-sm"
+                                    required>
+                                    <option value="datang"
+                                        {{ ($bulkInput['sesi_absensi'] ?? 'datang') === 'datang' ? 'selected' : '' }}>Datang
+                                    </option>
+                                    <option value="pulang"
+                                        {{ ($bulkInput['sesi_absensi'] ?? 'datang') === 'pulang' ? 'selected' : '' }}>Pulang
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-2">
                                 <div class="alert alert-light border py-2 mb-0 text-muted text-center">
                                     Tabel tampil otomatis
                                 </div>
@@ -76,6 +88,7 @@
                         @csrf
                         <input type="hidden" name="kelompok_id" id="bulkKelompokId">
                         <input type="hidden" name="tanggal_absensi" id="bulkTanggalAbsensi">
+                        <input type="hidden" name="sesi_absensi" id="bulkSesiAbsensi">
 
                         <div class="table-responsive">
                             <table id="inputAbsensiTable" class="table table-bordered table-striped table-sm mb-2">
@@ -158,6 +171,16 @@
                                 </select>
                             </div>
                             <div class="col-md-3 mb-2">
+                                <label class="mb-1">Sesi</label>
+                                <select name="sesi_absensi" class="form-control form-control-sm">
+                                    <option value="">Semua Sesi</option>
+                                    <option value="datang" {{ $filters['sesi_absensi'] === 'datang' ? 'selected' : '' }}>
+                                        Datang</option>
+                                    <option value="pulang" {{ $filters['sesi_absensi'] === 'pulang' ? 'selected' : '' }}>
+                                        Pulang</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-2">
                                 <label class="mb-1">Kelompok</label>
                                 <select name="kelompok_id" class="form-control form-control-sm">
                                     <option value="">Semua Kelompok</option>
@@ -169,7 +192,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <label class="mb-1">Cari Data</label>
                                 <input type="text" name="keyword" class="form-control form-control-sm"
                                     placeholder="Cari siswa, pembimbing, atau keterangan"
@@ -195,7 +218,9 @@
                                 <th style="width: 220px;">Siswa</th>
                                 <th style="width: 180px;">Kelompok</th>
                                 <th style="width: 220px;">Pembimbing</th>
+                                <th style="width: 90px;">Sesi</th>
                                 <th style="width: 100px;">Status</th>
+                                <th style="width: 120px;">Atribut</th>
                                 <th>Keterangan</th>
                             </tr>
                         </thead>
@@ -212,6 +237,9 @@
                                     <td>{{ optional(optional($item->siswa)->kelompokBimbingan)->pluck('nama_kelompok')->first() ?? '-' }}
                                     </td>
                                     <td>{{ $item->pembimbing->nama_pembimbing ?? '-' }}</td>
+                                    <td><span
+                                            class="badge badge-light border">{{ ucfirst($item->sesi_absensi ?? 'datang') }}</span>
+                                    </td>
                                     <td>
                                         @php
                                             $badge =
@@ -223,6 +251,15 @@
                                         @endphp
                                         <span
                                             class="badge badge-{{ $badge }}">{{ strtoupper($item->status) }}</span>
+                                    </td>
+                                    <td>
+                                        @if ($item->atribut_lengkap === null)
+                                            <span class="badge badge-secondary">Belum Dicek</span>
+                                        @elseif ($item->atribut_lengkap)
+                                            <span class="badge badge-success">Lengkap</span>
+                                        @else
+                                            <span class="badge badge-danger">Tidak Lengkap</span>
+                                        @endif
                                     </td>
                                     <td>{{ \Illuminate\Support\Str::limit($item->keterangan ?? '-', 180) }}</td>
                                 </tr>
@@ -303,12 +340,14 @@
             const $bulkForm = $('#bulkAbsensiForm');
             const $bulkKelompokId = $('#bulkKelompokId');
             const $bulkTanggalAbsensi = $('#bulkTanggalAbsensi');
+            const $bulkSesiAbsensi = $('#bulkSesiAbsensi');
             const $inputInfo = $('#inputAbsensiInfo');
             const $inputWarning = $('#inputAbsensiWarning');
             const $inputLoading = $('#inputAbsensiLoading');
             const $tbody = $('#inputAbsensiBody');
             const $submitBtn = $('#submitBulkAbsensiBtn');
             const $checkAll = $('#checkAllSiswaAbsensi');
+            const $sesi = $('#sesiInputSelect');
 
             const hideWarning = () => {
                 $inputWarning.addClass('d-none').text('');
@@ -337,6 +376,7 @@
                 $tbody.empty();
                 $bulkKelompokId.val('');
                 $bulkTanggalAbsensi.val('');
+                $bulkSesiAbsensi.val('');
                 clearInfo();
                 $checkAll.prop('checked', false);
                 setupInputDataTable('Pilih kelompok bimbingan untuk menampilkan data siswa.');
@@ -346,6 +386,7 @@
             const setLoading = (isLoading) => {
                 $kelompok.prop('disabled', isLoading);
                 $tanggal.prop('disabled', isLoading);
+                $sesi.prop('disabled', isLoading);
                 $submitBtn.prop('disabled', isLoading);
                 $inputLoading.toggleClass('d-none', !isLoading);
             };
@@ -430,8 +471,9 @@
 
                 const kelompokId = $kelompok.val();
                 const tanggalAbsensi = $tanggal.val();
+                const sesiAbsensi = $sesi.val();
 
-                if (!kelompokId || !tanggalAbsensi) {
+                if (!kelompokId || !tanggalAbsensi || !sesiAbsensi) {
                     resetInputTable();
                     return;
                 }
@@ -445,6 +487,7 @@
                     data: {
                         kelompok_id: kelompokId,
                         tanggal_absensi: tanggalAbsensi,
+                        sesi_absensi: sesiAbsensi,
                     },
                     success: function(response) {
                         const students = Array.isArray(response.students) ? response.students : [];
@@ -455,6 +498,7 @@
 
                         $bulkKelompokId.val(response.kelompok.id);
                         $bulkTanggalAbsensi.val(response.tanggal_absensi);
+                        $bulkSesiAbsensi.val(response.sesi_absensi);
                         buildRows(students);
                         setupInputDataTable();
                         setInfo(response.kelompok.nama_kelompok, response.kelompok.pembimbing);
@@ -475,6 +519,7 @@
 
             $kelompok.on('change', loadStudents);
             $tanggal.on('change', loadStudents);
+            $sesi.on('change', loadStudents);
 
             $(document).on('change', '#checkAllSiswaAbsensi', function() {
                 const isChecked = $(this).is(':checked');

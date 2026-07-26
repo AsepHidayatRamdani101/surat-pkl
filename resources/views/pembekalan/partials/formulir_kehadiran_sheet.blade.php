@@ -56,7 +56,7 @@
     </tr>
     <tr>
         <th>Waktu</th>
-        <td>..........................................</td>
+        <td>Datang / Pulang</td>
     </tr>
     <tr>
         <th>Tempat</th>
@@ -89,14 +89,13 @@
     <thead>
         <tr>
             <th class="text-center" style="width: 5.50%;">No</th>
-            <th style="width: 22.76%;">Nama Peserta</th>
-            <th class="text-center" style="width: 12.34%;">NIS</th>
-            <th class="text-center" style="width: 8.77%;">Hadir</th>
-            <th class="text-center" style="width: 13.02%;">Terlambat</th>
-            <th class="text-center" style="width: 7.58%;">Izin</th>
-            <th class="text-center" style="width: 7.87%;">Sakit</th>
-            <th class="text-center" style="width: 8.34%;">Alpha</th>
-            <th class="text-center" style="width: 13.83%;">Tanda Tangan</th>
+            <th style="width: 22%;">Nama Peserta</th>
+            <th class="text-center" style="width: 12%;">NIS</th>
+            <th class="text-center" style="width: 9%;">Datang</th>
+            <th class="text-center" style="width: 9%;">Pulang</th>
+            <th class="text-center" style="width: 13%;">Atribut Lengkap</th>
+            <th style="width: 16%;">Catatan</th>
+            <th class="text-center" style="width: 14%;">Paraf</th>
         </tr>
     </thead>
     <tbody>
@@ -114,9 +113,8 @@
                 </td>
                 <td class="text-center"><span class="frm-checkbox" aria-hidden="true"></span></td>
                 <td class="text-center"><span class="frm-checkbox" aria-hidden="true"></span></td>
-                <td class="text-center"><span class="frm-checkbox" aria-hidden="true"></span></td>
-                <td class="text-center"><span class="frm-checkbox" aria-hidden="true"></span></td>
-                <td class="text-center"><span class="frm-checkbox" aria-hidden="true"></span></td>
+                <td></td>
+                <td></td>
                 <td></td>
             </tr>
         @endfor
@@ -175,11 +173,10 @@
 
 <h4 class="frm-section-title section-petunjuk">PETUNJUK PENGISIAN</h4>
 <ul class="frm-note-list">
-    <li>Beri tanda ✓ pada kolom status kehadiran yang sesuai.</li>
-    <li>Status Hadir diberikan kepada peserta yang hadir sebelum registrasi ditutup.</li>
-    <li>Status Terlambat diberikan kepada peserta yang hadir setelah registrasi ditutup namun masih diperkenankan
-        mengikuti kegiatan sesuai ketentuan.</li>
-    <li>Kolom Catatan Guru Pembimbing digunakan untuk mencatat informasi penting, seperti izin keluar, kondisi khusus,
-        atau tindak lanjut pembinaan.</li>
+    <li>Beri tanda ✓ pada kolom Datang dan Pulang sesuai kehadiran siswa pada hari itu.</li>
+    <li>Kolom Atribut Lengkap digunakan untuk memeriksa seragam dan atribut wajib siswa sebelum kegiatan berlangsung.
+    </li>
+    <li>Kolom Catatan Guru Pembimbing digunakan untuk mencatat atribut yang kurang lengkap, izin, atau kondisi khusus.
+    </li>
     <li>Kode kelompok atau guru pembimbing dapat ditambahkan untuk mempercepat proses rekapitulasi oleh panitia.</li>
 </ul>

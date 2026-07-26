@@ -5,24 +5,26 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class AbsensiPembekalan extends Model
+class CekKelengkapanSiswa extends Model
 {
     use HasFactory;
 
-    protected $table = 'absensi_pembekalans';
+    protected $table = 'cek_kelengkapan_siswas';
 
     protected $fillable = [
         'pembimbing_id',
         'siswa_id',
-        'tanggal_absensi',
-        'sesi_absensi',
-        'status',
-        'atribut_lengkap',
-        'keterangan',
+        'tanggal_cek',
+        'sesi_cek',
+        'item_checks',
+        'is_lengkap',
+        'catatan',
     ];
 
     protected $casts = [
-        'atribut_lengkap' => 'boolean',
+        'tanggal_cek' => 'date',
+        'item_checks' => 'array',
+        'is_lengkap' => 'boolean',
     ];
 
     public function pembimbing()

@@ -473,6 +473,17 @@ return [
                     'icon' => 'fas fa-user-check',
                 ],
                 [
+                    'text' => 'Master Kelengkapan Siswa',
+                    'url'  => 'pembekalan/kelengkapan-master',
+                    'icon' => 'fas fa-list-check',
+                    'can'  => 'panitia',
+                ],
+                [
+                    'text' => 'Cek Kelengkapan Siswa',
+                    'url'  => 'pembekalan/kelengkapan-siswa',
+                    'icon' => 'fas fa-user-tag',
+                ],
+                [
                     'text' => 'Input Catatan Sikap',
                     'url'  => 'pembekalan/sikap/input',
                     'icon' => 'fas fa-notes-medical',
@@ -569,6 +580,11 @@ return [
                     'text' => 'Lihat Absensi Siswa',
                     'url'  => 'pembekalan/absensi/riwayat',
                     'icon' => 'fas fa-user-check',
+                ],
+                [
+                    'text' => 'Cek Kelengkapan Siswa',
+                    'url'  => 'pembekalan/kelengkapan-siswa',
+                    'icon' => 'fas fa-user-tag',
                 ],
                 [
                     'text' => 'Input Catatan Sikap',

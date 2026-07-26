@@ -32,6 +32,9 @@
                                 class="btn btn-sm btn-outline-success mb-1">Tugas & Nilai</a>
                             <a href="{{ url('pembekalan/absensi/input') }}" class="btn btn-sm btn-outline-info mb-1">Input
                                 Absensi</a>
+                            <a href="{{ url('pembekalan/kelengkapan-siswa') }}"
+                                class="btn btn-sm btn-outline-secondary mb-1">Cek
+                                Kelengkapan</a>
                             <a href="{{ url('pembekalan/sikap/input') }}" class="btn btn-sm btn-outline-warning mb-1">Input
                                 Sikap</a>
                         </div>
@@ -124,6 +127,42 @@
                 </div>
             </div>
 
+            <div class="row dashboard-summary-row">
+                <div class="col-md-4 col-6">
+                    <div class="small-box bg-secondary shadow-sm dashboard-metric-box dashboard-mini-box">
+                        <div class="inner">
+                            <h3>{{ $summaryPembimbing['total_cek_kelengkapan'] }}</h3>
+                            <p>Total Cek Kelengkapan</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-6">
+                    <div class="small-box bg-success shadow-sm dashboard-metric-box dashboard-mini-box">
+                        <div class="inner">
+                            <h3>{{ $summaryPembimbing['lengkap'] }}</h3>
+                            <p>Siswa Lengkap</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-12">
+                    <div class="small-box bg-danger shadow-sm dashboard-metric-box dashboard-mini-box">
+                        <div class="inner">
+                            <h3>{{ $summaryPembimbing['belum_lengkap'] }}</h3>
+                            <p>Siswa Belum Lengkap</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card shadow-sm border-0 mb-3" id="tugas-siswa-pembimbing">
                 <div class="card-header bg-white">
                     <h5 class="mb-0"><i class="fas fa-th-large mr-1 text-success"></i>Akses Cepat Modul Pembimbing</h5>
@@ -154,6 +193,16 @@
                                     kelompok.</p>
                                 <a href="{{ url('pembekalan/absensi/riwayat') }}" class="btn btn-sm btn-outline-info">Buka
                                     Riwayat</a>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3 d-flex">
+                            <div class="border rounded p-3 w-100 h-100">
+                                <h6 class="mb-2">Cek Kelengkapan Siswa</h6>
+                                <p class="text-muted small mb-3">Periksa kelengkapan atribut siswa berdasarkan daftar
+                                    yang sudah diinput admin.</p>
+                                <a href="{{ url('pembekalan/kelengkapan-siswa') }}"
+                                    class="btn btn-sm btn-outline-secondary">Buka
+                                    Modul</a>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-6 mb-3 d-flex">
@@ -207,6 +256,59 @@
                     </div>
                 </div>
             </div>
+
+            <div class="card shadow-sm border-0 mb-3" id="kelengkapan-pembimbing">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-user-tag mr-1 text-secondary"></i>Ringkasan Kelengkapan Siswa</h5>
+                    <a href="{{ url('pembekalan/kelengkapan-siswa') }}" class="btn btn-sm btn-outline-secondary">Buka
+                        Modul</a>
+                </div>
+                <div class="card-body">
+                    @if ($kelengkapanTerbaru->isEmpty())
+                        <div class="alert alert-light border mb-0">Belum ada data cek kelengkapan siswa.</div>
+                    @else
+                        <div class="row">
+                            @foreach ($kelengkapanTerbaru as $item)
+                                <div class="col-lg-6 mb-3">
+                                    <div class="border rounded p-3 h-100">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <strong>{{ $item->record->siswa->nama_siswa ?? '-' }}</strong>
+                                                @if ($item->record->siswa && $item->record->siswa->kelas)
+                                                    <div class="text-muted small">
+                                                        {{ $item->record->siswa->kelas->nama_kelas }}</div>
+                                                @endif
+                                            </div>
+                                            <span
+                                                class="badge badge-{{ $item->missing_count === 0 ? 'success' : 'danger' }}">
+                                                {{ $item->missing_count === 0 ? 'Lengkap' : $item->missing_count . ' kurang' }}
+                                            </span>
+                                        </div>
+                                        <div class="text-muted small mb-2">
+                                            Pemeriksaan terakhir:
+                                            {{ optional($item->record->tanggal_cek)->format('d-m-Y') ?? '-' }}
+                                            @if ($item->record->sesi_cek)
+                                                - {{ ucfirst($item->record->sesi_cek) }}
+                                            @endif
+                                        </div>
+                                        @if ($item->missing_count === 0)
+                                            <div class="text-success small mb-2">Semua item kelengkapan sudah terpenuhi.
+                                            </div>
+                                        @else
+                                            <div class="small mb-2">Item yang masih kurang:
+                                                {{ $item->missing_names ?: 'Lihat detail di modul kelengkapan.' }}</div>
+                                        @endif
+                                        @if ($item->record->catatan)
+                                            <div class="small text-muted">Catatan:
+                                                {{ \Illuminate\Support\Str::limit($item->record->catatan, 120) }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
         @endif
     </div>
 @endsection
@@ -215,7 +317,8 @@
     <style>
         #kelompok-pembimbing,
         #tugas-siswa-pembimbing,
-        #evaluasi-siswa-pembimbing {
+        #evaluasi-siswa-pembimbing,
+        #kelengkapan-pembimbing {
             scroll-margin-top: 90px;
         }
 

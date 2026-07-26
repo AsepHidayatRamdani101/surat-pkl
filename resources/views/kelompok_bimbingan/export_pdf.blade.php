@@ -5,10 +5,15 @@
     <meta charset="UTF-8">
     <title>Export Kelompok Bimbingan</title>
     <style>
+        @page {
+            margin: 10px;
+        }
+
         body {
             font-family: DejaVu Sans, sans-serif;
-            font-size: 11px;
+            font-size: 10px;
             color: #111827;
+            margin: 0;
         }
 
         h2 {
@@ -38,15 +43,22 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed;
+            table-layout: auto;
+        }
+
+        thead {
+            display: table-header-group;
         }
 
         th,
         td {
             border: 1px solid #9ca3af;
-            padding: 6px;
+            padding: 4px;
             vertical-align: top;
             text-align: left;
+            overflow-wrap: anywhere;
+            word-wrap: break-word;
+            word-break: break-word;
         }
 
         th {
@@ -58,6 +70,7 @@
 
         .group-start td {
             border-top: 2px solid #94a3b8;
+            page-break-inside: avoid;
         }
 
         .main-cell {
@@ -79,6 +92,14 @@
 
         .member-item:last-child {
             border-bottom: 0;
+        }
+
+        .phone-cell {
+            word-break: break-all;
+        }
+
+        tr {
+            page-break-inside: avoid;
         }
     </style>
 </head>
@@ -108,30 +129,23 @@
             @forelse ($groups as $index => $group)
                 @foreach ($group['kelas_rows'] as $kelasIndex => $kelasRow)
                     <tr class="{{ $kelasIndex === 0 ? 'group-start' : '' }}">
-                        @if ($kelasIndex === 0)
-                            <td rowspan="{{ $group['rowspan'] }}" class="main-cell">
-                                {{ $index + 1 }}</td>
-                            <td rowspan="{{ $group['rowspan'] }}" class="main-cell">
-                                {{ $group['nama_kelompok'] }}</td>
-                            <td rowspan="{{ $group['rowspan'] }}" class="main-cell">
-                                {{ $group['metode'] }}</td>
-                            <td rowspan="{{ $group['rowspan'] }}" class="main-cell">
-                                {{ $group['pembimbing'] }}</td>
-                            <td rowspan="{{ $group['rowspan'] }}" class="main-cell">
-                                {{ $group['jumlah_siswa'] }}</td>
-                        @endif
+                        <td class="main-cell">{{ $kelasIndex === 0 ? $index + 1 : '' }}</td>
+                        <td class="main-cell">{{ $kelasIndex === 0 ? $group['nama_kelompok'] : '' }}</td>
+                        <td class="main-cell">{{ $kelasIndex === 0 ? $group['metode'] : '' }}</td>
+                        <td class="main-cell">{{ $kelasIndex === 0 ? $group['pembimbing'] : '' }}</td>
+                        <td class="main-cell">{{ $kelasIndex === 0 ? $group['jumlah_siswa'] : '' }}</td>
                         <td class="class-cell">{{ $kelasRow['siswa_per_kelas'] }}</td>
                         <td>
                             @foreach ($kelasRow['daftar_anggota'] as $anggota)
                                 <div class="member-item">{{ $anggota }}</div>
                             @endforeach
                         </td>
-                        <td>
+                        <td class="phone-cell">
                             @foreach ($kelasRow['daftar_no_hp_siswa'] as $noHpSiswa)
                                 <div class="member-item">{{ $noHpSiswa }}</div>
                             @endforeach
                         </td>
-                        <td>
+                        <td class="phone-cell">
                             @foreach ($kelasRow['daftar_no_hp_ortu'] as $noHpOrtu)
                                 <div class="member-item">{{ $noHpOrtu }}</div>
                             @endforeach

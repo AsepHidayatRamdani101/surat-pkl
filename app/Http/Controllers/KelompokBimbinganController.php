@@ -751,7 +751,7 @@ class KelompokBimbinganController extends Controller
         $pdf = Pdf::loadView('kelompok_bimbingan.export_pdf', [
             'groups' => $groups,
             'generatedAt' => now()->format('d-m-Y H:i'),
-        ])->setPaper('a4', 'landscape');
+        ])->setPaper('legal', 'landscape');
 
         $fileName = 'kelompok-bimbingan-' . now()->format('Ymd_His') . '.pdf';
 

@@ -169,59 +169,188 @@
                         <h5 class="mb-0"><i class="fas fa-info-circle mr-1 text-primary"></i>Ringkasan Informasi</h5>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4 mb-2">
-                                <strong>NIS:</strong> {{ $siswa->nis }}
+                        @php
+                            $statusSiswa = trim((string) ($siswa->status ?? ''));
+                            $statusBadge =
+                                strtolower($statusSiswa) === 'aktif'
+                                    ? 'success'
+                                    : (strtolower($statusSiswa) === 'nonaktif'
+                                        ? 'secondary'
+                                        : 'info');
+                            $suratIzinTanggal = $suratIzin->tanggal_surat ?? ($suratIzin->created_at ?? null);
+                            $pembimbingSekolahNama = $pembimbing->nama_pembimbing ?? '-';
+                            $pembimbingSekolahJabatan = $pembimbing->jabatan_pembimbing ?? null;
+                            $pembimbingPerusahaanNama =
+                                $pembimbingPerusahaan->nama_pembimbing ?? ($tempatPkl->nama_pembimbing ?? '-');
+                            $pembimbingPerusahaanJabatan =
+                                $pembimbingPerusahaan->jabatan ?? ($tempatPkl->jabatan_pembimbing ?? null);
+                            $pembimbingPerusahaanNoHp =
+                                $pembimbingPerusahaan->nohp ?? ($tempatPkl->no_hp_pembimbing ?? null);
+                            $alamatDomisili =
+                                $suratIzin->alamat_ortu ?? ($siswa->alamat_ortu ?? ($siswa->alamat_siswa ?? '-'));
+                            $suratIzinBadge = $hasSuratIzin ? 'success' : 'secondary';
+                            $suratIzinLabel = $hasSuratIzin ? 'Sudah Isi' : 'Belum Isi';
+                            $periodePkl =
+                                $tempatPkl?->tanggal_mulai || $tempatPkl?->tanggal_selesai
+                                    ? ($tempatPkl->tanggal_mulai
+                                            ? \Carbon\Carbon::parse($tempatPkl->tanggal_mulai)->format('d-m-Y')
+                                            : '-') .
+                                        ' s/d ' .
+                                        ($tempatPkl->tanggal_selesai
+                                            ? \Carbon\Carbon::parse($tempatPkl->tanggal_selesai)->format('d-m-Y')
+                                            : '-')
+                                    : '-';
+                            $sikapTerakhir = $summary['latest_sikap']
+                                ? ucwords(str_replace('_', ' ', $summary['latest_sikap']))
+                                : 'Belum Dinilai';
+                        @endphp
+                        <div class="info-summary-grid">
+                            <div class="info-summary-card">
+                                <div class="info-summary-card-head">
+                                    <span class="info-summary-icon bg-primary-soft text-primary"><i
+                                            class="fas fa-id-card"></i></span>
+                                    <div>
+                                        <h6 class="info-summary-title">Identitas</h6>
+                                        <p class="info-summary-subtitle">Status dan dokumen utama siswa.</p>
+                                    </div>
+                                </div>
+                                <div class="info-summary-list">
+                                    <div class="info-summary-item">
+                                        <span class="info-summary-label">NIS</span>
+                                        <span class="info-summary-value">{{ $siswa->nis }}</span>
+                                    </div>
+                                    <div class="info-summary-item">
+                                        <span class="info-summary-label">Status Siswa</span>
+                                        <span class="info-summary-value"><span
+                                                class="badge badge-{{ $statusBadge }}">{{ $statusSiswa !== '' ? ucfirst($statusSiswa) : '-' }}</span></span>
+                                    </div>
+                                    <div class="info-summary-item">
+                                        <span class="info-summary-label">Surat Izin</span>
+                                        <span class="info-summary-value"><span
+                                                class="badge badge-{{ $suratIzinBadge }}">{{ $suratIzinLabel }}</span></span>
+                                    </div>
+                                    <div class="info-summary-item">
+                                        <span class="info-summary-label">Tanggal Surat Izin</span>
+                                        <span
+                                            class="info-summary-value">{{ $suratIzinTanggal ? \Carbon\Carbon::parse($suratIzinTanggal)->format('d-m-Y') : '-' }}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-4 mb-2">
-                                <strong>Status Siswa:</strong> {{ $siswa->status }}
+
+                            <div class="info-summary-card">
+                                <div class="info-summary-card-head">
+                                    <span class="info-summary-icon bg-success-soft text-success"><i
+                                            class="fas fa-address-book"></i></span>
+                                    <div>
+                                        <h6 class="info-summary-title">Kontak</h6>
+                                        <p class="info-summary-subtitle">Data keluarga dan domisili siswa.</p>
+                                    </div>
+                                </div>
+                                <div class="info-summary-list">
+                                    <div class="info-summary-item">
+                                        <span class="info-summary-label">Nama Orang Tua</span>
+                                        <span
+                                            class="info-summary-value">{{ $suratIzin->nama_ortu ?? ($siswa->nama_ortu ?? '-') }}</span>
+                                    </div>
+                                    <div class="info-summary-item">
+                                        <span class="info-summary-label">No HP Siswa</span>
+                                        <span class="info-summary-value">{{ $siswa->no_hp_siswa ?? '-' }}</span>
+                                    </div>
+                                    <div class="info-summary-item">
+                                        <span class="info-summary-label">No HP Orang Tua</span>
+                                        <span class="info-summary-value">{{ $siswa->no_hp_ortu ?? '-' }}</span>
+                                    </div>
+                                    <div class="info-summary-item info-summary-item-block">
+                                        <span class="info-summary-label">Alamat Domisili</span>
+                                        <span
+                                            class="info-summary-value info-summary-value-multiline">{{ $alamatDomisili }}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-4 mb-2">
-                                <strong>Surat Izin:</strong>
-                                @if ($hasSuratIzin)
-                                    <span class="badge badge-success">Sudah Isi</span>
-                                @else
-                                    <span class="badge badge-secondary">Belum Isi</span>
-                                @endif
+
+                            <div class="info-summary-card">
+                                <div class="info-summary-card-head">
+                                    <span class="info-summary-icon bg-warning-soft text-warning"><i
+                                            class="fas fa-building"></i></span>
+                                    <div>
+                                        <h6 class="info-summary-title">PKL</h6>
+                                        <p class="info-summary-subtitle">Informasi penempatan dan progres tugas.</p>
+                                    </div>
+                                </div>
+                                <div class="info-summary-list">
+                                    <div class="info-summary-item">
+                                        <span class="info-summary-label">Tempat PKL</span>
+                                        <span class="info-summary-value">
+                                            @if ($tempatPkl && $tempatPkl->perusahaan)
+                                                <span
+                                                    class="badge badge-success">{{ $tempatPkl->perusahaan->nama_perusahaan }}</span>
+                                            @elseif ($hasTempatPkl)
+                                                <span class="badge badge-warning">Belum ada perusahaan</span>
+                                            @else
+                                                <span class="badge badge-secondary">Belum Pilih</span>
+                                            @endif
+                                        </span>
+                                    </div>
+                                    <div class="info-summary-item">
+                                        <span class="info-summary-label">Periode PKL</span>
+                                        <span class="info-summary-value">{{ $periodePkl }}</span>
+                                    </div>
+                                    <div class="info-summary-item info-summary-item-block">
+                                        <span class="info-summary-label">Alamat Tempat PKL</span>
+                                        <span
+                                            class="info-summary-value info-summary-value-multiline">{{ $tempatPkl->perusahaan->alamat ?? '-' }}</span>
+                                    </div>
+                                    <div class="info-summary-item">
+                                        <span class="info-summary-label">Tugas Dikerjakan</span>
+                                        <span class="info-summary-value">{{ $summary['tugas_selesai'] }} /
+                                            {{ $summary['total_tugas'] }}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-4 mb-2">
-                                <strong>Tempat PKL:</strong>
-                                @if ($tempatPkl && $tempatPkl->perusahaan)
-                                    <span class="badge badge-success">{{ $tempatPkl->perusahaan->nama_perusahaan }}</span>
-                                @elseif ($hasTempatPkl)
-                                    <span class="badge badge-warning">Belum ada perusahaan</span>
-                                @else
-                                    <span class="badge badge-secondary">Belum Pilih</span>
-                                @endif
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <strong>Pembimbing PKL:</strong>
-                                @if ($pembimbing)
-                                    <span class="badge badge-info">{{ $pembimbing->nama_pembimbing }}</span>
-                                @else
-                                    <span class="badge badge-secondary">Belum Ditentukan</span>
-                                @endif
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <strong>Pembimbing Perusahaan:</strong>
-                                @if ($pembimbingPerusahaan)
-                                    <span class="badge badge-info">{{ $pembimbingPerusahaan->nama_pembimbing }}</span>
-                                @else
-                                    <span class="badge badge-secondary">Belum Ditentukan</span>
-                                @endif
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <strong>Tugas Dikerjakan:</strong>
-                                {{ $summary['tugas_selesai'] }} / {{ $summary['total_sesi'] }}
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <strong>Penilaian Sikap Terakhir:</strong>
-                                @if ($summary['latest_sikap'])
-                                    <span
-                                        class="badge badge-info">{{ ucwords(str_replace('_', ' ', $summary['latest_sikap'])) }}</span>
-                                @else
-                                    <span class="badge badge-secondary">Belum Dinilai</span>
-                                @endif
+
+                            <div class="info-summary-card">
+                                <div class="info-summary-card-head">
+                                    <span class="info-summary-icon bg-info-soft text-info"><i
+                                            class="fas fa-user-tie"></i></span>
+                                    <div>
+                                        <h6 class="info-summary-title">Pembimbing</h6>
+                                        <p class="info-summary-subtitle">Pendamping sekolah dan perusahaan.</p>
+                                    </div>
+                                </div>
+                                <div class="info-summary-list">
+                                    <div class="info-summary-item info-summary-item-block">
+                                        <span class="info-summary-label">Pembimbing Sekolah</span>
+                                        <span class="info-summary-value info-summary-value-multiline">
+                                            {{ $pembimbingSekolahNama }}
+                                            @if ($pembimbingSekolahJabatan)
+                                                <span class="info-summary-meta">{{ $pembimbingSekolahJabatan }}</span>
+                                            @endif
+                                        </span>
+                                    </div>
+                                    <div class="info-summary-item info-summary-item-block">
+                                        <span class="info-summary-label">Pembimbing Perusahaan</span>
+                                        <span class="info-summary-value info-summary-value-multiline">
+                                            {{ $pembimbingPerusahaanNama }}
+                                            @if ($pembimbingPerusahaanJabatan)
+                                                <span class="info-summary-meta">{{ $pembimbingPerusahaanJabatan }}</span>
+                                            @endif
+                                        </span>
+                                    </div>
+                                    <div class="info-summary-item">
+                                        <span class="info-summary-label">No HP Pembimbing</span>
+                                        <span class="info-summary-value">{{ $pembimbingPerusahaanNoHp ?? '-' }}</span>
+                                    </div>
+                                    <div class="info-summary-item">
+                                        <span class="info-summary-label">Sikap Terakhir</span>
+                                        <span class="info-summary-value">
+                                            @if ($summary['latest_sikap'])
+                                                <span class="badge badge-info">{{ $sikapTerakhir }}</span>
+                                            @else
+                                                <span class="badge badge-secondary">{{ $sikapTerakhir }}</span>
+                                            @endif
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -255,22 +384,22 @@
                                     <th>No</th>
                                     <th>Tanggal</th>
                                     <th>Pembimbing</th>
-                                    <th>Topik Pembekalan</th>
+                                    <th>Keterangan</th>
                                     <th>Absensi</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($bimbingan as $index => $item)
+                                @foreach ($absensiPembekalan as $index => $item)
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
-                                        <td>{{ $item->tanggal_bimbingan ? \Carbon\Carbon::parse($item->tanggal_bimbingan)->format('d-m-Y') : '-' }}
+                                        <td>{{ $item->tanggal_absensi ? \Carbon\Carbon::parse($item->tanggal_absensi)->format('d-m-Y') : '-' }}
                                         </td>
                                         <td>{{ $item->pembimbing->nama_pembimbing ?? '-' }}</td>
-                                        <td>{{ $item->topik_pembekalan ?? '-' }}</td>
+                                        <td>{{ $item->keterangan ?? '-' }}</td>
                                         <td>
                                             <span
-                                                class="badge {{ $item->status_absensi === 'hadir' ? 'badge-success' : ($item->status_absensi === 'izin' ? 'badge-warning' : 'badge-danger') }}">
-                                                {{ ucfirst($item->status_absensi ?? '-') }}
+                                                class="badge {{ $item->status === 'hadir' ? 'badge-success' : ($item->status === 'izin' ? 'badge-warning' : 'badge-danger') }}">
+                                                {{ ucfirst($item->status ?? '-') }}
                                             </span>
                                         </td>
                                     </tr>
@@ -750,6 +879,144 @@
             min-height: 120px;
         }
 
+        .info-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .info-summary-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            border: 1px solid #e5edf5;
+            border-radius: 18px;
+            padding: 1rem;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+            container-type: inline-size;
+        }
+
+        .info-summary-card-head {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-summary-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .bg-primary-soft {
+            background: #dbeafe;
+        }
+
+        .bg-success-soft {
+            background: #dcfce7;
+        }
+
+        .bg-warning-soft {
+            background: #fef3c7;
+        }
+
+        .bg-info-soft {
+            background: #dbeafe;
+        }
+
+        .info-summary-title {
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.2rem;
+        }
+
+        .info-summary-subtitle {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 0;
+            line-height: 1.45;
+        }
+
+        .info-summary-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .info-summary-item {
+            display: grid;
+            grid-template-columns: minmax(110px, max-content) minmax(0, 1fr);
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.7rem 0.8rem;
+            border-radius: 12px;
+            background: rgba(248, 250, 252, 0.9);
+            border: 1px solid #edf2f7;
+        }
+
+        .info-summary-item-block {
+            display: block;
+        }
+
+        .info-summary-label {
+            display: block;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: #64748b;
+            min-width: 120px;
+        }
+
+        .info-summary-value {
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+            text-align: right;
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: #1e293b;
+            line-height: 1.45;
+            min-width: 0;
+        }
+
+        .info-summary-value-multiline {
+            display: block;
+            text-align: left;
+            margin-top: 0.35rem;
+            font-weight: 500;
+        }
+
+        .info-summary-meta {
+            display: block;
+            font-size: 0.8rem;
+            color: #64748b;
+            font-weight: 500;
+            margin-top: 0.15rem;
+        }
+
+        @container (max-width: 320px)
+
+            {
+            .info-summary-item:not(.info-summary-item-block) {
+                grid-template-columns: 1fr;
+            }
+
+            .info-summary-item:not(.info-summary-item-block) .info-summary-label {
+                min-width: 0;
+            }
+
+            .info-summary-item:not(.info-summary-item-block) .info-summary-value {
+                display: block;
+                text-align: left;
+                justify-content: flex-start;
+            }
+        }
+
         /* -------- TUGAS CARD -------- */
         .tugas-card-inner {
             border-radius: 16px;
@@ -989,6 +1256,64 @@
         }
 
         @media (max-width: 576px) {
+            .info-summary-grid {
+                grid-template-columns: 1fr;
+                gap: 0.85rem;
+            }
+
+            .info-summary-card {
+                padding: 0.85rem;
+                border-radius: 16px;
+            }
+
+            .info-summary-card-head {
+                gap: 0.7rem;
+                margin-bottom: 0.85rem;
+            }
+
+            .info-summary-icon {
+                width: 38px;
+                height: 38px;
+                border-radius: 10px;
+            }
+
+            .info-summary-title {
+                font-size: 0.92rem;
+            }
+
+            .info-summary-subtitle {
+                font-size: 0.76rem;
+            }
+
+            .info-summary-list {
+                gap: 0.6rem;
+            }
+
+            .info-summary-item,
+            .info-summary-item-block {
+                display: block;
+                padding: 0.7rem;
+            }
+
+            .info-summary-label {
+                min-width: 0;
+                margin-bottom: 0.3rem;
+            }
+
+            .info-summary-value,
+            .info-summary-value-multiline {
+                display: block;
+                text-align: left;
+                justify-content: flex-start;
+                margin-top: 0;
+                white-space: normal;
+                word-break: break-word;
+            }
+
+            .info-summary-meta {
+                margin-top: 0.25rem;
+            }
+
             .elearning-section-header {
                 flex-direction: column;
             }

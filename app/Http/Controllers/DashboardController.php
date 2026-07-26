@@ -161,9 +161,11 @@ class DashboardController extends Controller
 
         $hasSuratIzin = false;
         $hasTempatPkl = false;
+        $suratIzin = null;
         $tempatPkl = null;
         $pembimbing = null;
         $pembimbingPerusahaan = null;
+        $absensiPembekalan = collect();
         $bimbingan = collect();
         $nilaiSikapPembekalan = collect();
         $summary = [
@@ -171,6 +173,7 @@ class DashboardController extends Controller
             'hadir' => 0,
             'izin' => 0,
             'alpa' => 0,
+            'total_tugas' => 0,
             'tugas_selesai' => 0,
             'avg_nilai' => null,
             'latest_sikap' => null,
@@ -193,15 +196,43 @@ class DashboardController extends Controller
         ])->latest('tanggal_tugas')->get();
 
         if ($siswa) {
-            $hasSuratIzin = SuratIzinOrtu::where('siswa_id', $siswa->id)->exists();
+            $suratIzin = SuratIzinOrtu::where('siswa_id', $siswa->id)
+                ->latest('id')
+                ->first();
+            $hasSuratIzin = $suratIzin !== null;
             $tempatPkl = TempatPkl::with(['perusahaan', 'pembimbing', 'pembimbingPerusahaan'])
                 ->where('siswa_id', $siswa->id)
+                ->latest('id')
                 ->first();
             $hasTempatPkl = $tempatPkl !== null;
             if ($tempatPkl) {
                 $pembimbing = $tempatPkl->pembimbing;
                 $pembimbingPerusahaan = $tempatPkl->pembimbingPerusahaan;
             }
+
+            if (!$pembimbing) {
+                $kelompokBimbingan = KelompokBimbingan::with(['pembimbing', 'pembimbings'])
+                    ->whereHas('siswa', fn($query) => $query->where('siswa.id', $siswa->id))
+                    ->latest('id')
+                    ->first();
+
+                if ($kelompokBimbingan) {
+                    $pembimbing = $kelompokBimbingan->pembimbing
+                        ?? $kelompokBimbingan->pembimbings->sortBy('nama_pembimbing')->first();
+                }
+            }
+
+            if (!$pembimbing) {
+                $pembimbing = $siswa->pembimbingBimbingan()
+                    ->orderBy('nama_pembimbing')
+                    ->first();
+            }
+
+            $absensiPembekalan = AbsensiPembekalan::with('pembimbing')
+                ->where('siswa_id', $siswa->id)
+                ->orderByDesc('tanggal_absensi')
+                ->orderByDesc('id')
+                ->get();
 
             $bimbingan = Bimbingan::with('pembimbing')
                 ->where('siswa_id', $siswa->id)
@@ -219,13 +250,21 @@ class DashboardController extends Controller
                 ->orderByDesc('id')
                 ->get();
 
-            $totalSesi = $bimbingan->count();
-            $hadir = $bimbingan->where('status_absensi', 'hadir')->count();
-            $izin = $bimbingan->where('status_absensi', 'izin')->count();
-            $alpa = $bimbingan->where('status_absensi', 'alpa')->count();
-            $tugasSelesai = $bimbingan->filter(fn($item) => !empty($item->tugas_siswa))->count();
-            $avgNilai = $bimbingan->whereNotNull('nilai_tugas')->avg('nilai_tugas');
-            $latestSikap = $bimbingan->whereNotNull('penilaian_sikap')->first()?->penilaian_sikap;
+            $totalSesi = $absensiPembekalan->count();
+            $hadir = $absensiPembekalan->where('status', 'hadir')->count();
+            $izin = $absensiPembekalan->where('status', 'izin')->count();
+            $alpa = $absensiPembekalan->where('status', 'alpa')->count();
+            $totalTugas = $tugasPembekalan->count();
+            $tugasSelesai = $tugasPembekalan->filter(function ($item) {
+                $jawaban = $item->jawabanSiswa->first();
+
+                return !empty($jawaban?->submitted_at);
+            })->count();
+            $avgNilai = $tugasPembekalan
+                ->map(fn($item) => $item->jawabanSiswa->first()?->nilaiTugas?->nilai)
+                ->filter(fn($nilai) => $nilai !== null)
+                ->avg();
+            $latestSikap = $nilaiSikapPembekalan->first()?->nilai_sikap;
             $progres = $totalSesi > 0 ? (int) round(($hadir / $totalSesi) * 100) : 0;
 
             $summary = [
@@ -233,24 +272,25 @@ class DashboardController extends Controller
                 'hadir' => $hadir,
                 'izin' => $izin,
                 'alpa' => $alpa,
+                'total_tugas' => $totalTugas,
                 'tugas_selesai' => $tugasSelesai,
                 'avg_nilai' => $avgNilai !== null ? round((float) $avgNilai, 2) : null,
                 'latest_sikap' => $latestSikap,
                 'progres' => $progres,
             ];
 
-            $timeline = $bimbingan->sortBy('tanggal_bimbingan')->values();
+            $timeline = $absensiPembekalan->sortBy('tanggal_absensi')->values();
             $runningTotal = 0;
             $runningHadir = 0;
 
             foreach ($timeline as $entry) {
                 $runningTotal++;
-                if ($entry->status_absensi === 'hadir') {
+                if ($entry->status === 'hadir') {
                     $runningHadir++;
                 }
 
-                $chartLabels[] = $entry->tanggal_bimbingan
-                    ? \Carbon\Carbon::parse($entry->tanggal_bimbingan)->format('d M')
+                $chartLabels[] = $entry->tanggal_absensi
+                    ? \Carbon\Carbon::parse($entry->tanggal_absensi)->format('d M')
                     : 'Sesi ' . $runningTotal;
                 $chartProgres[] = (int) round(($runningHadir / $runningTotal) * 100);
             }
@@ -260,9 +300,11 @@ class DashboardController extends Controller
             'siswa',
             'hasSuratIzin',
             'hasTempatPkl',
+            'suratIzin',
             'tempatPkl',
             'pembimbing',
             'pembimbingPerusahaan',
+            'absensiPembekalan',
             'bimbingan',
             'nilaiSikapPembekalan',
             'materi',

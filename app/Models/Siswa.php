@@ -31,4 +31,9 @@ class Siswa extends Model
     {
         return $this->belongsToMany(Pembimbing::class, 'pembimbing_siswa', 'siswa_id', 'pembimbing_id')->withTimestamps();
     }
+
+    public function absensiPembekalan()
+    {
+        return $this->hasMany(AbsensiPembekalan::class, 'siswa_id');
+    }
 }

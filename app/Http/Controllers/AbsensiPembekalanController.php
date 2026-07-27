@@ -335,11 +335,11 @@ class AbsensiPembekalanController extends Controller
             $detailTitle = 'Siswa yang Telah Diabsen';
             $detailDescription = 'Daftar siswa yang telah melakukan absensi pembekalan';
             
+            $siswaAbsenIds = AbsensiPembekalan::distinct('siswa_id')->pluck('siswa_id');
+            
             $query = Siswa::distinct()
                 ->with(['kelas', 'kelompokBimbingan'])
-                ->whereHas('absensiBimbing', function ($q) {
-                    // This will be defined in Siswa model
-                });
+                ->whereIn('id', $siswaAbsenIds);
 
             if ($isPembimbing && !empty($pembimbingAuthId)) {
                 $query->whereHas('kelompokBimbingan', function ($q) use ($pembimbingAuthId) {
@@ -347,22 +347,35 @@ class AbsensiPembekalanController extends Controller
                 });
             }
 
-            $detailData = $query->get();
+            if (!empty($filters['keyword'])) {
+                $keyword = trim((string) $filters['keyword']);
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('nama_siswa', 'like', '%' . $keyword . '%')
+                        ->orWhere('nis', 'like', '%' . $keyword . '%');
+                });
+            }
+
+            $detailData = $query->orderBy('nama_siswa')->get();
 
         } elseif ($detailType === 'guru_absen') {
             $detailTitle = 'Guru yang Telah Mengabsen';
             $detailDescription = 'Daftar guru pembimbing yang telah melakukan absensi pembekalan';
             
+            $guruAbsenIds = AbsensiPembekalan::distinct('pembimbing_id')->pluck('pembimbing_id');
+            
             $query = Pembimbing::distinct()
-                ->whereHas('absensiPembekalan', function ($q) {
-                    // Condition to filter
-                });
+                ->whereIn('id', $guruAbsenIds);
 
             if ($isPembimbing && !empty($pembimbingAuthId)) {
                 $query->where('id', $pembimbingAuthId);
             }
 
-            $detailData = $query->get();
+            if (!empty($filters['keyword'])) {
+                $keyword = trim((string) $filters['keyword']);
+                $query->where('nama_pembimbing', 'like', '%' . $keyword . '%');
+            }
+
+            $detailData = $query->orderBy('nama_pembimbing')->get();
 
         } elseif ($detailType === 'siswa_belum') {
             $detailTitle = 'Siswa yang Belum Diabsen';

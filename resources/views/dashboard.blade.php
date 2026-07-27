@@ -55,14 +55,13 @@
         $kelasOptions = $kelasOptionsQuery->get(['id', 'nama_kelas']);
 
         $topSiswaQuery = \App\Models\Siswa::query()
-            ->leftJoin('bimbingans', 'bimbingans.siswa_id', '=', 'siswa.id')
+            ->leftJoin('nilai_tugas_pembekalans as ntp', 'ntp.siswa_id', '=', 'siswa.id')
+            ->leftJoin('absensi_pembekalans as ap', 'ap.siswa_id', '=', 'siswa.id')
             ->leftJoin('kelas', 'kelas.id', '=', 'siswa.kelas_id')
             ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas', 'kelas.jurusan_id')
-            ->selectRaw('COALESCE(ROUND(AVG(bimbingans.nilai_tugas),2),0) as rata_nilai')
-            ->selectRaw("SUM(CASE WHEN bimbingans.status_absensi = 'hadir' THEN 1 ELSE 0 END) as total_hadir")
-            ->selectRaw(
-                "SUM(CASE WHEN bimbingans.tugas_siswa IS NOT NULL AND bimbingans.tugas_siswa <> '' THEN 1 ELSE 0 END) as tugas_terkumpul",
-            );
+            ->selectRaw('COALESCE(ROUND(AVG(ntp.nilai_tugas),2),0) as rata_nilai')
+            ->selectRaw("SUM(CASE WHEN ap.status = 'hadir' THEN 1 ELSE 0 END) as total_hadir")
+            ->selectRaw('COUNT(DISTINCT ntp.id) as tugas_terkumpul');
 
         if (!empty($selectedJurusanId)) {
             $topSiswaQuery->where('kelas.jurusan_id', $selectedJurusanId);
@@ -85,14 +84,13 @@
             $allJurusan = \App\Models\Jurusan::orderBy('nama_jurusan')->get(['id', 'nama_jurusan']);
             foreach ($allJurusan as $jurusan) {
                 $topSiswaPerJurusan[$jurusan->id] = \App\Models\Siswa::query()
-                    ->leftJoin('bimbingans', 'bimbingans.siswa_id', '=', 'siswa.id')
+                    ->leftJoin('nilai_tugas_pembekalans as ntp', 'ntp.siswa_id', '=', 'siswa.id')
+                    ->leftJoin('absensi_pembekalans as ap', 'ap.siswa_id', '=', 'siswa.id')
                     ->leftJoin('kelas', 'kelas.id', '=', 'siswa.kelas_id')
                     ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
-                    ->selectRaw('COALESCE(ROUND(AVG(bimbingans.nilai_tugas),2),0) as rata_nilai')
-                    ->selectRaw("SUM(CASE WHEN bimbingans.status_absensi = 'hadir' THEN 1 ELSE 0 END) as total_hadir")
-                    ->selectRaw(
-                        "SUM(CASE WHEN bimbingans.tugas_siswa IS NOT NULL AND bimbingans.tugas_siswa <> '' THEN 1 ELSE 0 END) as tugas_terkumpul",
-                    )
+                    ->selectRaw('COALESCE(ROUND(AVG(ntp.nilai_tugas),2),0) as rata_nilai')
+                    ->selectRaw("SUM(CASE WHEN ap.status = 'hadir' THEN 1 ELSE 0 END) as total_hadir")
+                    ->selectRaw('COUNT(DISTINCT ntp.id) as tugas_terkumpul')
                     ->where('kelas.jurusan_id', $jurusan->id)
                     ->groupBy('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
                     ->orderByDesc('rata_nilai')

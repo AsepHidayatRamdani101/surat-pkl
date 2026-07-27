@@ -246,6 +246,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pembekalan/laporan', [PembekalanController::class, 'laporan'])->name('pembekalan.laporan');
     Route::get('/pembekalan/laporan/export-excel', [PembekalanController::class, 'exportExcel'])->name('pembekalan.laporan.export-excel');
     Route::get('/pembekalan/laporan/export-pdf', [PembekalanController::class, 'exportPdf'])->name('pembekalan.laporan.export-pdf');
+    
+    // Laporan Absensi
+    Route::get('/pembekalan/laporan-absensi', [AbsensiPembekalanController::class, 'laporan'])->name('pembekalan.laporan-absensi');
+    
+    // Laporan Catatan Sikap
+    Route::get('/pembekalan/laporan-sikap', [NilaiSikapPembekalanController::class, 'laporan'])->name('pembekalan.laporan-sikap');
+    
+    // Laporan Kelengkapan
+    Route::get('/pembekalan/laporan-kelengkapan', [CekKelengkapanSiswaController::class, 'laporan'])->name('pembekalan.laporan-kelengkapan');
 
     // Domain terpisah pembekalan (versi normalized)
     Route::prefix('pembekalan-domain')->group(function () {

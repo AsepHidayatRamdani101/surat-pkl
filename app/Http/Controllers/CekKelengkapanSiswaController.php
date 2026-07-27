@@ -273,6 +273,64 @@ class CekKelengkapanSiswaController extends Controller
         ])->with('success', "Cek kelengkapan siswa berhasil disimpan. {$createdCount} data ditambahkan, {$updatedCount} data diperbarui.");
     }
 
+    public function laporan(Request $request)
+    {
+        $filters = [
+            'pembimbing_id' => $request->get('pembimbing_id'),
+            'tanggal_awal' => $request->get('tanggal_awal'),
+            'tanggal_akhir' => $request->get('tanggal_akhir'),
+            'sesi_cek' => $request->get('sesi_cek'),
+            'status_kelengkapan' => $request->get('status_kelengkapan'),
+        ];
+
+        $query = CekKelengkapanSiswa::with(['pembimbing', 'siswa.kelas', 'siswa.kelompokBimbingan'])
+            ->latest('tanggal_cek')
+            ->latest('id');
+
+        if (!empty($filters['pembimbing_id'])) {
+            $query->where('pembimbing_id', $filters['pembimbing_id']);
+        }
+
+        if (!empty($filters['tanggal_awal'])) {
+            $query->whereDate('tanggal_cek', '>=', $filters['tanggal_awal']);
+        }
+
+        if (!empty($filters['tanggal_akhir'])) {
+            $query->whereDate('tanggal_cek', '<=', $filters['tanggal_akhir']);
+        }
+
+        if (!empty($filters['sesi_cek'])) {
+            $query->where('sesi_cek', $filters['sesi_cek']);
+        }
+
+        if ($filters['status_kelengkapan'] === 'lengkap') {
+            $query->where('is_lengkap', true);
+        } elseif ($filters['status_kelengkapan'] === 'belum') {
+            $query->where('is_lengkap', false);
+        }
+
+        $data = $query->get();
+
+        $summary = [
+            'total_cek' => $data->count(),
+            'lengkap' => $data->where('is_lengkap', true)->count(),
+            'belum_lengkap' => $data->where('is_lengkap', false)->count(),
+            'siswa_unik' => $data->pluck('siswa_id')->unique()->count(),
+            'pembimbing_unik' => $data->pluck('pembimbing_id')->unique()->count(),
+        ];
+
+        $pembimbingOptions = Pembimbing::orderBy('nama_pembimbing')->get(['id', 'nama_pembimbing']);
+        $items = KelengkapanSiswaItem::where('is_active', true)->orderBy('urutan')->orderBy('nama_item')->get();
+
+        return view('pembekalan.laporan_kelengkapan', compact(
+            'data',
+            'summary',
+            'filters',
+            'pembimbingOptions',
+            'items'
+        ));
+    }
+
     private function buildFilteredQuery(array $filters, ?int $pembimbingAuthId)
     {
         $query = CekKelengkapanSiswa::with(['pembimbing', 'siswa.kelas', 'siswa.kelompokBimbingan'])

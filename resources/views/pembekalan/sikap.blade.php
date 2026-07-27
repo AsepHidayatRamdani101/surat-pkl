@@ -494,7 +494,7 @@
                 editIdInput.val(data.id);
 
                 setValue('tanggal_penilaian', data.tanggal_penilaian || '');
-                setValue('nilai_sikap', data.nilai_sikap || 'sangat_baik');
+                setValue('nilai_sikap', data.nilai_sikap || 'baik');
                 setValue('siswa_id', data.siswa_id || '');
                 setValue('pembimbing_id', data.pembimbing_id || '');
                 setValue('catatan', data.catatan || '');
@@ -517,7 +517,7 @@
                 setModalToEdit({
                     id: btn.data('id'),
                     tanggal_penilaian: btn.data('tanggal_penilaian') || '',
-                    nilai_sikap: btn.data('nilai_sikap') || 'sangat_baik',
+                    nilai_sikap: btn.data('nilai_sikap') || 'baik',
                     siswa_id: btn.data('siswa_id') || '',
                     pembimbing_id: btn.data('pembimbing_id') || '',
                     catatan: btn.data('catatan') || ''
@@ -656,7 +656,7 @@
 
                 students.forEach((student, index) => {
                     const siswaId = Number(student.siswa_id);
-                    const nilaiSikap = student.nilai_sikap || 'sangat_baik';
+                    const nilaiSikap = student.nilai_sikap || 'baik';
                     const siswaName = escapeHtml(student.nama_siswa || '-');
                     const kelasName = student.kelas ? '<br><small class="text-muted">' + escapeHtml(
                         student.kelas) + '</small>' : '';

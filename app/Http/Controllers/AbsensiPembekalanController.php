@@ -669,6 +669,60 @@ class AbsensiPembekalanController extends Controller
         return response()->json(['message' => 'Absensi deleted']);
     }
 
+    public function laporan(Request $request)
+    {
+        $filters = [
+            'pembimbing_id' => $request->get('pembimbing_id'),
+            'tanggal_awal' => $request->get('tanggal_awal'),
+            'tanggal_akhir' => $request->get('tanggal_akhir'),
+            'status' => $request->get('status'),
+            'sesi_absensi' => $request->get('sesi_absensi'),
+        ];
+
+        $query = AbsensiPembekalan::with(['pembimbing', 'siswa.kelas', 'siswa.kelompokBimbingan'])
+            ->latest('tanggal_absensi');
+
+        if (!empty($filters['pembimbing_id'])) {
+            $query->where('pembimbing_id', $filters['pembimbing_id']);
+        }
+
+        if (!empty($filters['tanggal_awal'])) {
+            $query->whereDate('tanggal_absensi', '>=', $filters['tanggal_awal']);
+        }
+
+        if (!empty($filters['tanggal_akhir'])) {
+            $query->whereDate('tanggal_absensi', '<=', $filters['tanggal_akhir']);
+        }
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['sesi_absensi'])) {
+            $query->where('sesi_absensi', $filters['sesi_absensi']);
+        }
+
+        $data = $query->get();
+
+        $summary = [
+            'total_absensi' => $data->count(),
+            'hadir' => $data->where('status', 'hadir')->count(),
+            'izin' => $data->where('status', 'izin')->count(),
+            'alpa' => $data->where('status', 'alpa')->count(),
+            'siswa_unik' => $data->pluck('siswa_id')->unique()->count(),
+            'pembimbing_unik' => $data->pluck('pembimbing_id')->unique()->count(),
+        ];
+
+        $pembimbingOptions = Pembimbing::orderBy('nama_pembimbing')->get(['id', 'nama_pembimbing']);
+
+        return view('pembekalan.laporan_absensi', compact(
+            'data',
+            'summary',
+            'filters',
+            'pembimbingOptions'
+        ));
+    }
+
     private function validatePembimbingForSiswa(int $siswaId, int $pembimbingId): void
     {
         $hasKelompok = Siswa::query()

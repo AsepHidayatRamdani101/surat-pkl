@@ -71,7 +71,7 @@ class NilaiSikapPembekalanController extends Controller
                     'siswa_id' => (int) $siswa->id,
                     'nama_siswa' => (string) $siswa->nama_siswa,
                     'kelas' => $siswa->kelas ? (string) $siswa->kelas->nama_kelas : null,
-                    'nilai_sikap' => (string) ($sikap->nilai_sikap ?? 'sangat_baik'),
+                    'nilai_sikap' => (string) ($sikap->nilai_sikap ?? 'baik'),
                     'catatan' => (string) ($sikap->catatan ?? ''),
                 ];
             })
@@ -497,6 +497,64 @@ class NilaiSikapPembekalanController extends Controller
                 'pembimbing_id' => 'Pembimbing yang dipilih tidak sesuai dengan kelompok bimbingan siswa.',
             ]);
         }
+    }
+
+    public function laporan(Request $request)
+    {
+        $filters = [
+            'pembimbing_id' => $request->get('pembimbing_id'),
+            'tanggal_awal' => $request->get('tanggal_awal'),
+            'tanggal_akhir' => $request->get('tanggal_akhir'),
+            'nilai_sikap' => $request->get('nilai_sikap'),
+            'materi_id' => $request->get('materi_id'),
+        ];
+
+        $query = NilaiSikapPembekalan::with(['pembimbing', 'siswa.kelas', 'siswa.kelompokBimbingan', 'materi'])
+            ->latest('tanggal_penilaian')
+            ->latest('id');
+
+        if (!empty($filters['pembimbing_id'])) {
+            $query->where('pembimbing_id', $filters['pembimbing_id']);
+        }
+
+        if (!empty($filters['tanggal_awal'])) {
+            $query->whereDate('tanggal_penilaian', '>=', $filters['tanggal_awal']);
+        }
+
+        if (!empty($filters['tanggal_akhir'])) {
+            $query->whereDate('tanggal_penilaian', '<=', $filters['tanggal_akhir']);
+        }
+
+        if (!empty($filters['nilai_sikap'])) {
+            $query->where('nilai_sikap', $filters['nilai_sikap']);
+        }
+
+        if (!empty($filters['materi_id'])) {
+            $query->where('materi_id', $filters['materi_id']);
+        }
+
+        $data = $query->get();
+
+        $summary = [
+            'total_penilaian' => $data->count(),
+            'sangat_baik' => $data->where('nilai_sikap', 'sangat_baik')->count(),
+            'baik' => $data->where('nilai_sikap', 'baik')->count(),
+            'cukup' => $data->where('nilai_sikap', 'cukup')->count(),
+            'perlu_bimbingan' => $data->where('nilai_sikap', 'perlu_bimbingan')->count(),
+            'siswa_unik' => $data->pluck('siswa_id')->unique()->count(),
+            'pembimbing_unik' => $data->pluck('pembimbing_id')->unique()->count(),
+        ];
+
+        $pembimbingOptions = Pembimbing::orderBy('nama_pembimbing')->get(['id', 'nama_pembimbing']);
+        $materiOptions = Materi::orderBy('nama_materi')->get(['id', 'nama_materi']);
+
+        return view('pembekalan.laporan_sikap', compact(
+            'data',
+            'summary',
+            'filters',
+            'pembimbingOptions',
+            'materiOptions'
+        ));
     }
 
     private function getAuthorizedPembimbingForSikapPage(): ?int

@@ -57,7 +57,7 @@
         $topSiswaQuery = \App\Models\Siswa::query()
             ->leftJoin('bimbingans', 'bimbingans.siswa_id', '=', 'siswa.id')
             ->leftJoin('kelas', 'kelas.id', '=', 'siswa.kelas_id')
-            ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
+            ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas', 'kelas.jurusan_id')
             ->selectRaw('COALESCE(ROUND(AVG(bimbingans.nilai_tugas),2),0) as rata_nilai')
             ->selectRaw("SUM(CASE WHEN bimbingans.status_absensi = 'hadir' THEN 1 ELSE 0 END) as total_hadir")
             ->selectRaw(
@@ -73,11 +73,34 @@
         }
 
         $topSiswa = $topSiswaQuery
-            ->groupBy('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
+            ->groupBy('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas', 'kelas.jurusan_id')
             ->orderByDesc('rata_nilai')
             ->orderByDesc('total_hadir')
             ->limit(10)
             ->get();
+
+        // Get top 10 students for each jurusan (for dashboard display)
+        $topSiswaPerJurusan = [];
+        if (empty($selectedJurusanId) && empty($selectedKelasId)) {
+            $allJurusan = \App\Models\Jurusan::orderBy('nama_jurusan')->get(['id', 'nama_jurusan']);
+            foreach ($allJurusan as $jurusan) {
+                $topSiswaPerJurusan[$jurusan->id] = \App\Models\Siswa::query()
+                    ->leftJoin('bimbingans', 'bimbingans.siswa_id', '=', 'siswa.id')
+                    ->leftJoin('kelas', 'kelas.id', '=', 'siswa.kelas_id')
+                    ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
+                    ->selectRaw('COALESCE(ROUND(AVG(bimbingans.nilai_tugas),2),0) as rata_nilai')
+                    ->selectRaw("SUM(CASE WHEN bimbingans.status_absensi = 'hadir' THEN 1 ELSE 0 END) as total_hadir")
+                    ->selectRaw(
+                        "SUM(CASE WHEN bimbingans.tugas_siswa IS NOT NULL AND bimbingans.tugas_siswa <> '' THEN 1 ELSE 0 END) as tugas_terkumpul",
+                    )
+                    ->where('kelas.jurusan_id', $jurusan->id)
+                    ->groupBy('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
+                    ->orderByDesc('rata_nilai')
+                    ->orderByDesc('total_hadir')
+                    ->limit(10)
+                    ->get();
+            }
+        }
     @endphp
 
     @if (auth()->user()->role == 'kepala_program')
@@ -379,6 +402,58 @@
                 </div>
             </div>
         </div>
+
+        {{-- 10 Siswa Terbaik Per Jurusan --}}
+        @if (!empty($topSiswaPerJurusan) && count($topSiswaPerJurusan) > 0)
+            <div class="row pt-4">
+                @foreach ($topSiswaPerJurusan as $jurusanId => $siswaList)
+                    @php
+                        $jurusan = $jurusanOptions->find($jurusanId);
+                    @endphp
+                    <div class="col-lg-6 mb-4">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0">10 Siswa Terbaik - {{ $jurusan->nama_jurusan ?? 'Jurusan' }}</h6>
+                            </div>
+                            <div class="card-body table-responsive p-0">
+                                <table class="table table-bordered table-striped table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 30px;">No</th>
+                                            <th>Nama Siswa</th>
+                                            <th style="width: 80px;">Nilai</th>
+                                            <th style="width: 50px;">Hadir</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse ($siswaList as $index => $row)
+                                            <tr>
+                                                <td class="text-center">{{ $index + 1 }}</td>
+                                                <td>
+                                                    <small>{{ $row->nama_siswa }}<br>
+                                                        <span class="text-muted">{{ $row->nis }}</span></small>
+                                                </td>
+                                                <td>
+                                                    <span
+                                                        class="badge badge-{{ $row->rata_nilai >= 80 ? 'success' : ($row->rata_nilai >= 70 ? 'warning' : 'danger') }}">
+                                                        {{ $row->rata_nilai }}
+                                                    </span>
+                                                </td>
+                                                <td class="text-center">{{ $row->total_hadir ?? 0 }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted py-3">Belum ada data</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
     @endif
 @endsection
 

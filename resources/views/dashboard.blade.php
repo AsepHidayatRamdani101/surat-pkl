@@ -55,11 +55,12 @@
         $kelasOptions = $kelasOptionsQuery->get(['id', 'nama_kelas']);
 
         $topSiswaQuery = \App\Models\Siswa::query()
-            ->leftJoin('nilai_tugas_pembekalans as ntp', 'ntp.siswa_id', '=', 'siswa.id')
+            ->leftJoin('jawaban_tugas_siswas as jts', 'jts.siswa_id', '=', 'siswa.id')
+            ->leftJoin('nilai_tugas_pembekalans as ntp', 'ntp.jawaban_tugas_siswa_id', '=', 'jts.id')
             ->leftJoin('absensi_pembekalans as ap', 'ap.siswa_id', '=', 'siswa.id')
             ->leftJoin('kelas', 'kelas.id', '=', 'siswa.kelas_id')
             ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas', 'kelas.jurusan_id')
-            ->selectRaw('COALESCE(ROUND(AVG(ntp.nilai_tugas),2),0) as rata_nilai')
+            ->selectRaw('COALESCE(ROUND(AVG(ntp.nilai),2),0) as rata_nilai')
             ->selectRaw("SUM(CASE WHEN ap.status = 'hadir' THEN 1 ELSE 0 END) as total_hadir")
             ->selectRaw('COUNT(DISTINCT ntp.id) as tugas_terkumpul');
 
@@ -84,11 +85,12 @@
             $allJurusan = \App\Models\Jurusan::orderBy('nama_jurusan')->get(['id', 'nama_jurusan']);
             foreach ($allJurusan as $jurusan) {
                 $topSiswaPerJurusan[$jurusan->id] = \App\Models\Siswa::query()
-                    ->leftJoin('nilai_tugas_pembekalans as ntp', 'ntp.siswa_id', '=', 'siswa.id')
+                    ->leftJoin('jawaban_tugas_siswas as jts', 'jts.siswa_id', '=', 'siswa.id')
+                    ->leftJoin('nilai_tugas_pembekalans as ntp', 'ntp.jawaban_tugas_siswa_id', '=', 'jts.id')
                     ->leftJoin('absensi_pembekalans as ap', 'ap.siswa_id', '=', 'siswa.id')
                     ->leftJoin('kelas', 'kelas.id', '=', 'siswa.kelas_id')
                     ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
-                    ->selectRaw('COALESCE(ROUND(AVG(ntp.nilai_tugas),2),0) as rata_nilai')
+                    ->selectRaw('COALESCE(ROUND(AVG(ntp.nilai),2),0) as rata_nilai')
                     ->selectRaw("SUM(CASE WHEN ap.status = 'hadir' THEN 1 ELSE 0 END) as total_hadir")
                     ->selectRaw('COUNT(DISTINCT ntp.id) as tugas_terkumpul')
                     ->where('kelas.jurusan_id', $jurusan->id)

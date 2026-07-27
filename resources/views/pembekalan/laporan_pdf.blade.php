@@ -109,32 +109,27 @@
                 <th>Pembimbing</th>
                 <th>Siswa</th>
                 <th>Kelas</th>
-                <th>Materi</th>
-                <th>Tugas</th>
-                <th>Absensi</th>
-                <th>Nilai</th>
-                <th>Sikap</th>
+                <th>Sesi</th>
+                <th>Status</th>
+                <th>Keterangan</th>
             </tr>
         </thead>
         <tbody>
             @forelse ($data as $index => $item)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $item->tanggal_bimbingan ? \Carbon\Carbon::parse($item->tanggal_bimbingan)->format('d-m-Y') : '-' }}
+                    <td>{{ $item->tanggal_absensi ? \Carbon\Carbon::parse($item->tanggal_absensi)->format('d-m-Y') : '-' }}
                     </td>
                     <td>{{ $item->pembimbing->nama_pembimbing ?? '-' }}</td>
                     <td>{{ $item->siswa->nama_siswa ?? '-' }}</td>
                     <td>{{ $item->siswa->kelas->nama_kelas ?? '-' }}</td>
-                    <td>{{ $item->topik_pembekalan ?? '-' }}</td>
-                    <td>{{ $item->tugas ?? '-' }}</td>
-                    <td>{{ $item->status_absensi ?? '-' }}</td>
-                    <td>{{ $item->nilai_tugas ?? '-' }}</td>
-                    <td>{{ $item->penilaian_sikap ? ucwords(str_replace('_', ' ', $item->penilaian_sikap)) : '-' }}
-                    </td>
+                    <td>{{ ucfirst($item->sesi_absensi ?? '-') }}</td>
+                    <td>{{ strtoupper($item->status ?? '-') }}</td>
+                    <td>{{ $item->keterangan ?? '-' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="10" style="text-align: center;">Tidak ada data.</td>
+                    <td colspan="8" style="text-align: center;">Tidak ada data.</td>
                 </tr>
             @endforelse
         </tbody>

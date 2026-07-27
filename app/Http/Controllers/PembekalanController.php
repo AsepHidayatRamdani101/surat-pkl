@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\AbsensiPembekalan;
 use App\Models\Bimbingan;
 use App\Models\Kelas;
 use App\Models\Pembimbing;
@@ -420,11 +421,13 @@ class PembekalanController extends Controller
         $sheet->setCellValue('B5', $summary['total_pembimbing']);
         $sheet->setCellValue('A6', 'Total Hadir');
         $sheet->setCellValue('B6', $summary['hadir']);
-        $sheet->setCellValue('A7', 'Rata-rata Nilai');
-        $sheet->setCellValue('B7', $summary['rata_nilai']);
+        $sheet->setCellValue('A7', 'Total Izin');
+        $sheet->setCellValue('B7', $summary['izin']);
+        $sheet->setCellValue('A8', 'Total Alpa');
+        $sheet->setCellValue('B8', $summary['alpa']);
 
-        $startRow = 9;
-        $headers = ['No', 'Tanggal', 'Pembimbing', 'Siswa', 'Kelas', 'Materi', 'Tugas', 'Absensi', 'Nilai', 'Sikap'];
+        $startRow = 10;
+        $headers = ['No', 'Tanggal', 'Pembimbing', 'Siswa', 'Kelas', 'Sesi', 'Status', 'Keterangan'];
 
         foreach ($headers as $index => $header) {
             $column = Coordinate::stringFromColumnIndex($index + 1);
@@ -434,19 +437,17 @@ class PembekalanController extends Controller
         $row = $startRow + 1;
         foreach ($data as $index => $item) {
             $sheet->setCellValue('A' . $row, $index + 1);
-            $sheet->setCellValue('B' . $row, $item->tanggal_bimbingan ? date('d-m-Y', strtotime($item->tanggal_bimbingan)) : '-');
+            $sheet->setCellValue('B' . $row, $item->tanggal_absensi ? date('d-m-Y', strtotime($item->tanggal_absensi)) : '-');
             $sheet->setCellValue('C' . $row, $item->pembimbing->nama_pembimbing ?? '-');
             $sheet->setCellValue('D' . $row, $item->siswa->nama_siswa ?? '-');
             $sheet->setCellValue('E' . $row, $item->siswa->kelas->nama_kelas ?? '-');
-            $sheet->setCellValue('F' . $row, $item->topik_pembekalan ?? '-');
-            $sheet->setCellValue('G' . $row, $item->tugas ?? '-');
-            $sheet->setCellValue('H' . $row, $item->status_absensi ?? '-');
-            $sheet->setCellValue('I' . $row, $item->nilai_tugas ?? '-');
-            $sheet->setCellValue('J' . $row, $item->penilaian_sikap ? ucwords(str_replace('_', ' ', $item->penilaian_sikap)) : '-');
+            $sheet->setCellValue('F' . $row, ucfirst($item->sesi_absensi ?? '-'));
+            $sheet->setCellValue('G' . $row, strtoupper($item->status ?? '-'));
+            $sheet->setCellValue('H' . $row, $item->keterangan ?? '-');
             $row++;
         }
 
-        foreach (range('A', 'J') as $column) {
+        foreach (range('A', 'H') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
@@ -532,9 +533,9 @@ class PembekalanController extends Controller
 
     private function buildLaporanData(array $filters): array
     {
-
-        $query = Bimbingan::with(['siswa.kelas', 'pembimbing'])
-            ->orderByDesc('tanggal_bimbingan')
+        // Ambil data dari absensi_pembekalans dan relasi terkaitnya
+        $query = AbsensiPembekalan::with(['siswa.kelas', 'pembimbing'])
+            ->orderByDesc('tanggal_absensi')
             ->orderByDesc('id');
 
         if (!empty($filters['pembimbing_id'])) {
@@ -542,11 +543,11 @@ class PembekalanController extends Controller
         }
 
         if (!empty($filters['tanggal_awal'])) {
-            $query->whereDate('tanggal_bimbingan', '>=', $filters['tanggal_awal']);
+            $query->whereDate('tanggal_absensi', '>=', $filters['tanggal_awal']);
         }
 
         if (!empty($filters['tanggal_akhir'])) {
-            $query->whereDate('tanggal_bimbingan', '<=', $filters['tanggal_akhir']);
+            $query->whereDate('tanggal_absensi', '<=', $filters['tanggal_akhir']);
         }
 
         $data = $query->get();
@@ -555,50 +556,54 @@ class PembekalanController extends Controller
             'total_sesi' => $data->count(),
             'total_siswa' => $data->pluck('siswa_id')->filter()->unique()->count(),
             'total_pembimbing' => $data->pluck('pembimbing_id')->filter()->unique()->count(),
-            'hadir' => $data->where('status_absensi', 'hadir')->count(),
-            'izin' => $data->where('status_absensi', 'izin')->count(),
-            'alpa' => $data->where('status_absensi', 'alpa')->count(),
-            'rata_nilai' => round((float) ($data->whereNotNull('nilai_tugas')->avg('nilai_tugas') ?? 0), 2),
+            'hadir' => $data->where('status', 'hadir')->count(),
+            'izin' => $data->where('status', 'izin')->count(),
+            'alpa' => $data->where('status', 'alpa')->count(),
+            'rata_nilai' => 0, // Placeholder, akan diambil dari tabel lain jika ada
         ];
 
-        $rekapPembimbing = Bimbingan::query()
-            ->leftJoin('pembimbings', 'pembimbings.id', '=', 'bimbingans.pembimbing_id')
-            ->select('bimbingans.pembimbing_id', 'pembimbings.nama_pembimbing')
+        // Rekap per Pembimbing
+        $rekapPembimbing = AbsensiPembekalan::query()
+            ->leftJoin('pembimbings', 'pembimbings.id', '=', 'absensi_pembekalans.pembimbing_id')
+            ->select('absensi_pembekalans.pembimbing_id', 'pembimbings.nama_pembimbing')
             ->selectRaw('COUNT(*) as total_sesi')
-            ->selectRaw("SUM(CASE WHEN bimbingans.status_absensi = 'hadir' THEN 1 ELSE 0 END) as total_hadir")
-            ->selectRaw('COALESCE(ROUND(AVG(bimbingans.nilai_tugas),2),0) as rata_nilai')
+            ->selectRaw("SUM(CASE WHEN absensi_pembekalans.status = 'hadir' THEN 1 ELSE 0 END) as total_hadir")
+            ->selectRaw('COALESCE(COUNT(DISTINCT absensi_pembekalans.siswa_id), 0) as total_siswa')
             ->when(!empty($filters['pembimbing_id']), function ($q) use ($filters) {
-                $q->where('bimbingans.pembimbing_id', $filters['pembimbing_id']);
+                $q->where('absensi_pembekalans.pembimbing_id', $filters['pembimbing_id']);
             })
             ->when(!empty($filters['tanggal_awal']), function ($q) use ($filters) {
-                $q->whereDate('bimbingans.tanggal_bimbingan', '>=', $filters['tanggal_awal']);
+                $q->whereDate('absensi_pembekalans.tanggal_absensi', '>=', $filters['tanggal_awal']);
             })
             ->when(!empty($filters['tanggal_akhir']), function ($q) use ($filters) {
-                $q->whereDate('bimbingans.tanggal_bimbingan', '<=', $filters['tanggal_akhir']);
+                $q->whereDate('absensi_pembekalans.tanggal_absensi', '<=', $filters['tanggal_akhir']);
             })
-            ->groupBy('bimbingans.pembimbing_id', 'pembimbings.nama_pembimbing')
+            ->groupBy('absensi_pembekalans.pembimbing_id', 'pembimbings.nama_pembimbing')
             ->orderByDesc('total_sesi')
             ->get();
 
-        $topSiswa = Bimbingan::query()
-            ->leftJoin('siswa', 'siswa.id', '=', 'bimbingans.siswa_id')
+        // Top 10 Siswa
+        $topSiswa = AbsensiPembekalan::query()
+            ->leftJoin('siswa', 'siswa.id', '=', 'absensi_pembekalans.siswa_id')
             ->leftJoin('kelas', 'kelas.id', '=', 'siswa.kelas_id')
-            ->select('bimbingans.siswa_id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
+            ->select('absensi_pembekalans.siswa_id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
             ->selectRaw('COUNT(*) as total_sesi')
-            ->selectRaw('COALESCE(ROUND(AVG(bimbingans.nilai_tugas),2),0) as rata_nilai')
-            ->selectRaw("SUM(CASE WHEN bimbingans.status_absensi = 'hadir' THEN 1 ELSE 0 END) as total_hadir")
+            ->selectRaw("SUM(CASE WHEN absensi_pembekalans.status = 'hadir' THEN 1 ELSE 0 END) as total_hadir")
+            ->selectRaw("SUM(CASE WHEN absensi_pembekalans.status = 'izin' THEN 1 ELSE 0 END) as total_izin")
+            ->selectRaw("SUM(CASE WHEN absensi_pembekalans.status = 'alpa' THEN 1 ELSE 0 END) as total_alpa")
+            ->selectRaw('COALESCE(0, 0) as rata_nilai')
             ->when(!empty($filters['pembimbing_id']), function ($q) use ($filters) {
-                $q->where('bimbingans.pembimbing_id', $filters['pembimbing_id']);
+                $q->where('absensi_pembekalans.pembimbing_id', $filters['pembimbing_id']);
             })
             ->when(!empty($filters['tanggal_awal']), function ($q) use ($filters) {
-                $q->whereDate('bimbingans.tanggal_bimbingan', '>=', $filters['tanggal_awal']);
+                $q->whereDate('absensi_pembekalans.tanggal_absensi', '>=', $filters['tanggal_awal']);
             })
             ->when(!empty($filters['tanggal_akhir']), function ($q) use ($filters) {
-                $q->whereDate('bimbingans.tanggal_bimbingan', '<=', $filters['tanggal_akhir']);
+                $q->whereDate('absensi_pembekalans.tanggal_absensi', '<=', $filters['tanggal_akhir']);
             })
-            ->groupBy('bimbingans.siswa_id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
-            ->orderByDesc('rata_nilai')
+            ->groupBy('absensi_pembekalans.siswa_id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
             ->orderByDesc('total_hadir')
+            ->orderByDesc('total_sesi')
             ->limit(10)
             ->get();
 

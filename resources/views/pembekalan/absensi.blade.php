@@ -267,16 +267,30 @@
             </div>
 
             <div class="card shadow-sm border-0 mb-3">
-                <div class="card-header bg-white d-flex align-items-center">
+                <div class="card-header bg-white d-flex align-items-center justify-content-between">
                     <div>
                         <h5 class="mb-0">Riwayat Absensi Pembekalan</h5>
                         <small class="text-muted">{{ $absensi->count() }} data</small>
                     </div>
+                    <div>
+                        <button type="button" id="deleteSelectedBtn" class="btn btn-sm btn-danger d-none">
+                            <i class="fas fa-trash mr-1"></i> Hapus Terpilih (<span id="selectedCount">0</span>)
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body table-responsive">
+                    <form id="bulkDeleteForm" method="POST" action="{{ route('pembekalan.absensi.bulk-delete') }}"
+                        style="display: none;">
+                        @csrf
+                        @method('POST')
+                        <input type="hidden" name="ids" id="bulkDeleteIds">
+                    </form>
                     <table id="absensiTable" class="table table-bordered table-striped table-sm">
                         <thead>
                             <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" id="selectAllCheckbox" title="Pilih semua">
+                                </th>
                                 <th style="width: 95px;">Tanggal</th>
                                 <th style="width: 220px;">Siswa</th>
                                 <th style="width: 180px;">Kelompok</th>
@@ -290,6 +304,9 @@
                         <tbody>
                             @forelse ($absensi as $item)
                                 <tr>
+                                    <td>
+                                        <input type="checkbox" class="rowCheckbox" value="{{ $item->id }}">
+                                    </td>
                                     <td>{{ \Carbon\Carbon::parse($item->tanggal_absensi)->format('d-m-Y') }}</td>
                                     <td>
                                         {{ $item->siswa->nama_siswa ?? '-' }}
@@ -369,6 +386,73 @@
                 return;
             }
 
+            // Bulk delete functionality
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const rowCheckboxes = document.querySelectorAll('.rowCheckbox');
+            const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+            const selectedCountSpan = document.getElementById('selectedCount');
+            const bulkDeleteForm = document.getElementById('bulkDeleteForm');
+            const bulkDeleteIds = document.getElementById('bulkDeleteIds');
+
+            function updateDeleteButton() {
+                const checkedCount = document.querySelectorAll('.rowCheckbox:checked').length;
+                selectedCountSpan.textContent = checkedCount;
+                deleteSelectedBtn.classList.toggle('d-none', checkedCount === 0);
+            }
+
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    rowCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+                    updateDeleteButton();
+                });
+            }
+
+            rowCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const allChecked = Array.from(rowCheckboxes).every(cb => cb.checked);
+                    const someChecked = Array.from(rowCheckboxes).some(cb => cb.checked);
+                    if (selectAllCheckbox) {
+                        selectAllCheckbox.checked = allChecked;
+                        selectAllCheckbox.indeterminate = someChecked && !allChecked;
+                    }
+                    updateDeleteButton();
+                });
+            });
+
+            if (deleteSelectedBtn) {
+                deleteSelectedBtn.addEventListener('click', function() {
+                    const checkedIds = Array.from(document.querySelectorAll('.rowCheckbox:checked'))
+                        .map(checkbox => checkbox.value);
+
+                    if (checkedIds.length === 0) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Tidak Ada Pilihan',
+                            text: 'Silakan pilih minimal 1 data untuk dihapus',
+                        });
+                        return;
+                    }
+
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Konfirmasi Hapus',
+                        text: `Anda akan menghapus ${checkedIds.length} data absensi. Tindakan ini tidak dapat dibatalkan!`,
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Ya, Hapus',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            bulkDeleteIds.value = JSON.stringify(checkedIds);
+                            bulkDeleteForm.submit();
+                        }
+                    });
+                });
+            }
+
             const riwayatTable = $('#absensiTable');
             if (riwayatTable.length) {
                 if ($.fn.DataTable.isDataTable('#absensiTable')) {
@@ -383,7 +467,7 @@
                     responsive: true,
                     autoWidth: false,
                     order: [
-                        [0, 'desc']
+                        [1, 'desc']
                     ],
                     language: {
                         url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json',

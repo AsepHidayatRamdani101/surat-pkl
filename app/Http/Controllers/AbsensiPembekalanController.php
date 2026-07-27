@@ -597,6 +597,35 @@ class AbsensiPembekalanController extends Controller
         return redirect()->route('pembekalan.absensi.riwayat')->with('success', 'Absensi berhasil dihapus.');
     }
 
+    public function bulkDelete(Request $request)
+    {
+        $pembimbingAuthId = $this->getAuthorizedPembimbingForAbsensiPage();
+
+        $validated = $request->validate([
+            'ids' => ['required', 'json'],
+        ]);
+
+        $ids = json_decode($validated['ids'], true);
+
+        if (!is_array($ids) || empty($ids)) {
+            return redirect()->route('pembekalan.absensi.riwayat')->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
+        }
+
+        $query = AbsensiPembekalan::whereIn('id', $ids);
+
+        if (!empty($pembimbingAuthId)) {
+            $query->where('pembimbing_id', $pembimbingAuthId);
+        }
+
+        $deletedCount = $query->delete();
+
+        $message = $deletedCount > 0 
+            ? "Berhasil menghapus {$deletedCount} data absensi."
+            : 'Tidak ada data yang berhasil dihapus.';
+
+        return redirect()->route('pembekalan.absensi.riwayat')->with('success', $message);
+    }
+
     public function index(Request $request)
     {
         $query = AbsensiPembekalan::with(['pembimbing', 'siswa'])->latest('tanggal_absensi');

@@ -116,6 +116,101 @@
         @endif
 
         @if ($showRiwayatSection)
+            {{-- Dashboard Cards --}}
+            <div class="row mb-4">
+                {{-- Siswa Telah Diabsen --}}
+                <div class="col-md-6 col-lg-3 mb-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <p class="text-muted mb-1 small">Siswa Telah Diabsen</p>
+                                    <h3 class="mb-0 text-primary">{{ $siswaAbsenCount }}</h3>
+                                </div>
+                                <div class="text-primary">
+                                    <i class="fas fa-check-circle fa-2x" style="opacity: 0.3;"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent border-top-0 pt-2">
+                            <a href="{{ route('pembekalan.absensi.riwayat') }}"
+                                class="text-primary small font-weight-bold">
+                                Lihat Detail <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Guru Telah Mengabsen --}}
+                <div class="col-md-6 col-lg-3 mb-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <p class="text-muted mb-1 small">Guru Telah Mengabsen</p>
+                                    <h3 class="mb-0 text-success">{{ $pembimbingAbsenCount }}</h3>
+                                </div>
+                                <div class="text-success">
+                                    <i class="fas fa-user-check fa-2x" style="opacity: 0.3;"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent border-top-0 pt-2">
+                            <a href="{{ route('pembekalan.absensi.riwayat') }}?filter=guru_absen"
+                                class="text-success small font-weight-bold">
+                                Lihat Detail <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Siswa Belum Diabsen --}}
+                <div class="col-md-6 col-lg-3 mb-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <p class="text-muted mb-1 small">Siswa Belum Diabsen</p>
+                                    <h3 class="mb-0 text-warning">{{ $siswaBelumAbs }}</h3>
+                                </div>
+                                <div class="text-warning">
+                                    <i class="fas fa-hourglass-half fa-2x" style="opacity: 0.3;"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent border-top-0 pt-2">
+                            <a href="{{ route('pembekalan.absensi.riwayat') }}?filter=siswa_belum"
+                                class="text-warning small font-weight-bold">
+                                Lihat Detail <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Guru Belum Mengabsen --}}
+                <div class="col-md-6 col-lg-3 mb-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <p class="text-muted mb-1 small">Guru Belum Mengabsen</p>
+                                    <h3 class="mb-0 text-danger">{{ $pembimbingBelumAbs }}</h3>
+                                </div>
+                                <div class="text-danger">
+                                    <i class="fas fa-user-times fa-2x" style="opacity: 0.3;"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent border-top-0 pt-2">
+                            <a href="{{ route('pembekalan.absensi.riwayat') }}?filter=guru_belum"
+                                class="text-danger small font-weight-bold">
+                                Lihat Detail <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card shadow-sm border-0 mb-3" id="lihat-absensi">
                 <div class="card-body py-3">
                     <div class="d-flex justify-content-end mb-2">

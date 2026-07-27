@@ -210,6 +210,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pembekalan/absensi/input', [AbsensiPembekalanController::class, 'pageInput'])->name('pembekalan.absensi.input');
     Route::get('/pembekalan/absensi/input/students', [AbsensiPembekalanController::class, 'pageInputStudents'])->name('pembekalan.absensi.input.students');
     Route::get('/pembekalan/absensi/riwayat', [AbsensiPembekalanController::class, 'pageRiwayat'])->name('pembekalan.absensi.riwayat');
+    Route::get('/pembekalan/absensi/detail', [AbsensiPembekalanController::class, 'pageDetailAbsensi'])->name('pembekalan.absensi.detail');
     Route::get('/pembekalan/absensi/formulir', [AbsensiPembekalanController::class, 'pageFormulir'])->name('pembekalan.absensi.formulir');
     Route::get('/pembekalan/absensi/formulir/pdf', [AbsensiPembekalanController::class, 'pageFormulirPdf'])->name('pembekalan.absensi.formulir.pdf');
     Route::get('/pembekalan/kelengkapan-siswa', [CekKelengkapanSiswaController::class, 'index'])->name('pembekalan.kelengkapan');

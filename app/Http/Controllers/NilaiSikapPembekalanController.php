@@ -230,7 +230,7 @@ class NilaiSikapPembekalanController extends Controller
             $filters['pembimbing_id'] = (string) $pembimbingAuthId;
         }
 
-        $query = NilaiSikapPembekalan::with(['pembimbing', 'materi', 'siswa.kelas', 'siswa.kelompokBimbingan'])
+        $query = NilaiSikapPembekalan::with(['pembimbing.kelompokBimbingan', 'materi', 'siswa.kelas', 'siswa.kelompokBimbingan'])
             ->latest('tanggal_penilaian')
             ->latest('id');
 
@@ -613,7 +613,7 @@ class NilaiSikapPembekalanController extends Controller
             'materi_id' => $request->get('materi_id'),
         ];
 
-        $query = NilaiSikapPembekalan::with(['pembimbing', 'siswa.kelas', 'siswa.kelompokBimbingan', 'materi'])
+        $query = NilaiSikapPembekalan::with(['pembimbing.kelompokBimbingan', 'siswa.kelas', 'siswa.kelompokBimbingan', 'materi'])
             ->latest('tanggal_penilaian')
             ->latest('id');
 

@@ -61,7 +61,7 @@ class AbsensiPembekalanController extends Controller
             ->whereKey($validated['kelompok_id']);
 
         if (!empty($pembimbingAuthId)) {
-            $selectedKelompokQuery->where('pembimbing_id', $pembimbingAuthId);
+            $this->scopeKelompokForPembimbing($selectedKelompokQuery, $pembimbingAuthId);
         }
 
         $selectedKelompok = $selectedKelompokQuery->first();
@@ -233,7 +233,7 @@ class AbsensiPembekalanController extends Controller
             if (empty($pembimbingAuthId)) {
                 $kelompokOptionsQuery->whereRaw('1 = 0');
             } else {
-                $kelompokOptionsQuery->where('pembimbing_id', $pembimbingAuthId);
+                $this->scopeKelompokForPembimbing($kelompokOptionsQuery, $pembimbingAuthId);
             }
         }
 
@@ -247,7 +247,7 @@ class AbsensiPembekalanController extends Controller
                 ->whereKey($bulkInput['kelompok_id']);
 
             if ($isPembimbing && !empty($pembimbingAuthId)) {
-                $selectedKelompokQuery->where('pembimbing_id', $pembimbingAuthId);
+                $this->scopeKelompokForPembimbing($selectedKelompokQuery, $pembimbingAuthId);
             }
 
             $selectedKelompok = $selectedKelompokQuery->first();
@@ -410,6 +410,7 @@ class AbsensiPembekalanController extends Controller
             $guruAbsenIds = $filteredAbsensi->pluck('pembimbing_id')->unique();
             
             $query = Pembimbing::distinct()
+                ->with('kelompokBimbingan')
                 ->whereIn('id', $guruAbsenIds);
 
             if ($isPembimbing && !empty($pembimbingAuthId)) {
@@ -450,7 +451,8 @@ class AbsensiPembekalanController extends Controller
             
             $guruAbsenIds = $filteredAbsensi->pluck('pembimbing_id')->unique();
             
-            $query = Pembimbing::whereNotIn('id', $guruAbsenIds);
+            $query = Pembimbing::with('kelompokBimbingan')
+                ->whereNotIn('id', $guruAbsenIds);
 
             if ($isPembimbing && !empty($pembimbingAuthId)) {
                 $query->where('id', $pembimbingAuthId);
@@ -846,6 +848,16 @@ class AbsensiPembekalanController extends Controller
         throw new UnauthorizedException('Anda tidak memiliki akses ke modul absensi ini.');
     }
 
+    private function scopeKelompokForPembimbing($query, int $pembimbingId): void
+    {
+        $query->where(function ($kelompokQuery) use ($pembimbingId) {
+            $kelompokQuery->where('pembimbing_id', $pembimbingId)
+                ->orWhereHas('pembimbings', function ($mentorQuery) use ($pembimbingId) {
+                    $mentorQuery->where('id', $pembimbingId);
+                });
+        });
+    }
+
     public function getDashboardCardCounts(Request $request)
     {
         $authUser = auth()->user();
@@ -854,7 +866,9 @@ class AbsensiPembekalanController extends Controller
         $pembimbingAuthId = null;
 
         if ($isPembimbing) {
-            $pembimbingAuthId = $authUser->pembimbing?->id;
+            $pembimbingAuthId = Pembimbing::query()
+                ->where('nip_pembimbing', (string) $authUser->username)
+                ->value('id');
         }
 
         $validated = $request->validate([
@@ -1005,7 +1019,7 @@ class AbsensiPembekalanController extends Controller
             ->orderBy('nama_kelompok');
 
         if (!empty($pembimbingAuthId)) {
-            $kelompokOptionsQuery->where('pembimbing_id', $pembimbingAuthId);
+            $this->scopeKelompokForPembimbing($kelompokOptionsQuery, $pembimbingAuthId);
         } elseif (!empty($filters['pembimbing_id'])) {
             $kelompokOptionsQuery->where('pembimbing_id', $filters['pembimbing_id']);
         }
@@ -1020,7 +1034,7 @@ class AbsensiPembekalanController extends Controller
                 ->whereKey($filters['kelompok_id']);
 
             if (!empty($pembimbingAuthId)) {
-                $selectedKelompokQuery->where('pembimbing_id', $pembimbingAuthId);
+                $this->scopeKelompokForPembimbing($selectedKelompokQuery, $pembimbingAuthId);
             }
 
             $selectedKelompok = $selectedKelompokQuery->first();

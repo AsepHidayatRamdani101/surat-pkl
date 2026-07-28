@@ -367,7 +367,7 @@ class CekKelengkapanSiswaController extends Controller
 
     private function buildFilteredQuery(array $filters, ?int $pembimbingAuthId)
     {
-        $query = CekKelengkapanSiswa::with(['pembimbing', 'siswa.kelas', 'siswa.kelompokBimbingan'])
+        $query = CekKelengkapanSiswa::with(['pembimbing.kelompokBimbingan', 'siswa.kelas', 'siswa.kelompokBimbingan'])
             ->latest('tanggal_cek')
             ->latest('id');
 
@@ -480,7 +480,7 @@ class CekKelengkapanSiswaController extends Controller
         $query->where(function ($kelompokQuery) use ($pembimbingId) {
             $kelompokQuery->where('pembimbing_id', $pembimbingId)
                 ->orWhereHas('pembimbings', function ($mentorQuery) use ($pembimbingId) {
-                    $mentorQuery->where('pembimbings.id', $pembimbingId);
+                    $mentorQuery->where('id', $pembimbingId);
                 });
         });
     }

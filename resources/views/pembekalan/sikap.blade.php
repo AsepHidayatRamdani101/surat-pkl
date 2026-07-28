@@ -335,7 +335,13 @@
                                             <span class="text-muted">-</span>
                                         @endif
                                     </td>
-                                    <td>{{ $item->pembimbing->nama_pembimbing ?? '-' }}</td>
+                                    <td>
+                                        {{ $item->pembimbing->nama_pembimbing ?? '-' }}
+                                        @if ($item->pembimbing && $item->pembimbing->kelompokBimbingan && $item->pembimbing->kelompokBimbingan->count() > 0)
+                                            <br><small
+                                                class="text-muted">{{ $item->pembimbing->kelompokBimbingan->pluck('nama_kelompok')->join(', ') }}</small>
+                                        @endif
+                                    </td>
                                     <td>
                                         @php
                                             $badge =

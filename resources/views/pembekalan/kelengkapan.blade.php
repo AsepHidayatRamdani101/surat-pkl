@@ -294,7 +294,13 @@
                                         <br><small class="text-muted">{{ $item->siswa->kelas->nama_kelas }}</small>
                                     @endif
                                 </td>
-                                <td>{{ $item->pembimbing->nama_pembimbing ?? '-' }}</td>
+                                <td>
+                                    {{ $item->pembimbing->nama_pembimbing ?? '-' }}
+                                    @if ($item->pembimbing && $item->pembimbing->kelompokBimbingan && $item->pembimbing->kelompokBimbingan->count() > 0)
+                                        <br><small
+                                            class="text-muted">{{ $item->pembimbing->kelompokBimbingan->pluck('nama_kelompok')->join(', ') }}</small>
+                                    @endif
+                                </td>
                                 <td>
                                     <span class="badge badge-{{ $item->is_lengkap ? 'success' : 'danger' }}">
                                         {{ $item->is_lengkap ? 'Lengkap' : 'Belum Lengkap' }}

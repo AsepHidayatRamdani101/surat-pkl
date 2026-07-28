@@ -394,13 +394,21 @@
             const cardsUpdateApiUrl = @json(route('api.absensi.dashboard-cards'));
 
             function getFilterQueryString() {
-                const formData = new FormData(document.getElementById('filterForm'));
+                // Use riwayat filter form if available, otherwise use input filter form
+                const filterForm = document.getElementById('filterForm') || document.getElementById(
+                    'filterInputAbsensiForm');
+                if (!filterForm) return '';
+                const formData = new FormData(filterForm);
                 const params = new URLSearchParams(formData);
                 return params.toString();
             }
 
             function updateDetailLinks() {
-                const formData = new FormData(document.getElementById('filterForm'));
+                // Use riwayat filter form if available, otherwise use input filter form
+                const filterForm = document.getElementById('filterForm') || document.getElementById(
+                    'filterInputAbsensiForm');
+                if (!filterForm) return;
+                const formData = new FormData(filterForm);
                 const params = new URLSearchParams(formData);
                 const baseUrl = @json(route('pembekalan.absensi.detail'));
 

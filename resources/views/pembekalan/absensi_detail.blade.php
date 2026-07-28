@@ -72,6 +72,7 @@
                                 @else
                                     <th>Nama Guru</th>
                                     <th style="width: 140px;">NIP</th>
+                                    <th>Kelompok Bimbingan</th>
                                 @endif
                             </tr>
                         </thead>
@@ -93,6 +94,13 @@
                                     @else
                                         <td>{{ $item->nama_pembimbing }}</td>
                                         <td>{{ $item->nip_pembimbing ?? '-' }}</td>
+                                        <td>
+                                            @if ($item->kelompokBimbingan && $item->kelompokBimbingan->count() > 0)
+                                                {{ $item->kelompokBimbingan->pluck('nama_kelompok')->join(', ') }}
+                                            @else
+                                                <span class="badge badge-warning">Tidak Ada</span>
+                                            @endif
+                                        </td>
                                     @endif
                                 </tr>
                             @empty

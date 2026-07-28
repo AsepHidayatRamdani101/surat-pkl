@@ -480,7 +480,7 @@ class CekKelengkapanSiswaController extends Controller
         $query->where(function ($kelompokQuery) use ($pembimbingId) {
             $kelompokQuery->where('pembimbing_id', $pembimbingId)
                 ->orWhereHas('pembimbings', function ($mentorQuery) use ($pembimbingId) {
-                    $mentorQuery->where('id', $pembimbingId);
+                    $mentorQuery->where('pembimbings.id', $pembimbingId);
                 });
         });
     }

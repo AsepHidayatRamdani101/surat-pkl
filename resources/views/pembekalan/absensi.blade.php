@@ -213,8 +213,8 @@
                         <div class="inner">
                             <h3 id="card-siswa-telah-diabsen">{{ $siswaAbsenCount }}</h3>
                             <p>Siswa Telah Diabsen</p>
-                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'siswa_absen'], array_filter($filters))) }}"
-                                class="btn btn-block btn-primary">Lihat Detail</a>
+                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'siswa_absen'], array_filter($filters, fn($v) => !empty($v)))) }}"
+                                class="btn btn-block btn-primary" id="link-siswa-telah-diabsen">Lihat Detail</a>
                         </div>
                         <div class="icon">
                             <i class="fas fa-check-circle"></i>
@@ -228,8 +228,8 @@
                         <div class="inner">
                             <h3 id="card-guru-telah-mengabsen">{{ $pembimbingAbsenCount }}</h3>
                             <p>Guru Telah Mengabsen</p>
-                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'guru_absen'], array_filter($filters))) }}"
-                                class="btn btn-block btn-primary">Lihat Detail</a>
+                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'guru_absen'], array_filter($filters, fn($v) => !empty($v)))) }}"
+                                class="btn btn-block btn-primary" id="link-guru-telah-mengabsen">Lihat Detail</a>
                         </div>
                         <div class="icon">
                             <i class="fas fa-user-check"></i>
@@ -243,8 +243,8 @@
                         <div class="inner">
                             <h3 id="card-siswa-belum-diabsen">{{ $siswaBelumAbs }}</h3>
                             <p>Siswa Belum Diabsen</p>
-                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'siswa_belum'], array_filter($filters))) }}"
-                                class="btn btn-block btn-primary">Lihat Detail</a>
+                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'siswa_belum'], array_filter($filters, fn($v) => !empty($v)))) }}"
+                                class="btn btn-block btn-primary" id="link-siswa-belum-diabsen">Lihat Detail</a>
                         </div>
                         <div class="icon">
                             <i class="fas fa-hourglass-half"></i>
@@ -258,8 +258,8 @@
                         <div class="inner">
                             <h3 id="card-guru-belum-mengabsen">{{ $pembimbingBelumAbs }}</h3>
                             <p>Guru Belum Mengabsen</p>
-                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'guru_belum'], array_filter($filters))) }}"
-                                class="btn btn-block btn-primary">Lihat Detail</a>
+                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'guru_belum'], array_filter($filters, fn($v) => !empty($v)))) }}"
+                                class="btn btn-block btn-primary" id="link-guru-belum-mengabsen">Lihat Detail</a>
                         </div>
                         <div class="icon">
                             <i class="fas fa-user-times"></i>
@@ -402,39 +402,36 @@
             function updateDetailLinks() {
                 const formData = new FormData(document.getElementById('filterForm'));
                 const params = new URLSearchParams(formData);
+                const baseUrl = @json(route('pembekalan.absensi.detail'));
 
                 const detailLinkConfigs = [{
-                        cardId: 'card-siswa-telah-diabsen',
+                        linkId: 'link-siswa-telah-diabsen',
                         type: 'siswa_absen'
                     },
                     {
-                        cardId: 'card-guru-telah-mengabsen',
+                        linkId: 'link-guru-telah-mengabsen',
                         type: 'guru_absen'
                     },
                     {
-                        cardId: 'card-siswa-belum-diabsen',
+                        linkId: 'link-siswa-belum-diabsen',
                         type: 'siswa_belum'
                     },
                     {
-                        cardId: 'card-guru-belum-mengabsen',
+                        linkId: 'link-guru-belum-mengabsen',
                         type: 'guru_belum'
                     }
                 ];
 
                 detailLinkConfigs.forEach(config => {
-                    const card = document.getElementById(config.cardId);
-                    if (card) {
-                        const link = card.closest('.small-box').querySelector('a.btn-primary');
-                        if (link) {
-                            // Build the detail URL with current filters
-                            const baseUrl = @json(route('pembekalan.absensi.detail', ['type' => 'siswa_absen']));
-                            const pathOnly = baseUrl.split('?')[0];
-                            const detailUrl = pathOnly.replace('siswa_absen', config.type);
+                    const link = document.getElementById(config.linkId);
+                    if (link) {
+                        // Create a new URLSearchParams with current filters
+                        const detailParams = new URLSearchParams(params);
+                        detailParams.set('type', config.type);
 
-                            // Add query parameters
-                            const queryString = params.toString();
-                            link.href = queryString ? `${detailUrl}?${queryString}` : detailUrl;
-                        }
+                        // Build complete URL
+                        const fullUrl = `${baseUrl}?${detailParams.toString()}`;
+                        link.href = fullUrl;
                     }
                 });
             }

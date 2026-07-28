@@ -124,21 +124,21 @@
 
         <div class="card shadow-sm border-0 mb-3">
             <div class="card-body py-3">
-                <form method="GET" action="{{ $kelengkapanPageUrl }}">
+                <form id="filterForm" method="GET" action="{{ $kelengkapanPageUrl }}">
                     <div class="form-row align-items-end">
                         <div class="col-md-2 mb-2">
                             <label class="mb-1">Dari</label>
-                            <input type="date" name="tanggal_awal" class="form-control form-control-sm"
+                            <input type="date" name="tanggal_awal" class="form-control form-control-sm filter-input"
                                 value="{{ $filters['tanggal_awal'] }}">
                         </div>
                         <div class="col-md-2 mb-2">
                             <label class="mb-1">Sampai</label>
-                            <input type="date" name="tanggal_akhir" class="form-control form-control-sm"
+                            <input type="date" name="tanggal_akhir" class="form-control form-control-sm filter-input"
                                 value="{{ $filters['tanggal_akhir'] }}">
                         </div>
                         <div class="col-md-3 mb-2">
                             <label class="mb-1">Pembimbing</label>
-                            <select name="pembimbing_id" class="form-control form-control-sm"
+                            <select name="pembimbing_id" class="form-control form-control-sm filter-input"
                                 {{ $isPembimbingOnly ? 'disabled' : '' }}>
                                 <option value="">Semua Pembimbing</option>
                                 @foreach ($pembimbingOptions as $pembimbing)
@@ -151,7 +151,7 @@
                         </div>
                         <div class="col-md-3 mb-2">
                             <label class="mb-1">Kelompok</label>
-                            <select name="kelompok_id" class="form-control form-control-sm">
+                            <select name="kelompok_id" class="form-control form-control-sm filter-input">
                                 <option value="">Semua Kelompok</option>
                                 @foreach ($kelompokOptions as $kelompok)
                                     <option value="{{ $kelompok->id }}"
@@ -169,7 +169,7 @@
                     <div class="form-row mt-1">
                         <div class="col-md-2 mb-2">
                             <label class="mb-1">Sesi</label>
-                            <select name="sesi_cek" class="form-control form-control-sm">
+                            <select name="sesi_cek" class="form-control form-control-sm filter-input">
                                 <option value="">Semua Sesi</option>
                                 <option value="datang" {{ $filters['sesi_cek'] === 'datang' ? 'selected' : '' }}>Datang
                                 </option>
@@ -179,7 +179,7 @@
                         </div>
                         <div class="col-md-2 mb-2">
                             <label class="mb-1">Status</label>
-                            <select name="status_kelengkapan" class="form-control form-control-sm">
+                            <select name="status_kelengkapan" class="form-control form-control-sm filter-input">
                                 <option value="">Semua Status</option>
                                 <option value="lengkap"
                                     {{ $filters['status_kelengkapan'] === 'lengkap' ? 'selected' : '' }}>Lengkap</option>
@@ -190,11 +190,71 @@
                         </div>
                         <div class="col-md-8 mb-2">
                             <label class="mb-1">Cari Data</label>
-                            <input type="text" name="keyword" class="form-control form-control-sm"
+                            <input type="text" name="keyword" class="form-control form-control-sm filter-input"
                                 placeholder="Cari siswa, pembimbing, atau catatan" value="{{ $filters['keyword'] }}">
                         </div>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Dashboard Cards -->
+        <div class="row mb-3">
+            <div class="col-md-6 mb-2">
+                <div class="small-box bg-success shadow-sm" id="card-siswa-lengkap">
+                    <div class="inner">
+                        <h3 id="count-siswa-lengkap">0</h3>
+                        <p>Siswa Lengkap</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <a href="#" id="link-siswa-lengkap" class="small-box-footer">
+                        Lihat Detail <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-6 mb-2">
+                <div class="small-box bg-danger shadow-sm" id="card-siswa-belum-lengkap">
+                    <div class="inner">
+                        <h3 id="count-siswa-belum-lengkap">0</h3>
+                        <p>Siswa Belum Lengkap</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <a href="#" id="link-siswa-belum-lengkap" class="small-box-footer">
+                        Lihat Detail <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-6 mb-2">
+                <div class="small-box bg-info shadow-sm" id="card-guru-terinput">
+                    <div class="inner">
+                        <h3 id="count-guru-terinput">0</h3>
+                        <p>Guru yang Sudah Input</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <a href="#" id="link-guru-terinput" class="small-box-footer">
+                        Lihat Detail <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-6 mb-2">
+                <div class="small-box bg-warning shadow-sm" id="card-siswa-terinput">
+                    <div class="inner">
+                        <h3 id="count-siswa-terinput">0</h3>
+                        <p>Siswa yang Sudah Terinput</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <a href="#" id="link-siswa-terinput" class="small-box-footer">
+                        Lihat Detail <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -578,6 +638,69 @@
             if ($kelompok.length && $kelompok.val()) {
                 loadStudents();
             }
+
+            // Dynamic Dashboard Cards
+            const dashboardCardApiUrl = @json(route('api.kelengkapan.dashboard-cards'));
+            let updateDashboardCardsTimeout;
+
+            const getFilterQueryString = () => {
+                const formData = new FormData(document.getElementById('filterForm'));
+                const params = new URLSearchParams(formData);
+                return params.toString();
+            };
+
+            const updateCardValue = (elementId, newValue) => {
+                const $element = document.getElementById(elementId);
+                if ($element) {
+                    const oldValue = $element.textContent;
+                    $element.textContent = newValue;
+                    if (oldValue !== String(newValue)) {
+                        $element.style.backgroundColor = '#ffc107';
+                        setTimeout(() => {
+                            $element.style.backgroundColor = '';
+                        }, 500);
+                    }
+                }
+            };
+
+            const updateDetailLinks = () => {
+                const queryString = getFilterQueryString();
+                const baseUrl = @json(route('pembekalan.kelengkapan'));
+
+                document.getElementById('link-siswa-lengkap').href = baseUrl + '?' + queryString +
+                    '&status_kelengkapan=lengkap';
+                document.getElementById('link-siswa-belum-lengkap').href = baseUrl + '?' + queryString +
+                    '&status_kelengkapan=belum_lengkap';
+                document.getElementById('link-guru-terinput').href = baseUrl + '?' + queryString;
+                document.getElementById('link-siswa-terinput').href = baseUrl + '?' + queryString;
+            };
+
+            const updateDashboardCards = () => {
+                clearTimeout(updateDashboardCardsTimeout);
+                updateDashboardCardsTimeout = setTimeout(() => {
+                    const queryString = getFilterQueryString();
+                    fetch(`${dashboardCardApiUrl}?${queryString}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            updateCardValue('count-siswa-lengkap', data.siswa_lengkap || 0);
+                            updateCardValue('count-siswa-belum-lengkap', data.siswa_belum_lengkap ||
+                                0);
+                            updateCardValue('count-guru-terinput', data.guru_sudah_input || 0);
+                            updateCardValue('count-siswa-terinput', data.siswa_terinput || 0);
+                            updateDetailLinks();
+                        })
+                        .catch(error => console.error('Error fetching dashboard cards:', error));
+                }, 500);
+            };
+
+            // Add event listeners to filter inputs
+            document.querySelectorAll('.filter-input').forEach(input => {
+                input.addEventListener('change', updateDashboardCards);
+                input.addEventListener('input', updateDashboardCards);
+            });
+
+            // Initial update on page load
+            updateDashboardCards();
         });
     </script>
 @endsection

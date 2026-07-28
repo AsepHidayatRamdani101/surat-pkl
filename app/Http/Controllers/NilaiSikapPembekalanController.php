@@ -29,6 +29,110 @@ class NilaiSikapPembekalanController extends Controller
         return $this->renderPage($request, 'riwayat');
     }
 
+    public function getDashboardCardCounts(Request $request)
+    {
+        $authUser = auth()->user();
+        $isPanitia = $authUser && Gate::forUser($authUser)->allows('panitia');
+        $isPembimbing = $authUser && (Gate::forUser($authUser)->allows('pembimbing') || $authUser->role === 'pembimbing');
+        $pembimbingAuthId = null;
+
+        if ($isPembimbing) {
+            $pembimbingAuthId = Pembimbing::query()
+                ->where('nip_pembimbing', (string) $authUser->username)
+                ->value('id');
+        }
+
+        $filters = [
+            'tanggal_awal' => $request->get('tanggal_awal'),
+            'tanggal_akhir' => $request->get('tanggal_akhir'),
+            'pembimbing_id' => $request->get('pembimbing_id'),
+            'kelompok_id' => $request->get('kelompok_id'),
+            'materi_id' => $request->get('materi_id'),
+            'nilai_sikap' => $request->get('nilai_sikap'),
+            'keyword' => $request->get('keyword'),
+        ];
+
+        $query = NilaiSikapPembekalan::with(['pembimbing', 'materi', 'siswa.kelas', 'siswa.kelompokBimbingan'])
+            ->latest('tanggal_penilaian')
+            ->latest('id');
+
+        if ($isPembimbing) {
+            if (empty($pembimbingAuthId)) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->where('pembimbing_id', $pembimbingAuthId);
+            }
+        }
+
+        if (!empty($filters['tanggal_awal'])) {
+            $query->whereDate('tanggal_penilaian', '>=', $filters['tanggal_awal']);
+        }
+
+        if (!empty($filters['tanggal_akhir'])) {
+            $query->whereDate('tanggal_penilaian', '<=', $filters['tanggal_akhir']);
+        }
+
+        if (!empty($filters['pembimbing_id'])) {
+            $query->where('pembimbing_id', $filters['pembimbing_id']);
+        }
+
+        if (!empty($filters['kelompok_id'])) {
+            $query->whereHas('siswa.kelompokBimbingan', function ($q) use ($filters) {
+                $q->where('kelompok_bimbingan.id', $filters['kelompok_id']);
+            });
+        }
+
+        if (!empty($filters['materi_id'])) {
+            $query->where('materi_id', $filters['materi_id']);
+        }
+
+        if (!empty($filters['nilai_sikap'])) {
+            $query->where('nilai_sikap', $filters['nilai_sikap']);
+        }
+
+        if (!empty($filters['keyword'])) {
+            $keyword = trim((string) $filters['keyword']);
+            $query->where(function ($q) use ($keyword) {
+                $q->where('catatan', 'like', '%' . $keyword . '%')
+                    ->orWhereHas('siswa', function ($sq) use ($keyword) {
+                        $sq->where('nama_siswa', 'like', '%' . $keyword . '%');
+                    })
+                    ->orWhereHas('pembimbing', function ($pq) use ($keyword) {
+                        $pq->where('nama_pembimbing', 'like', '%' . $keyword . '%');
+                    })
+                    ->orWhereHas('materi', function ($mq) use ($keyword) {
+                        $mq->where('topik', 'like', '%' . $keyword . '%');
+                    })
+                    ->orWhereHas('siswa.kelompokBimbingan', function ($kq) use ($keyword) {
+                        $kq->where('nama_kelompok', 'like', '%' . $keyword . '%');
+                    });
+            });
+        }
+
+        $nilaiSikap = $query->get();
+
+        // Calculate statistics
+        $sangat_baik = $nilaiSikap->where('nilai_sikap', 'sangat_baik')->count();
+        $baik = $nilaiSikap->where('nilai_sikap', 'baik')->count();
+        $cukup = $nilaiSikap->where('nilai_sikap', 'cukup')->count();
+        $perlu_bimbingan = $nilaiSikap->where('nilai_sikap', 'perlu_bimbingan')->count();
+        
+        // Get distinct counts
+        $guruSudahInput = $nilaiSikap->pluck('pembimbing_id')->unique()->count();
+        $siswaTerinput = $nilaiSikap->pluck('siswa_id')->unique()->count();
+
+        return response()->json([
+            'sangat_baik' => $sangat_baik,
+            'baik' => $baik,
+            'cukup' => $cukup,
+            'perlu_bimbingan' => $perlu_bimbingan,
+            'guru_sudah_input' => $guruSudahInput,
+            'guru_belum_input' => 0,
+            'siswa_terinput' => $siswaTerinput,
+            'siswa_belum_input' => 0,
+        ]);
+    }
+
     public function pageInputStudents(Request $request)
     {
         $pembimbingAuthId = $this->getAuthorizedPembimbingForSikapPage();

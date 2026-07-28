@@ -78,6 +78,40 @@ class CekKelengkapanSiswaController extends Controller
         ]);
     }
 
+    public function getDashboardCardCounts(Request $request)
+    {
+        $pembimbingAuthId = $this->getAuthorizedPembimbingId();
+
+        $filters = [
+            'tanggal_awal' => $request->get('tanggal_awal'),
+            'tanggal_akhir' => $request->get('tanggal_akhir'),
+            'pembimbing_id' => $request->get('pembimbing_id'),
+            'kelompok_id' => $request->get('kelompok_id'),
+            'sesi_cek' => $request->get('sesi_cek'),
+            'status_kelengkapan' => $request->get('status_kelengkapan'),
+            'keyword' => $request->get('keyword'),
+        ];
+
+        $records = $this->buildFilteredQuery($filters, $pembimbingAuthId)->get();
+
+        // Calculate statistics
+        $lengkapCount = $records->where('is_lengkap', true)->count();
+        $belumLengkapCount = $records->where('is_lengkap', false)->count();
+        
+        // Get distinct counts
+        $guruSudahInput = $records->pluck('pembimbing_id')->unique()->count();
+        $siswaTerinput = $records->pluck('siswa_id')->unique()->count();
+
+        return response()->json([
+            'siswa_lengkap' => $lengkapCount,
+            'siswa_belum_lengkap' => $belumLengkapCount,
+            'guru_sudah_input' => $guruSudahInput,
+            'guru_belum_input' => 0, // Will be calculated on frontend or handled separately
+            'siswa_terinput' => $siswaTerinput,
+            'siswa_belum_input' => 0, // Will be calculated on frontend or handled separately
+        ]);
+    }
+
     public function inputStudents(Request $request)
     {
         $pembimbingAuthId = $this->getAuthorizedPembimbingId();

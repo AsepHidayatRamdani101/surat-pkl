@@ -322,6 +322,9 @@ class AbsensiPembekalanController extends Controller
             'tanggal_awal' => $request->get('tanggal_awal'),
             'tanggal_akhir' => $request->get('tanggal_akhir'),
             'pembimbing_id' => $request->get('pembimbing_id'),
+            'kelompok_id' => $request->get('kelompok_id'),
+            'status' => $request->get('status'),
+            'sesi_absensi' => $request->get('sesi_absensi'),
             'keyword' => $request->get('keyword'),
         ];
 
@@ -331,11 +334,62 @@ class AbsensiPembekalanController extends Controller
         $detailTitle = '';
         $detailDescription = '';
 
+        // Build base query with filters for attendance records
+        $absensiQuery = AbsensiPembekalan::with(['pembimbing', 'siswa.kelas', 'siswa.kelompokBimbingan']);
+
+        if ($isPembimbing && !empty($pembimbingAuthId)) {
+            $absensiQuery->where('pembimbing_id', $pembimbingAuthId);
+        }
+
+        if (!empty($filters['tanggal_awal'])) {
+            $absensiQuery->whereDate('tanggal_absensi', '>=', $filters['tanggal_awal']);
+        }
+
+        if (!empty($filters['tanggal_akhir'])) {
+            $absensiQuery->whereDate('tanggal_absensi', '<=', $filters['tanggal_akhir']);
+        }
+
+        if (!empty($filters['pembimbing_id'])) {
+            $absensiQuery->where('pembimbing_id', $filters['pembimbing_id']);
+        }
+
+        if (!empty($filters['kelompok_id'])) {
+            $absensiQuery->whereHas('siswa.kelompokBimbingan', function ($q) use ($filters) {
+                $q->where('kelompok_bimbingan.id', $filters['kelompok_id']);
+            });
+        }
+
+        if (!empty($filters['status'])) {
+            $absensiQuery->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['sesi_absensi'])) {
+            $absensiQuery->where('sesi_absensi', $filters['sesi_absensi']);
+        }
+
+        if (!empty($filters['keyword'])) {
+            $keyword = trim((string) $filters['keyword']);
+            $absensiQuery->where(function ($q) use ($keyword) {
+                $q->where('keterangan', 'like', '%' . $keyword . '%')
+                    ->orWhereHas('siswa', function ($sq) use ($keyword) {
+                        $sq->where('nama_siswa', 'like', '%' . $keyword . '%');
+                    })
+                    ->orWhereHas('pembimbing', function ($pq) use ($keyword) {
+                        $pq->where('nama_pembimbing', 'like', '%' . $keyword . '%');
+                    })
+                    ->orWhereHas('siswa.kelompokBimbingan', function ($kq) use ($keyword) {
+                        $kq->where('nama_kelompok', 'like', '%' . $keyword . '%');
+                    });
+            });
+        }
+
+        $filteredAbsensi = $absensiQuery->get();
+
         if ($detailType === 'siswa_absen') {
             $detailTitle = 'Siswa yang Telah Diabsen';
             $detailDescription = 'Daftar siswa yang telah melakukan absensi pembekalan';
             
-            $siswaAbsenIds = AbsensiPembekalan::distinct('siswa_id')->pluck('siswa_id');
+            $siswaAbsenIds = $filteredAbsensi->pluck('siswa_id')->unique();
             
             $query = Siswa::distinct()
                 ->with(['kelas', 'kelompokBimbingan'])
@@ -347,21 +401,13 @@ class AbsensiPembekalanController extends Controller
                 });
             }
 
-            if (!empty($filters['keyword'])) {
-                $keyword = trim((string) $filters['keyword']);
-                $query->where(function ($q) use ($keyword) {
-                    $q->where('nama_siswa', 'like', '%' . $keyword . '%')
-                        ->orWhere('nis', 'like', '%' . $keyword . '%');
-                });
-            }
-
             $detailData = $query->orderBy('nama_siswa')->get();
 
         } elseif ($detailType === 'guru_absen') {
             $detailTitle = 'Guru yang Telah Mengabsen';
             $detailDescription = 'Daftar guru pembimbing yang telah melakukan absensi pembekalan';
             
-            $guruAbsenIds = AbsensiPembekalan::distinct('pembimbing_id')->pluck('pembimbing_id');
+            $guruAbsenIds = $filteredAbsensi->pluck('pembimbing_id')->unique();
             
             $query = Pembimbing::distinct()
                 ->whereIn('id', $guruAbsenIds);
@@ -370,21 +416,17 @@ class AbsensiPembekalanController extends Controller
                 $query->where('id', $pembimbingAuthId);
             }
 
-            if (!empty($filters['keyword'])) {
-                $keyword = trim((string) $filters['keyword']);
-                $query->where('nama_pembimbing', 'like', '%' . $keyword . '%');
-            }
-
             $detailData = $query->orderBy('nama_pembimbing')->get();
 
         } elseif ($detailType === 'siswa_belum') {
             $detailTitle = 'Siswa yang Belum Diabsen';
             $detailDescription = 'Daftar siswa yang belum melakukan absensi pembekalan';
             
-            $siswaAbsenIds = AbsensiPembekalan::distinct('siswa_id')->pluck('siswa_id');
+            // Get all siswa that do NOT have records in the filtered absensi data
+            $siswaAbsenIds = $filteredAbsensi->pluck('siswa_id')->unique();
             
-            $query = Siswa::with(['kelas', 'kelompokBimbingan'])
-                ->whereNotIn('id', $siswaAbsenIds);
+            // Query all siswa from the filtered context
+            $query = Siswa::with(['kelas', 'kelompokBimbingan']);
 
             if ($isPembimbing && !empty($pembimbingAuthId)) {
                 $query->whereHas('kelompokBimbingan', function ($q) use ($pembimbingAuthId) {
@@ -392,13 +434,13 @@ class AbsensiPembekalanController extends Controller
                 });
             }
 
-            if (!empty($filters['keyword'])) {
-                $keyword = trim((string) $filters['keyword']);
-                $query->where(function ($q) use ($keyword) {
-                    $q->where('nama_siswa', 'like', '%' . $keyword . '%')
-                        ->orWhere('nis', 'like', '%' . $keyword . '%');
+            if (!empty($filters['kelompok_id'])) {
+                $query->whereHas('kelompokBimbingan', function ($q) use ($filters) {
+                    $q->where('kelompok_bimbingan.id', $filters['kelompok_id']);
                 });
             }
+
+            $query->whereNotIn('id', $siswaAbsenIds);
 
             $detailData = $query->orderBy('nama_siswa')->get();
 
@@ -406,7 +448,7 @@ class AbsensiPembekalanController extends Controller
             $detailTitle = 'Guru yang Belum Mengabsen';
             $detailDescription = 'Daftar guru pembimbing yang belum melakukan absensi pembekalan';
             
-            $guruAbsenIds = AbsensiPembekalan::distinct('pembimbing_id')->pluck('pembimbing_id');
+            $guruAbsenIds = $filteredAbsensi->pluck('pembimbing_id')->unique();
             
             $query = Pembimbing::whereNotIn('id', $guruAbsenIds);
 
@@ -414,9 +456,8 @@ class AbsensiPembekalanController extends Controller
                 $query->where('id', $pembimbingAuthId);
             }
 
-            if (!empty($filters['keyword'])) {
-                $keyword = trim((string) $filters['keyword']);
-                $query->where('nama_pembimbing', 'like', '%' . $keyword . '%');
+            if (!empty($filters['pembimbing_id'])) {
+                $query->where('id', $filters['pembimbing_id']);
             }
 
             $detailData = $query->orderBy('nama_pembimbing')->get();
@@ -803,6 +844,131 @@ class AbsensiPembekalanController extends Controller
         }
 
         throw new UnauthorizedException('Anda tidak memiliki akses ke modul absensi ini.');
+    }
+
+    public function getDashboardCardCounts(Request $request)
+    {
+        $authUser = auth()->user();
+        $isPanitia = $authUser && Gate::forUser($authUser)->allows('panitia');
+        $isPembimbing = $authUser && Gate::forUser($authUser)->allows('pembimbing');
+        $pembimbingAuthId = null;
+
+        if ($isPembimbing) {
+            $pembimbingAuthId = $authUser->pembimbing?->id;
+        }
+
+        $validated = $request->validate([
+            'tanggal_awal' => ['nullable', 'date'],
+            'tanggal_akhir' => ['nullable', 'date'],
+            'pembimbing_id' => ['nullable', 'exists:pembimbings,id'],
+            'kelompok_id' => ['nullable', 'exists:kelompok_bimbingan,id'],
+            'status' => ['nullable', 'in:hadir,izin,alpa'],
+            'sesi_absensi' => ['nullable', 'in:datang,pulang'],
+            'keyword' => ['nullable', 'string'],
+        ]);
+
+        $filters = [
+            'tanggal_awal' => $validated['tanggal_awal'] ?? '',
+            'tanggal_akhir' => $validated['tanggal_akhir'] ?? '',
+            'pembimbing_id' => $validated['pembimbing_id'] ?? '',
+            'kelompok_id' => $validated['kelompok_id'] ?? '',
+            'status' => $validated['status'] ?? '',
+            'sesi_absensi' => $validated['sesi_absensi'] ?? '',
+            'keyword' => $validated['keyword'] ?? '',
+        ];
+
+        // Build query for filtered data
+        $query = AbsensiPembekalan::with(['pembimbing', 'siswa.kelas', 'siswa.kelompokBimbingan'])
+            ->latest('tanggal_absensi')
+            ->latest('id');
+
+        if ($isPembimbing) {
+            if (empty($pembimbingAuthId)) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->where('pembimbing_id', $pembimbingAuthId);
+            }
+        }
+
+        if (!empty($filters['tanggal_awal'])) {
+            $query->whereDate('tanggal_absensi', '>=', $filters['tanggal_awal']);
+        }
+
+        if (!empty($filters['tanggal_akhir'])) {
+            $query->whereDate('tanggal_absensi', '<=', $filters['tanggal_akhir']);
+        }
+
+        if (!empty($filters['pembimbing_id'])) {
+            $query->where('pembimbing_id', $filters['pembimbing_id']);
+        }
+
+        if (!empty($filters['kelompok_id'])) {
+            $query->whereHas('siswa.kelompokBimbingan', function ($q) use ($filters) {
+                $q->where('kelompok_bimbingan.id', $filters['kelompok_id']);
+            });
+        }
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['sesi_absensi'])) {
+            $query->where('sesi_absensi', $filters['sesi_absensi']);
+        }
+
+        if (!empty($filters['keyword'])) {
+            $keyword = trim((string) $filters['keyword']);
+            $query->where(function ($q) use ($keyword) {
+                $q->where('keterangan', 'like', '%' . $keyword . '%')
+                    ->orWhereHas('siswa', function ($sq) use ($keyword) {
+                        $sq->where('nama_siswa', 'like', '%' . $keyword . '%');
+                    })
+                    ->orWhereHas('pembimbing', function ($pq) use ($keyword) {
+                        $pq->where('nama_pembimbing', 'like', '%' . $keyword . '%');
+                    })
+                    ->orWhereHas('siswa.kelompokBimbingan', function ($kq) use ($keyword) {
+                        $kq->where('nama_kelompok', 'like', '%' . $keyword . '%');
+                    });
+            });
+        }
+
+        $absensi = $query->get();
+
+        // Get all students and pembimbings for comparison
+        $siswaOptionsQuery = Siswa::query();
+        if ($isPembimbing) {
+            if (empty($pembimbingAuthId)) {
+                $siswaOptionsQuery->whereRaw('1 = 0');
+            } else {
+                $siswaOptionsQuery->whereHas('kelompokBimbingan', function ($q) use ($pembimbingAuthId) {
+                    $q->where('kelompok_bimbingan.pembimbing_id', $pembimbingAuthId);
+                });
+            }
+        }
+        $totalSiswa = $siswaOptionsQuery->count();
+
+        $pembimbingOptionsQuery = Pembimbing::query();
+        if ($isPembimbing) {
+            if (empty($pembimbingAuthId)) {
+                $pembimbingOptionsQuery->whereRaw('1 = 0');
+            } else {
+                $pembimbingOptionsQuery->whereKey($pembimbingAuthId);
+            }
+        }
+        $totalPembimbing = $pembimbingOptionsQuery->count();
+
+        // Calculate statistics
+        $siswaAbsenCount = $absensi->pluck('siswa_id')->unique()->count();
+        $pembimbingAbsenCount = $absensi->pluck('pembimbing_id')->unique()->count();
+        $siswaBelumAbs = max(0, $totalSiswa - $siswaAbsenCount);
+        $pembimbingBelumAbs = max(0, $totalPembimbing - $pembimbingAbsenCount);
+
+        return response()->json([
+            'siswa_telah_diabsen' => $siswaAbsenCount,
+            'guru_telah_mengabsen' => $pembimbingAbsenCount,
+            'siswa_belum_diabsen' => $siswaBelumAbs,
+            'guru_belum_mengabsen' => $pembimbingBelumAbs,
+        ]);
     }
 
     private function resolveFormulirData(Request $request): array

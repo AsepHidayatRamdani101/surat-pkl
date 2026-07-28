@@ -213,6 +213,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pembekalan/absensi/detail', [AbsensiPembekalanController::class, 'pageDetailAbsensi'])->name('pembekalan.absensi.detail');
     Route::get('/pembekalan/absensi/formulir', [AbsensiPembekalanController::class, 'pageFormulir'])->name('pembekalan.absensi.formulir');
     Route::get('/pembekalan/absensi/formulir/pdf', [AbsensiPembekalanController::class, 'pageFormulirPdf'])->name('pembekalan.absensi.formulir.pdf');
+    Route::get('/api/pembekalan/absensi/dashboard-cards', [AbsensiPembekalanController::class, 'getDashboardCardCounts'])->name('api.absensi.dashboard-cards');
     Route::get('/pembekalan/kelengkapan-siswa', [CekKelengkapanSiswaController::class, 'index'])->name('pembekalan.kelengkapan');
     Route::get('/pembekalan/kelengkapan-siswa/input/students', [CekKelengkapanSiswaController::class, 'inputStudents'])->name('pembekalan.kelengkapan.input.students');
     Route::post('/pembekalan/kelengkapan-siswa/bulk', [CekKelengkapanSiswaController::class, 'bulkStore'])->name('pembekalan.kelengkapan.bulk-store');

@@ -116,69 +116,6 @@
         @endif
 
         @if ($showRiwayatSection)
-            {{-- Dashboard Cards --}}
-            <div class="row pt-3">
-                {{-- Siswa Telah Diabsen --}}
-                <div class="col-lg-3 col-6">
-                    <div class="small-box bg-primary h-100">
-                        <div class="inner">
-                            <h3>{{ $siswaAbsenCount }}</h3>
-                            <p>Siswa Telah Diabsen</p>
-                            <a href="{{ route('pembekalan.absensi.detail', ['type' => 'siswa_absen']) }}"
-                                class="btn btn-block btn-primary">Lihat Detail</a>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Guru Telah Mengabsen --}}
-                <div class="col-lg-3 col-6">
-                    <div class="small-box bg-success h-100">
-                        <div class="inner">
-                            <h3>{{ $pembimbingAbsenCount }}</h3>
-                            <p>Guru Telah Mengabsen</p>
-                            <a href="{{ route('pembekalan.absensi.detail', ['type' => 'guru_absen']) }}"
-                                class="btn btn-block btn-primary">Lihat Detail</a>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-user-check"></i>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Siswa Belum Diabsen --}}
-                <div class="col-lg-3 col-6">
-                    <div class="small-box bg-warning h-100">
-                        <div class="inner">
-                            <h3>{{ $siswaBelumAbs }}</h3>
-                            <p>Siswa Belum Diabsen</p>
-                            <a href="{{ route('pembekalan.absensi.detail', ['type' => 'siswa_belum']) }}"
-                                class="btn btn-block btn-primary">Lihat Detail</a>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-hourglass-half"></i>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Guru Belum Mengabsen --}}
-                <div class="col-lg-3 col-6">
-                    <div class="small-box bg-danger h-100">
-                        <div class="inner">
-                            <h3>{{ $pembimbingBelumAbs }}</h3>
-                            <p>Guru Belum Mengabsen</p>
-                            <a href="{{ route('pembekalan.absensi.detail', ['type' => 'guru_belum']) }}"
-                                class="btn btn-block btn-primary">Lihat Detail</a>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-user-times"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <div class="card shadow-sm border-0 mb-3" id="lihat-absensi">
                 <div class="card-body py-3">
                     <div class="d-flex justify-content-end mb-2">
@@ -189,21 +126,23 @@
                             <i class="fas fa-user-shield mr-1"></i> Pembinaan
                         </a>
                     </div>
-                    <form method="GET" action="{{ route('pembekalan.absensi.riwayat') }}">
+                    <form method="GET" action="{{ route('pembekalan.absensi.riwayat') }}" id="filterForm"
+                        class="filter-form">
                         <div class="form-row align-items-end">
                             <div class="col-md-3 mb-2">
                                 <label class="mb-1">Dari</label>
-                                <input type="date" name="tanggal_awal" class="form-control form-control-sm"
+                                <input type="date" name="tanggal_awal" class="form-control form-control-sm filter-input"
                                     value="{{ $filters['tanggal_awal'] }}">
                             </div>
                             <div class="col-md-3 mb-2">
                                 <label class="mb-1">Sampai</label>
-                                <input type="date" name="tanggal_akhir" class="form-control form-control-sm"
+                                <input type="date" name="tanggal_akhir"
+                                    class="form-control form-control-sm filter-input"
                                     value="{{ $filters['tanggal_akhir'] }}">
                             </div>
                             <div class="col-md-3 mb-2">
                                 <label class="mb-1">Pembimbing</label>
-                                <select name="pembimbing_id" class="form-control form-control-sm">
+                                <select name="pembimbing_id" class="form-control form-control-sm filter-input">
                                     <option value="">Semua Pembimbing</option>
                                     @foreach ($pembimbingOptions as $pembimbing)
                                         <option value="{{ $pembimbing->id }}"
@@ -223,7 +162,7 @@
                         <div class="form-row mt-1">
                             <div class="col-md-3 mb-2">
                                 <label class="mb-1">Status</label>
-                                <select name="status" class="form-control form-control-sm">
+                                <select name="status" class="form-control form-control-sm filter-input">
                                     <option value="">Semua Status</option>
                                     <option value="hadir" {{ $filters['status'] === 'hadir' ? 'selected' : '' }}>Hadir
                                     </option>
@@ -235,7 +174,7 @@
                             </div>
                             <div class="col-md-3 mb-2">
                                 <label class="mb-1">Sesi</label>
-                                <select name="sesi_absensi" class="form-control form-control-sm">
+                                <select name="sesi_absensi" class="form-control form-control-sm filter-input">
                                     <option value="">Semua Sesi</option>
                                     <option value="datang" {{ $filters['sesi_absensi'] === 'datang' ? 'selected' : '' }}>
                                         Datang</option>
@@ -245,7 +184,7 @@
                             </div>
                             <div class="col-md-3 mb-2">
                                 <label class="mb-1">Kelompok</label>
-                                <select name="kelompok_id" class="form-control form-control-sm">
+                                <select name="kelompok_id" class="form-control form-control-sm filter-input">
                                     <option value="">Semua Kelompok</option>
                                     @foreach ($kelompokOptions as $kelompok)
                                         <option value="{{ $kelompok->id }}"
@@ -257,12 +196,75 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="mb-1">Cari Data</label>
-                                <input type="text" name="keyword" class="form-control form-control-sm"
+                                <input type="text" name="keyword" class="form-control form-control-sm filter-input"
                                     placeholder="Cari siswa, pembimbing, atau keterangan"
                                     value="{{ $filters['keyword'] }}">
                             </div>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            {{-- Dashboard Cards --}}
+            <div class="row pt-2">
+                {{-- Siswa Telah Diabsen --}}
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-primary h-100">
+                        <div class="inner">
+                            <h3 id="card-siswa-telah-diabsen">{{ $siswaAbsenCount }}</h3>
+                            <p>Siswa Telah Diabsen</p>
+                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'siswa_absen'], array_filter($filters))) }}"
+                                class="btn btn-block btn-primary">Lihat Detail</a>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Guru Telah Mengabsen --}}
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-success h-100">
+                        <div class="inner">
+                            <h3 id="card-guru-telah-mengabsen">{{ $pembimbingAbsenCount }}</h3>
+                            <p>Guru Telah Mengabsen</p>
+                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'guru_absen'], array_filter($filters))) }}"
+                                class="btn btn-block btn-primary">Lihat Detail</a>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Siswa Belum Diabsen --}}
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-warning h-100">
+                        <div class="inner">
+                            <h3 id="card-siswa-belum-diabsen">{{ $siswaBelumAbs }}</h3>
+                            <p>Siswa Belum Diabsen</p>
+                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'siswa_belum'], array_filter($filters))) }}"
+                                class="btn btn-block btn-primary">Lihat Detail</a>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Guru Belum Mengabsen --}}
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-danger h-100">
+                        <div class="inner">
+                            <h3 id="card-guru-belum-mengabsen">{{ $pembimbingBelumAbs }}</h3>
+                            <p>Guru Belum Mengabsen</p>
+                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'guru_belum'], array_filter($filters))) }}"
+                                class="btn btn-block btn-primary">Lihat Detail</a>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-user-times"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -385,6 +387,102 @@
                 console.error('DataTables library gagal dimuat.');
                 return;
             }
+
+            // Dynamic Dashboard Cards Update
+            let updateCardsTimeout;
+            const filterInputs = document.querySelectorAll('.filter-input');
+            const cardsUpdateApiUrl = @json(route('api.absensi.dashboard-cards'));
+
+            function getFilterQueryString() {
+                const formData = new FormData(document.getElementById('filterForm'));
+                const params = new URLSearchParams(formData);
+                return params.toString();
+            }
+
+            function updateDetailLinks() {
+                const formData = new FormData(document.getElementById('filterForm'));
+                const params = new URLSearchParams(formData);
+
+                const detailLinkConfigs = [{
+                        cardId: 'card-siswa-telah-diabsen',
+                        type: 'siswa_absen'
+                    },
+                    {
+                        cardId: 'card-guru-telah-mengabsen',
+                        type: 'guru_absen'
+                    },
+                    {
+                        cardId: 'card-siswa-belum-diabsen',
+                        type: 'siswa_belum'
+                    },
+                    {
+                        cardId: 'card-guru-belum-mengabsen',
+                        type: 'guru_belum'
+                    }
+                ];
+
+                detailLinkConfigs.forEach(config => {
+                    const card = document.getElementById(config.cardId);
+                    if (card) {
+                        const link = card.closest('.small-box').querySelector('a.btn-primary');
+                        if (link) {
+                            // Build the detail URL with current filters
+                            const baseUrl = @json(route('pembekalan.absensi.detail', ['type' => 'siswa_absen']));
+                            const pathOnly = baseUrl.split('?')[0];
+                            const detailUrl = pathOnly.replace('siswa_absen', config.type);
+
+                            // Add query parameters
+                            const queryString = params.toString();
+                            link.href = queryString ? `${detailUrl}?${queryString}` : detailUrl;
+                        }
+                    }
+                });
+            }
+
+            function updateDashboardCards() {
+                clearTimeout(updateCardsTimeout);
+                updateCardsTimeout = setTimeout(function() {
+                    const params = getFilterQueryString();
+
+                    fetch(`${cardsUpdateApiUrl}?${params}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // Update card values with animation
+                            updateCardValue('card-siswa-telah-diabsen', data.siswa_telah_diabsen);
+                            updateCardValue('card-guru-telah-mengabsen', data.guru_telah_mengabsen);
+                            updateCardValue('card-siswa-belum-diabsen', data.siswa_belum_diabsen);
+                            updateCardValue('card-guru-belum-mengabsen', data.guru_belum_mengabsen);
+                            // Update detail links with new filter parameters
+                            updateDetailLinks();
+                        })
+                        .catch(error => console.error('Error updating cards:', error));
+                }, 500); // Debounce 500ms
+            }
+
+            function updateCardValue(elementId, newValue) {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    const currentValue = parseInt(element.textContent);
+                    if (currentValue !== newValue) {
+                        element.textContent = newValue;
+                        // Add a subtle pulse animation
+                        element.style.transition = 'color 0.3s ease';
+                        element.style.color = '#ffc107';
+                        setTimeout(() => {
+                            element.style.color = '';
+                        }, 300);
+                    }
+                }
+            }
+
+            // Add event listeners to all filter inputs
+            filterInputs.forEach(input => {
+                input.addEventListener('change', updateDashboardCards);
+                input.addEventListener('input', updateDashboardCards);
+            });
+
+            // Initialize detail links on page load
+            updateDetailLinks();
 
             // Bulk delete functionality
             const selectAllCheckbox = document.getElementById('selectAllCheckbox');

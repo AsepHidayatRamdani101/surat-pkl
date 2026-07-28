@@ -377,6 +377,28 @@ return [
                 ],
             ],
         ],
+        [
+            'text' => 'Komunikasi',
+            'icon' => 'fas fa-envelope',
+            'can'  => 'panitia',
+            'submenu' => [
+                [
+                    'text' => 'Kirim Pesan',
+                    'url'  => 'template-informasi/send-message',
+                    'icon' => 'fas fa-paper-plane',
+                ],
+                [
+                    'text' => 'Template Informasi',
+                    'url'  => 'template-informasi',
+                    'icon' => 'fas fa-file-alt',
+                ],
+                [
+                    'text' => 'Riwayat Pengiriman',
+                    'url'  => 'template-informasi/logs',
+                    'icon' => 'fas fa-history',
+                ],
+            ],
+        ],
         // Menu untuk Kepala Program
         [
             'text' => 'Dashboard',

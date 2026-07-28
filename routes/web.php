@@ -25,6 +25,7 @@ use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\SuratIzinOrtuController;
 use App\Http\Controllers\TempatPklController;
 use App\Http\Controllers\UserManagementController;
+use App\Http\Controllers\MessageTemplateController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -324,4 +325,33 @@ Route::middleware(['auth', 'can:panitia'])->group(function () {
     Route::get('/manajemen-role/{role}/edit', [RoleManagementController::class, 'edit'])->name('role-management.edit');
     Route::put('/manajemen-role/{role}', [RoleManagementController::class, 'update'])->name('role-management.update');
     Route::delete('/manajemen-role/{role}', [RoleManagementController::class, 'destroy'])->name('role-management.destroy');
+
+    Route::get('/template-informasi', [MessageTemplateController::class, 'index'])->name('message-template.index');
+    Route::get('/template-informasi/data', [MessageTemplateController::class, 'data'])->name('message-template.data');
+    Route::get('/template-informasi/create', [MessageTemplateController::class, 'create'])->name('message-template.create');
+    Route::get('/template-informasi/send-message', [MessageTemplateController::class, 'sendMessage'])->name('message-template.send-message');
+    Route::get('/template-informasi/logs', [MessageTemplateController::class, 'logs'])->name('message-template.logs');
+    Route::get('/template-informasi/logs/data', [MessageTemplateController::class, 'logsData'])->name('message-template.logs-data');
+    Route::post('/template-informasi', [MessageTemplateController::class, 'store'])->name('message-template.store');
+    Route::get('/template-informasi/{messageTemplate}/edit', [MessageTemplateController::class, 'edit'])->name('message-template.edit');
+    Route::put('/template-informasi/{messageTemplate}', [MessageTemplateController::class, 'update'])->name('message-template.update');
+    Route::delete('/template-informasi/{messageTemplate}', [MessageTemplateController::class, 'destroy'])->name('message-template.destroy');
+    Route::get('/template-informasi/{messageTemplate}/send', [MessageTemplateController::class, 'send'])->name('message-template.send');
+    Route::post('/template-informasi/{messageTemplate}/send-personal', [MessageTemplateController::class, 'sendPersonal'])->name('message-template.send-personal');
+    Route::post('/template-informasi/{messageTemplate}/send-mass', [MessageTemplateController::class, 'sendMass'])->name('message-template.send-mass');
+    
+    Route::get('/api/siswa-list', [MessageTemplateController::class, 'apiSiswaList'])->name('api.siswa-list');
+});
+
+
+Route::get('/test-fonnte', function () {
+
+    $response = Http::withHeaders([
+        'Authorization' => env('FONNTE_TOKEN')
+    ])->asForm()->post('https://api.fonnte.com/send', [
+        'target' => '628562087589',
+        'message' => 'Halo, ini adalah pesan percobaan dari aplikasi SIPKL.'
+    ]);
+
+    return $response->json();
 });

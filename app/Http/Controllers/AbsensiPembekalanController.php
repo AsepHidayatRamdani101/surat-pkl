@@ -487,7 +487,7 @@ class AbsensiPembekalanController extends Controller
             'siswa_ids' => ['required', 'array', 'min:1'],
             'siswa_ids.*' => ['required', 'exists:siswa,id'],
             'statuses' => ['required', 'array'],
-            'statuses.*' => ['required', 'in:hadir,izin,alpa'],
+            'statuses.*' => ['required', 'in:hadir,izin,alpa,sakit,terlambat'],
             'keterangans' => ['nullable', 'array'],
             'keterangans.*' => ['nullable', 'string', 'max:1000'],
         ]);
@@ -560,7 +560,7 @@ class AbsensiPembekalanController extends Controller
             'siswa_id' => ['required', 'exists:siswa,id'],
             'tanggal_absensi' => ['required', 'date'],
             'sesi_absensi' => ['required', 'in:datang,pulang'],
-            'status' => ['required', 'in:hadir,izin,alpa'],
+            'status' => ['required', 'in:hadir,izin,alpa,sakit,terlambat'],
             'atribut_lengkap' => ['nullable', 'boolean'],
             'keterangan' => ['nullable', 'string'],
         ]);
@@ -596,7 +596,7 @@ class AbsensiPembekalanController extends Controller
             'siswa_id' => ['required', 'exists:siswa,id'],
             'tanggal_absensi' => ['required', 'date'],
             'sesi_absensi' => ['required', 'in:datang,pulang'],
-            'status' => ['required', 'in:hadir,izin,alpa'],
+            'status' => ['required', 'in:hadir,izin,alpa,sakit,terlambat'],
             'atribut_lengkap' => ['nullable', 'boolean'],
             'keterangan' => ['nullable', 'string'],
         ]);
@@ -691,7 +691,7 @@ class AbsensiPembekalanController extends Controller
             'siswa_id' => ['required', 'exists:siswa,id'],
             'tanggal_absensi' => ['required', 'date'],
             'sesi_absensi' => ['required', 'in:datang,pulang'],
-            'status' => ['required', 'in:hadir,izin,alpa'],
+            'status' => ['required', 'in:hadir,izin,alpa,sakit,terlambat'],
             'atribut_lengkap' => ['nullable', 'boolean'],
             'keterangan' => ['nullable', 'string'],
         ]);
@@ -722,7 +722,7 @@ class AbsensiPembekalanController extends Controller
             'siswa_id' => ['required', 'exists:siswa,id'],
             'tanggal_absensi' => ['required', 'date'],
             'sesi_absensi' => ['required', 'in:datang,pulang'],
-            'status' => ['required', 'in:hadir,izin,alpa'],
+            'status' => ['required', 'in:hadir,izin,alpa,sakit,terlambat'],
             'atribut_lengkap' => ['nullable', 'boolean'],
             'keterangan' => ['nullable', 'string'],
         ]);
@@ -876,7 +876,7 @@ class AbsensiPembekalanController extends Controller
             'tanggal_akhir' => ['nullable', 'date'],
             'pembimbing_id' => ['nullable', 'exists:pembimbings,id'],
             'kelompok_id' => ['nullable', 'exists:kelompok_bimbingan,id'],
-            'status' => ['nullable', 'in:hadir,izin,alpa'],
+            'status' => ['nullable', 'in:hadir,izin,alpa,sakit,terlambat'],
             'sesi_absensi' => ['nullable', 'in:datang,pulang'],
             'keyword' => ['nullable', 'string'],
         ]);

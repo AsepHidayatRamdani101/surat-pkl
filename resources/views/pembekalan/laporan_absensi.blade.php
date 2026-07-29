@@ -63,6 +63,10 @@
                                 <option value="hadir" {{ $filters['status'] === 'hadir' ? 'selected' : '' }}>Hadir</option>
                                 <option value="izin" {{ $filters['status'] === 'izin' ? 'selected' : '' }}>Izin</option>
                                 <option value="alpa" {{ $filters['status'] === 'alpa' ? 'selected' : '' }}>Alpa</option>
+                                <option value="sakit" {{ $filters['status'] === 'sakit' ? 'selected' : '' }}>Sakit
+                                </option>
+                                <option value="terlambat" {{ $filters['status'] === 'terlambat' ? 'selected' : '' }}>
+                                    Terlambat</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -173,6 +177,8 @@
                                                 'hadir' => 'success',
                                                 'izin' => 'warning',
                                                 'alpa' => 'danger',
+                                                'sakit' => 'info',
+                                                'terlambat' => 'primary',
                                             ][$item->status] ?? 'secondary';
                                     @endphp
                                     <span class="badge badge-{{ $badge }}">{{ strtoupper($item->status) }}</span>

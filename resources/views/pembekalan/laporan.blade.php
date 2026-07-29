@@ -208,6 +208,8 @@
                                                 'hadir' => 'success',
                                                 'izin' => 'warning',
                                                 'alpa' => 'danger',
+                                                'sakit' => 'info',
+                                                'terlambat' => 'primary',
                                             ][$item->status] ?? 'secondary';
                                     @endphp
                                     <span

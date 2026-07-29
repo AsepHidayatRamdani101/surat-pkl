@@ -15,28 +15,23 @@
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
 @endpush
 
-@section('content-header')
-    <div class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0">Template Informasi Siswa</h1>
-                </div>
-                <div class="col-sm-6 text-right">
-                    <button class="btn btn-sm btn-primary" id="btnTambahTemplate">
-                        <i class="fas fa-plus"></i> Buat Template Baru
-                    </button>
-                    <a href="{{ route('message-template.logs') }}" class="btn btn-sm btn-info">
-                        <i class="fas fa-history"></i> Riwayat Pengiriman
-                    </a>
+@section('content')
+    <div class="container-fluid">
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2>Template Informasi Siswa</h2>
+                    <div>
+                        <button type="button" class="btn btn-primary" id="btnTambahTemplate">
+                            <i class="fas fa-plus"></i> Buat Template Baru
+                        </button>
+                        <a href="{{ route('message-template.logs') }}" class="btn btn-info">
+                            <i class="fas fa-history"></i> Riwayat Pengiriman
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-@endsection
-
-@section('content')
-    <div class="container-fluid">
         @if (session('success'))
             <div class="alert alert-success alert-dismissible fade show">
                 <button type="button" class="close" data-dismiss="alert">&times;</button>
@@ -211,6 +206,9 @@
         var currentTemplate = null;
 
         $(function() {
+            console.log('DOM Ready - Template Page Initialized');
+            console.log('Button exists:', $('#btnTambahTemplate').length > 0);
+
             // Initialize Select2
             $('.select2').select2({
                 theme: 'bootstrap',
@@ -270,6 +268,7 @@
 
             // Tombol Buat Template Baru
             $(document).on('click', '#btnTambahTemplate', function() {
+                console.log('Tombol Buat Template Baru diklik');
                 resetForm();
                 $('#modalTitle').text('Buat Template Baru');
                 $('#formTemplate').attr('action', '{{ route('message-template.store') }}').attr('method',

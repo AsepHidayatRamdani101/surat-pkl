@@ -341,6 +341,8 @@ Route::middleware(['auth', 'can:panitia'])->group(function () {
     Route::post('/template-informasi/{messageTemplate}/send-mass', [MessageTemplateController::class, 'sendMass'])->name('message-template.send-mass');
     
     Route::get('/api/siswa-list', [MessageTemplateController::class, 'apiSiswaList'])->name('api.siswa-list');
+    Route::get('/api/guru-list', [MessageTemplateController::class, 'apiGuruList'])->name('api.guru-list');
+    Route::get('/api/orangtua-list', [MessageTemplateController::class, 'apiOrangtuaList'])->name('api.orangtua-list');
 });
 
 

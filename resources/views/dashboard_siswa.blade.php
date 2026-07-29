@@ -397,8 +397,17 @@
                                         <td>{{ $item->pembimbing->nama_pembimbing ?? '-' }}</td>
                                         <td>{{ $item->keterangan ?? '-' }}</td>
                                         <td>
-                                            <span
-                                                class="badge {{ $item->status === 'hadir' ? 'badge-success' : ($item->status === 'izin' ? 'badge-warning' : 'badge-danger') }}">
+                                            @php
+                                                $statusBadge =
+                                                    [
+                                                        'hadir' => 'badge-success',
+                                                        'izin' => 'badge-warning',
+                                                        'alpa' => 'badge-danger',
+                                                        'sakit' => 'badge-info',
+                                                        'terlambat' => 'badge-primary',
+                                                    ][$item->status] ?? 'badge-secondary';
+                                            @endphp
+                                            <span class="badge {{ $statusBadge }}">
                                                 {{ ucfirst($item->status ?? '-') }}
                                             </span>
                                         </td>

@@ -170,6 +170,11 @@
                                     </option>
                                     <option value="alpa" {{ $filters['status'] === 'alpa' ? 'selected' : '' }}>Alpa
                                     </option>
+                                    <option value="sakit" {{ $filters['status'] === 'sakit' ? 'selected' : '' }}>Sakit
+                                    </option>
+                                    <option value="terlambat" {{ $filters['status'] === 'terlambat' ? 'selected' : '' }}>
+                                        Terlambat
+                                    </option>
                                 </select>
                             </div>
                             <div class="col-md-3 mb-2">
@@ -329,6 +334,8 @@
                                                     'hadir' => 'success',
                                                     'izin' => 'warning',
                                                     'alpa' => 'danger',
+                                                    'sakit' => 'info',
+                                                    'terlambat' => 'primary',
                                                 ][$item->status] ?? 'secondary';
                                         @endphp
                                         <span
@@ -673,6 +680,8 @@
                                     <option value="hadir" ${status === 'hadir' ? 'selected' : ''}>Hadir</option>
                                     <option value="izin" ${status === 'izin' ? 'selected' : ''}>Izin</option>
                                     <option value="alpa" ${status === 'alpa' ? 'selected' : ''}>Alpa</option>
+                                    <option value="sakit" ${status === 'sakit' ? 'selected' : ''}>Sakit</option>
+                                    <option value="terlambat" ${status === 'terlambat' ? 'selected' : ''}>Terlambat</option>
                                 </select>
                             </td>
                             <td>

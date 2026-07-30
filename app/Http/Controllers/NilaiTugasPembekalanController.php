@@ -58,6 +58,85 @@ class NilaiTugasPembekalanController extends Controller
         return redirect()->route('pembekalan.jawaban-siswa')->with('success', 'Nilai tugas berhasil disimpan.');
     }
 
+    public function pageBulkStore(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user || (!Gate::forUser($user)->allows('pembimbing') && $user->role !== 'pembimbing')) {
+            throw new AuthorizationException('Akses hanya untuk pembimbing.');
+        }
+
+        $pembimbing = Pembimbing::query()
+            ->where('nip_pembimbing', (string) $user->username)
+            ->first();
+
+        if (!$pembimbing) {
+            throw new AuthorizationException('Data pembimbing untuk akun ini tidak ditemukan.');
+        }
+
+        $validated = $request->validate([
+            'nilai' => ['nullable', 'array'],
+            'nilai.*' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'catatan' => ['nullable', 'array'],
+            'catatan.*' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $nilaiInputs = collect($validated['nilai'] ?? [])
+            ->filter(fn($nilai) => $nilai !== null && $nilai !== '');
+
+        if ($nilaiInputs->isEmpty()) {
+            return redirect()->route('pembekalan.jawaban-siswa')->with('success', 'Belum ada nilai yang diinput.');
+        }
+
+        $jawabanIds = $nilaiInputs->keys()
+            ->map(fn($id) => (int) $id)
+            ->filter()
+            ->values();
+
+        $authorizedJawaban = JawabanTugasSiswa::query()
+            ->whereIn('id', $jawabanIds)
+            ->whereNotNull('submitted_at')
+            ->whereHas('siswa.kelompokBimbingan', function ($query) use ($pembimbing) {
+                $query->where('kelompok_bimbingan.pembimbing_id', $pembimbing->id);
+            })
+            ->get()
+            ->keyBy('id');
+
+        $catatanInputs = collect($validated['catatan'] ?? []);
+        $savedCount = 0;
+        $skippedCount = 0;
+
+        foreach ($nilaiInputs as $jawabanId => $nilai) {
+            $jawabanId = (int) $jawabanId;
+
+            if (!$authorizedJawaban->has($jawabanId)) {
+                $skippedCount++;
+                continue;
+            }
+
+            $catatan = $catatanInputs->get((string) $jawabanId, $catatanInputs->get($jawabanId));
+
+            NilaiTugasPembekalan::updateOrCreate(
+                ['jawaban_tugas_siswa_id' => $jawabanId],
+                [
+                    'jawaban_tugas_siswa_id' => $jawabanId,
+                    'pembimbing_id' => $pembimbing->id,
+                    'nilai' => $nilai,
+                    'catatan' => $catatan,
+                    'dinilai_at' => now(),
+                ]
+            );
+
+            $savedCount++;
+        }
+
+        $message = $savedCount . ' nilai berhasil disimpan/diperbarui.';
+        if ($skippedCount > 0) {
+            $message .= ' ' . $skippedCount . ' data dilewati karena tidak valid atau bukan bimbingan Anda.';
+        }
+
+        return redirect()->route('pembekalan.jawaban-siswa')->with('success', $message);
+    }
+
     public function index(Request $request)
     {
         $query = NilaiTugasPembekalan::with(['jawabanTugasSiswa.tugasPembekalan', 'jawabanTugasSiswa.siswa', 'pembimbing'])->latest();

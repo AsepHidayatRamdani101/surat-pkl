@@ -70,22 +70,28 @@
                     <h5 class="mb-0">Daftar Jawaban Siswa</h5>
                     <small class="text-muted">{{ $jawaban->count() }} data</small>
                 </div>
+                @if ($canInputNilai)
+                    <button type="submit" form="bulkNilaiForm" class="btn btn-sm btn-primary ml-auto">
+                        Simpan Nilai
+                    </button>
+                @endif
             </div>
             <div class="card-body table-responsive">
+                @if ($canInputNilai)
+                    <form method="POST" action="{{ route('pembekalan.jawaban-siswa.nilai.bulk-store') }}"
+                        id="bulkNilaiForm">
+                        @csrf
+                    </form>
+                @endif
                 <table id="jawabanTable" class="table table-bordered table-striped table-sm">
                     <thead>
                         <tr>
                             <th style="width: 95px;">Tanggal Submit</th>
                             <th style="width: 190px;">Siswa</th>
                             <th style="width: 200px;">Materi</th>
-                            <th style="width: 170px;">Judul Tugas</th>
-                            <th>Jawaban</th>
-                            <th style="width: 130px;">Lampiran</th>
-                            <th style="width: 90px;">Nilai</th>
-                            <th style="width: 170px;">Dinilai Oleh</th>
-                            @if ($canInputNilai)
-                                <th style="width: 210px;">Input Nilai</th>
-                            @endif
+                            <th style="width: 170px;">Tugas</th>
+                            <th style="width: 120px;">Nilai</th>
+                            <th style="width: 160px;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -112,47 +118,95 @@
                                     @endif
                                 </td>
                                 <td>{{ $item->tugasPembekalan->judul_tugas ?? '-' }}</td>
-                                <td>{{ \Illuminate\Support\Str::limit($item->jawaban_text ?? '-', 220) }}</td>
-                                <td>
-                                    @if ($item->lampiran_path)
-                                        <a href="{{ asset('storage/' . $item->lampiran_path) }}" target="_blank">Lihat</a>
-                                    @else
-                                        -
-                                    @endif
-                                </td>
                                 <td>{{ $item->nilaiTugas?->nilai ?? '-' }}</td>
-                                <td>{{ $item->nilaiTugas?->pembimbing?->nama_pembimbing ?? '-' }}</td>
-                                @if ($canInputNilai)
-                                    <td>
-                                        @if ($item->submitted_at)
-                                            <form method="POST"
-                                                action="{{ route('pembekalan.jawaban-siswa.nilai.store', $item->id) }}"
-                                                class="form-inline form-input-nilai">
-                                                @csrf
-                                                <input type="number" name="nilai"
-                                                    class="form-control form-control-sm mr-1" min="0" max="100"
-                                                    step="0.01" style="width: 90px;"
-                                                    value="{{ $item->nilaiTugas?->nilai ?? '' }}" required>
-                                                <input type="hidden" name="catatan"
-                                                    value="{{ $item->nilaiTugas?->catatan ?? '' }}">
-                                                <button type="submit" class="btn btn-xs btn-primary">
-                                                    {{ $item->nilaiTugas ? 'Ubah' : 'Simpan' }}
-                                                </button>
-                                            </form>
-                                        @else
-                                            <button type="button" class="btn btn-xs btn-secondary" disabled
-                                                title="Jawaban belum disubmit">
-                                                Belum Submit
-                                            </button>
-                                        @endif
-                                    </td>
-                                @endif
+                                <td>
+                                    <button type="button" class="btn btn-xs btn-info" data-toggle="modal"
+                                        data-target="#modalJawaban{{ $item->id }}">
+                                        Lihat Jawaban
+                                    </button>
+                                </td>
                             </tr>
                         @empty
                             {{-- Empty state handled by DataTables language.emptyTable. --}}
                         @endforelse
                     </tbody>
                 </table>
+
+                @foreach ($jawaban as $item)
+                    <div class="modal fade" id="modalJawaban{{ $item->id }}" tabindex="-1" role="dialog"
+                        aria-labelledby="modalJawabanLabel{{ $item->id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-lg" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalJawabanLabel{{ $item->id }}">Detail Jawaban Siswa
+                                    </h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-2">
+                                        <strong>Siswa:</strong> {{ $item->siswa->nama_siswa ?? '-' }}
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Materi:</strong> {{ $item->tugasPembekalan?->materi?->topik ?? '-' }}
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Judul Tugas:</strong> {{ $item->tugasPembekalan->judul_tugas ?? '-' }}
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Tanggal Submit:</strong>
+                                        @if ($item->submitted_at)
+                                            {{ \Carbon\Carbon::parse($item->submitted_at)->format('d-m-Y H:i') }}
+                                        @else
+                                            -
+                                        @endif
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Lampiran:</strong>
+                                        @if ($item->lampiran_path)
+                                            <a href="{{ asset('storage/' . $item->lampiran_path) }}" target="_blank">Lihat
+                                                Lampiran</a>
+                                        @else
+                                            -
+                                        @endif
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="mb-1"><strong>Jawaban Siswa</strong></label>
+                                        <textarea class="form-control form-control-sm" rows="8" readonly>{{ $item->jawaban_text ?? '-' }}</textarea>
+                                    </div>
+
+                                    @if ($canInputNilai)
+                                        <hr>
+                                        @if ($item->submitted_at)
+                                            <div class="form-row">
+                                                <div class="col-md-4 mb-2">
+                                                    <label class="mb-1">Nilai (0 - 100)</label>
+                                                    <input type="number" name="nilai[{{ $item->id }}]"
+                                                        form="bulkNilaiForm" class="form-control form-control-sm"
+                                                        min="0" max="100" step="0.01"
+                                                        value="{{ $item->nilaiTugas?->nilai ?? '' }}">
+                                                </div>
+                                                <div class="col-md-8 mb-2">
+                                                    <label class="mb-1">Catatan Penilaian</label>
+                                                    <input type="text" name="catatan[{{ $item->id }}]"
+                                                        form="bulkNilaiForm" class="form-control form-control-sm"
+                                                        value="{{ $item->nilaiTugas?->catatan ?? '' }}"
+                                                        placeholder="Catatan untuk siswa (opsional)">
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div class="alert alert-secondary py-2 mb-0">
+                                                Jawaban belum disubmit, nilai belum bisa diinput.
+                                            </div>
+                                        @endif
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>

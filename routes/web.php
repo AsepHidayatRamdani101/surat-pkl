@@ -246,6 +246,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/pembekalan/sikap/{nilaiSikapPembekalan}', [NilaiSikapPembekalanController::class, 'pageUpdate'])->name('pembekalan.sikap.update');
     Route::delete('/pembekalan/sikap/{nilaiSikapPembekalan}', [NilaiSikapPembekalanController::class, 'pageDestroy'])->name('pembekalan.sikap.destroy');
     Route::get('/pembekalan/jawaban-siswa', [JawabanTugasSiswaController::class, 'pageIndex'])->name('pembekalan.jawaban-siswa');
+    Route::post('/pembekalan/jawaban-siswa/nilai/bulk', [NilaiTugasPembekalanController::class, 'pageBulkStore'])->middleware('can:pembimbing')->name('pembekalan.jawaban-siswa.nilai.bulk-store');
     Route::post('/pembekalan/jawaban-siswa/{jawabanTugasSiswa}/nilai', [NilaiTugasPembekalanController::class, 'pageStore'])->middleware('can:pembimbing')->name('pembekalan.jawaban-siswa.nilai.store');
     Route::get('/pembekalan', [PembekalanController::class, 'index'])->name('pembekalan.index');
     Route::get('/pembekalan/laporan', [PembekalanController::class, 'laporan'])->name('pembekalan.laporan');

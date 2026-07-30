@@ -584,6 +584,16 @@ return [
             'can'  => 'pembimbing',
             'submenu' => [
                 [
+                    'text' => 'Data Materi',
+                    'url'  => 'pembekalan/materi',
+                    'icon' => 'fas fa-book-open',
+                ],
+                [
+                    'text' => 'Data Tugas',
+                    'url'  => 'pembekalan/tugas',
+                    'icon' => 'fas fa-book',
+                ],
+                [
                     'text' => 'Kelompok Bimbingan',
                     'url'  => 'kelompok-bimbingan',
                     'icon' => 'fas fa-layer-group',

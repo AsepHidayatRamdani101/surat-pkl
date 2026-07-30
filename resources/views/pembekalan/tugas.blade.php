@@ -60,6 +60,7 @@
                             <th style="width: 220px;">Materi</th>
                             <th style="width: 170px;">Judul Tugas</th>
                             <th>Soal Essay</th>
+                            <th style="width: 180px;">File Soal</th>
                             <th>Deskripsi</th>
                             <th style="width: 95px;">Deadline</th>
                             <th style="width: 160px;">Status Jawaban</th>
@@ -96,6 +97,21 @@
                                         -
                                     @endif
                                 </td>
+                                <td>
+                                    @if (is_array($item->soal_files) && count($item->soal_files) > 0)
+                                        <ul class="pl-3 mb-0">
+                                            @foreach ($item->soal_files as $idx => $path)
+                                                <li>
+                                                    <a href="{{ asset('storage/' . $path) }}" target="_blank">
+                                                        File {{ $idx + 1 }}
+                                                    </a>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                                 <td>{{ \Illuminate\Support\Str::limit($item->deskripsi_tugas ?? '-', 140) }}</td>
                                 <td>
                                     @if ($item->deadline)
@@ -121,6 +137,7 @@
                                             data-tanggal_tugas="{{ $item->tanggal_tugas }}"
                                             data-judul_tugas="{{ e($item->judul_tugas) }}"
                                             data-soal_essay='@json($item->soal_essay ?? [])'
+                                            data-soal_files='@json($item->soal_files ?? [])'
                                             data-deskripsi_tugas="{{ e($item->deskripsi_tugas ?? '') }}"
                                             data-deadline="{{ $item->deadline }}">
                                             Edit
@@ -154,7 +171,8 @@
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
-                        <form method="POST" action="{{ route('pembekalan.tugas.store') }}" id="tugasForm">
+                        <form method="POST" action="{{ route('pembekalan.tugas.store') }}" id="tugasForm"
+                            enctype="multipart/form-data">
                             <div class="modal-body">
                                 @csrf
                                 <input type="hidden" name="edit_id" id="edit_id" value="{{ old('edit_id') }}">
@@ -195,11 +213,24 @@
 
                                     <div class="col-md-12 mb-2">
                                         <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <label class="mb-0">Soal Essay (minimal 2 soal)</label>
+                                            <label class="mb-0">Soal Essay (opsional)</label>
                                             <button type="button" class="btn btn-xs btn-outline-primary"
                                                 id="btnAddSoalEssay">Tambah Soal</button>
                                         </div>
                                         <div id="soalEssayWrap"></div>
+                                        <small class="text-muted">Boleh dikosongkan jika soal mengikuti file PDF/JPG yang
+                                            diupload.</small>
+                                    </div>
+
+                                    <div class="col-md-12 mb-2">
+                                        <label class="mb-1">File Soal (PDF/JPG, bisa lebih dari 1)</label>
+                                        <input type="file" name="soal_files[]" id="soalFilesInput"
+                                            class="form-control form-control-sm"
+                                            accept=".pdf,.jpg,.jpeg,image/jpeg,application/pdf" multiple>
+                                        <small class="text-muted">Maksimal 10MB per file.</small>
+                                        <div id="existingSoalFilesWrap" class="mt-2"></div>
+                                        <small class="text-muted d-none" id="removeSoalFilesHint">Centang file yang ingin
+                                            dihapus, lalu klik Simpan Perubahan.</small>
                                     </div>
 
                                     <div class="col-md-12 mb-2">
@@ -276,7 +307,7 @@
                 const escaped = String(value || '').replace(/"/g, '&quot;');
                 return `<div class="input-group input-group-sm mb-2 soal-essay-item">
                     <div class="input-group-prepend"><span class="input-group-text">Soal ${index + 1}</span></div>
-                    <input type="text" name="soal_essay[]" class="form-control" value="${escaped}" placeholder="Masukkan pertanyaan essay" required>
+                    <input type="text" name="soal_essay[]" class="form-control" value="${escaped}" placeholder="Masukkan pertanyaan essay (opsional)">
                     <div class="input-group-append"><button type="button" class="btn btn-outline-danger btn-remove-soal">Hapus</button></div>
                 </div>`;
             }
@@ -289,7 +320,7 @@
 
             function renderSoalEssay(values) {
                 const normalized = (Array.isArray(values) ? values : []).filter(v => String(v || '').trim() !== '');
-                const final = normalized.length >= 2 ? normalized : ['', ''];
+                const final = normalized.length > 0 ? normalized : [''];
                 $('#soalEssayWrap').empty();
                 final.forEach((v, i) => $('#soalEssayWrap').append(soalEssayInputHtml(i, v)));
             }
@@ -306,7 +337,9 @@
                 $('#edit_id').val('');
                 $('#tugasForm')[0].reset();
                 $('#tugasForm [name="tanggal_tugas"]').val(@json(now()->toDateString()));
-                renderSoalEssay(['', '']);
+                renderSoalEssay(['']);
+                $('#existingSoalFilesWrap').empty();
+                $('#removeSoalFilesHint').addClass('d-none');
             }
 
             function openEditModal(data) {
@@ -321,6 +354,28 @@
                 $('#tugasForm [name="deskripsi_tugas"]').val(data.deskripsi_tugas || '');
                 $('#tugasForm [name="deadline"]').val(data.deadline || '');
                 renderSoalEssay(data.soal_essay || ['', '']);
+
+                const files = Array.isArray(data.soal_files) ? data.soal_files : [];
+                if (files.length > 0) {
+                    const list = files.map((path, i) => {
+                        const safePath = String(path || '');
+                        const escapedPath = $('<div>').text(safePath).html();
+                        return `<li class="mb-1">
+                            <a href="/storage/${escapedPath}" target="_blank">File ${i + 1}</a>
+                            <div class="form-check form-check-inline ml-2">
+                                <input class="form-check-input" type="checkbox" name="remove_soal_files[]" value="${escapedPath}" id="remove_file_${i}">
+                                <label class="form-check-label text-danger" for="remove_file_${i}">Hapus file ini</label>
+                            </div>
+                        </li>`;
+                    }).join('');
+                    $('#existingSoalFilesWrap').html(
+                        `<small class="text-muted d-block mb-1">File soal saat ini:</small><ul class="pl-3 mb-0">${list}</ul>`
+                    );
+                    $('#removeSoalFilesHint').removeClass('d-none');
+                } else {
+                    $('#existingSoalFilesWrap').empty();
+                    $('#removeSoalFilesHint').addClass('d-none');
+                }
             }
 
             /* ---- Restore on validation error ---- */
@@ -336,14 +391,14 @@
                             soal_essay: oldSoalEssay
                         });
                     } else {
-                        renderSoalEssay(oldSoalEssay.length ? oldSoalEssay : ['', '']);
+                        renderSoalEssay(oldSoalEssay.length ? oldSoalEssay : ['']);
                     }
                     $('#tugasModal').modal('show');
                 @else
-                    renderSoalEssay(['', '']);
+                    renderSoalEssay(['']);
                 @endif
             @else
-                renderSoalEssay(['', '']);
+                renderSoalEssay(['']);
             @endcan
 
             /* ---- Events ---- */
@@ -360,6 +415,7 @@
                     tanggal_tugas: btn.data('tanggal_tugas') || '',
                     judul_tugas: btn.data('judul_tugas') || '',
                     soal_essay: btn.data('soal_essay') || [],
+                    soal_files: btn.data('soal_files') || [],
                     deskripsi_tugas: btn.data('deskripsi_tugas') || '',
                     deadline: btn.data('deadline') || ''
                 });
@@ -373,15 +429,10 @@
             });
 
             $(document).on('click', '.btn-remove-soal', function() {
-                if ($('#soalEssayWrap .soal-essay-item').length <= 2) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Minimal 2 soal',
-                        text: 'Tugas essay harus berisi minimal 2 soal.'
-                    });
-                    return;
-                }
                 $(this).closest('.soal-essay-item').remove();
+                if ($('#soalEssayWrap .soal-essay-item').length === 0) {
+                    renderSoalEssay(['']);
+                }
                 reindexSoalEssay();
             });
 

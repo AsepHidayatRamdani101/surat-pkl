@@ -15,6 +15,7 @@ use App\Models\TugasPembekalan;
 use App\Models\Siswa;
 use App\Models\SuratIzinOrtu;
 use App\Models\TempatPkl;
+use App\Support\WorksheetPromptExtractor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -374,6 +375,15 @@ class DashboardController extends Controller
             'jawabanSiswa.nilaiTugas',
         ])->latest('tanggal_tugas')->get();
 
+        $tugasList->each(function (TugasPembekalan $tugas) {
+            $storedPrompts = is_array($tugas->soal_parsed_prompts) ? $tugas->soal_parsed_prompts : [];
+            $worksheetPrompts = !empty($storedPrompts)
+                ? $storedPrompts
+                : $this->buildWorksheetPromptsFromTask($tugas);
+            $tugas->setAttribute('worksheet_prompts', $worksheetPrompts);
+            $tugas->setAttribute('worksheet_source', !empty($storedPrompts) ? 'stored' : 'fallback');
+        });
+
         return view('siswa.kerjakan_tugas', compact('siswa', 'tugasList'));
     }
 
@@ -394,7 +404,8 @@ class DashboardController extends Controller
         $skippedCount = 0;
 
         foreach ($answers as $tugasId => $jawabanText) {
-            if (empty(trim((string) $jawabanText))) {
+            $sanitizedJawaban = $this->sanitizeJawabanHtml((string) $jawabanText);
+            if ($this->isJawabanEmpty($sanitizedJawaban)) {
                 continue;
             }
 
@@ -411,7 +422,7 @@ class DashboardController extends Controller
 
             JawabanTugasSiswa::updateOrCreate(
                 ['tugas_pembekalan_id' => $tugas->id, 'siswa_id' => $siswa->id],
-                ['jawaban_text' => $jawabanText, 'submitted_at' => now()]
+                ['jawaban_text' => $sanitizedJawaban, 'submitted_at' => now()]
             );
             $savedCount++;
         }
@@ -567,6 +578,31 @@ class DashboardController extends Controller
 
         return redirect()->to(route('dashboard') . '#evaluasi-siswa-pembimbing')
             ->with('success', 'Absensi dan catatan sikap siswa berhasil disimpan.');
+    }
+
+    private function sanitizeJawabanHtml(string $html): string
+    {
+        // Drop script/style blocks and event-handler attributes, keep structural tags like table.
+        $cleaned = preg_replace('/<(script|style)\b[^>]*>.*?<\/\1>/is', '', $html) ?? '';
+        $cleaned = preg_replace('/\s+on\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $cleaned) ?? '';
+        $cleaned = preg_replace('/\s+style\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $cleaned) ?? '';
+
+        $allowedTags = '<p><br><b><strong><i><em><u><ul><ol><li><table><thead><tbody><tfoot><tr><th><td><div><span>';
+        return trim(strip_tags($cleaned, $allowedTags));
+    }
+
+    private function buildWorksheetPromptsFromTask(TugasPembekalan $tugas): array
+    {
+        return app(WorksheetPromptExtractor::class)->extractFromTaskSources(
+            (array) ($tugas->soal_files ?? []),
+            (array) ($tugas->soal_essay ?? [])
+        );
+    }
+
+    private function isJawabanEmpty(string $html): bool
+    {
+        $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return trim($text) === '';
     }
 
     private function getPembimbingFromAuth(): ?Pembimbing

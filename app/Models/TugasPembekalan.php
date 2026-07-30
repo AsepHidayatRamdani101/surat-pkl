@@ -17,12 +17,18 @@ class TugasPembekalan extends Model
         'tanggal_tugas',
         'judul_tugas',
         'soal_essay',
+        'soal_files',
+        'soal_parsed_prompts',
+        'soal_parsed_at',
         'deskripsi_tugas',
         'deadline',
     ];
 
     protected $casts = [
         'soal_essay' => 'array',
+        'soal_files' => 'array',
+        'soal_parsed_prompts' => 'array',
+        'soal_parsed_at' => 'datetime',
     ];
 
     public function materi()

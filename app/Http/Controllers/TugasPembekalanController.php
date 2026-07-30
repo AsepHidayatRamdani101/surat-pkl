@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Materi;
 use App\Models\TugasPembekalan;
+use App\Support\WorksheetPromptExtractor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class TugasPembekalanController extends Controller
 {
@@ -53,17 +56,23 @@ class TugasPembekalanController extends Controller
             'materi_id' => ['required', 'exists:materis,id', 'unique:tugas_pembekalans,materi_id'],
             'tanggal_tugas' => ['required', 'date'],
             'judul_tugas' => ['required', 'string', 'max:255'],
-            'soal_essay' => ['required', 'array', 'min:2'],
-            'soal_essay.*' => ['required', 'string'],
+            'soal_essay' => ['nullable', 'array'],
+            'soal_essay.*' => ['nullable', 'string'],
+            'soal_files' => ['nullable', 'array'],
+            'soal_files.*' => ['file', 'mimes:pdf,jpg,jpeg', 'max:10240'],
             'deskripsi_tugas' => ['nullable', 'string'],
             'deadline' => ['nullable', 'date'],
         ]);
 
-        $validated['soal_essay'] = collect($validated['soal_essay'])
-            ->map(fn($soal) => trim((string) $soal))
-            ->filter()
-            ->values()
-            ->all();
+        $normalizedEssay = $this->normalizeSoalEssay($validated['soal_essay'] ?? []);
+        $uploadedFiles = $this->storeUploadedSoalFiles($request);
+        $this->ensureSoalSourceAvailable($normalizedEssay, [], $uploadedFiles);
+        $parsedPrompts = $this->buildParsedPrompts($uploadedFiles, $normalizedEssay);
+
+        $validated['soal_essay'] = !empty($normalizedEssay) ? $normalizedEssay : null;
+        $validated['soal_files'] = !empty($uploadedFiles) ? $uploadedFiles : null;
+        $validated['soal_parsed_prompts'] = !empty($parsedPrompts) ? $parsedPrompts : null;
+        $validated['soal_parsed_at'] = !empty($parsedPrompts) ? now() : null;
 
         TugasPembekalan::create($validated);
 
@@ -76,17 +85,30 @@ class TugasPembekalanController extends Controller
             'materi_id' => ['required', 'exists:materis,id', Rule::unique('tugas_pembekalans', 'materi_id')->ignore($tugasPembekalan->id)],
             'tanggal_tugas' => ['required', 'date'],
             'judul_tugas' => ['required', 'string', 'max:255'],
-            'soal_essay' => ['required', 'array', 'min:2'],
-            'soal_essay.*' => ['required', 'string'],
+            'soal_essay' => ['nullable', 'array'],
+            'soal_essay.*' => ['nullable', 'string'],
+            'soal_files' => ['nullable', 'array'],
+            'soal_files.*' => ['file', 'mimes:pdf,jpg,jpeg', 'max:10240'],
+            'remove_soal_files' => ['nullable', 'array'],
+            'remove_soal_files.*' => ['string'],
             'deskripsi_tugas' => ['nullable', 'string'],
             'deadline' => ['nullable', 'date'],
         ]);
 
-        $validated['soal_essay'] = collect($validated['soal_essay'])
-            ->map(fn($soal) => trim((string) $soal))
-            ->filter()
-            ->values()
-            ->all();
+        $normalizedEssay = $this->normalizeSoalEssay($validated['soal_essay'] ?? []);
+
+        $existingFiles = is_array($tugasPembekalan->soal_files) ? $tugasPembekalan->soal_files : [];
+        $filesToRemove = collect($validated['remove_soal_files'] ?? [])->filter()->values()->all();
+        $remainingExistingFiles = $this->removeSelectedSoalFiles($existingFiles, $filesToRemove);
+        $newFiles = $this->storeUploadedSoalFiles($request);
+        $mergedFiles = array_values(array_merge($remainingExistingFiles, $newFiles));
+        $this->ensureSoalSourceAvailable($normalizedEssay, $remainingExistingFiles, $newFiles);
+        $parsedPrompts = $this->buildParsedPrompts($mergedFiles, $normalizedEssay);
+
+        $validated['soal_essay'] = !empty($normalizedEssay) ? $normalizedEssay : null;
+        $validated['soal_files'] = !empty($mergedFiles) ? $mergedFiles : null;
+        $validated['soal_parsed_prompts'] = !empty($parsedPrompts) ? $parsedPrompts : null;
+        $validated['soal_parsed_at'] = !empty($parsedPrompts) ? now() : null;
 
         $tugasPembekalan->update($validated);
 
@@ -95,6 +117,7 @@ class TugasPembekalanController extends Controller
 
     public function pageDestroy(TugasPembekalan $tugasPembekalan)
     {
+        $this->deleteSoalFiles($tugasPembekalan->soal_files);
         $tugasPembekalan->delete();
 
         return redirect()->route('pembekalan.tugas')->with('success', 'Tugas berhasil dihapus.');
@@ -113,17 +136,23 @@ class TugasPembekalanController extends Controller
             'materi_id' => ['required', 'exists:materis,id', 'unique:tugas_pembekalans,materi_id'],
             'tanggal_tugas' => ['required', 'date'],
             'judul_tugas' => ['required', 'string', 'max:255'],
-            'soal_essay' => ['required', 'array', 'min:2'],
-            'soal_essay.*' => ['required', 'string'],
+            'soal_essay' => ['nullable', 'array'],
+            'soal_essay.*' => ['nullable', 'string'],
+            'soal_files' => ['nullable', 'array'],
+            'soal_files.*' => ['file', 'mimes:pdf,jpg,jpeg', 'max:10240'],
             'deskripsi_tugas' => ['nullable', 'string'],
             'deadline' => ['nullable', 'date'],
         ]);
 
-        $validated['soal_essay'] = collect($validated['soal_essay'])
-            ->map(fn($soal) => trim((string) $soal))
-            ->filter()
-            ->values()
-            ->all();
+        $normalizedEssay = $this->normalizeSoalEssay($validated['soal_essay'] ?? []);
+        $uploadedFiles = $this->storeUploadedSoalFiles($request);
+        $this->ensureSoalSourceAvailable($normalizedEssay, [], $uploadedFiles);
+        $parsedPrompts = $this->buildParsedPrompts($uploadedFiles, $normalizedEssay);
+
+        $validated['soal_essay'] = !empty($normalizedEssay) ? $normalizedEssay : null;
+        $validated['soal_files'] = !empty($uploadedFiles) ? $uploadedFiles : null;
+        $validated['soal_parsed_prompts'] = !empty($parsedPrompts) ? $parsedPrompts : null;
+        $validated['soal_parsed_at'] = !empty($parsedPrompts) ? now() : null;
 
         $tugas = TugasPembekalan::create($validated);
 
@@ -141,17 +170,30 @@ class TugasPembekalanController extends Controller
             'materi_id' => ['required', 'exists:materis,id', Rule::unique('tugas_pembekalans', 'materi_id')->ignore($tugasPembekalan->id)],
             'tanggal_tugas' => ['required', 'date'],
             'judul_tugas' => ['required', 'string', 'max:255'],
-            'soal_essay' => ['required', 'array', 'min:2'],
-            'soal_essay.*' => ['required', 'string'],
+            'soal_essay' => ['nullable', 'array'],
+            'soal_essay.*' => ['nullable', 'string'],
+            'soal_files' => ['nullable', 'array'],
+            'soal_files.*' => ['file', 'mimes:pdf,jpg,jpeg', 'max:10240'],
+            'remove_soal_files' => ['nullable', 'array'],
+            'remove_soal_files.*' => ['string'],
             'deskripsi_tugas' => ['nullable', 'string'],
             'deadline' => ['nullable', 'date'],
         ]);
 
-        $validated['soal_essay'] = collect($validated['soal_essay'])
-            ->map(fn($soal) => trim((string) $soal))
-            ->filter()
-            ->values()
-            ->all();
+        $normalizedEssay = $this->normalizeSoalEssay($validated['soal_essay'] ?? []);
+
+        $existingFiles = is_array($tugasPembekalan->soal_files) ? $tugasPembekalan->soal_files : [];
+        $filesToRemove = collect($validated['remove_soal_files'] ?? [])->filter()->values()->all();
+        $remainingExistingFiles = $this->removeSelectedSoalFiles($existingFiles, $filesToRemove);
+        $newFiles = $this->storeUploadedSoalFiles($request);
+        $mergedFiles = array_values(array_merge($remainingExistingFiles, $newFiles));
+        $this->ensureSoalSourceAvailable($normalizedEssay, $remainingExistingFiles, $newFiles);
+        $parsedPrompts = $this->buildParsedPrompts($mergedFiles, $normalizedEssay);
+
+        $validated['soal_essay'] = !empty($normalizedEssay) ? $normalizedEssay : null;
+        $validated['soal_files'] = !empty($mergedFiles) ? $mergedFiles : null;
+        $validated['soal_parsed_prompts'] = !empty($parsedPrompts) ? $parsedPrompts : null;
+        $validated['soal_parsed_at'] = !empty($parsedPrompts) ? now() : null;
 
         $tugasPembekalan->update($validated);
 
@@ -160,8 +202,91 @@ class TugasPembekalanController extends Controller
 
     public function destroy(TugasPembekalan $tugasPembekalan)
     {
+        $this->deleteSoalFiles($tugasPembekalan->soal_files);
         $tugasPembekalan->delete();
 
         return response()->json(['message' => 'Tugas deleted']);
+    }
+
+    private function normalizeSoalEssay(array $soalEssay): array
+    {
+        return collect($soalEssay)
+            ->map(fn($soal) => trim((string) $soal))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function storeUploadedSoalFiles(Request $request): array
+    {
+        if (!$request->hasFile('soal_files')) {
+            return [];
+        }
+
+        $storedPaths = [];
+        foreach ($request->file('soal_files', []) as $file) {
+            if ($file) {
+                $storedPaths[] = $file->store('tugas-soal', 'public');
+            }
+        }
+
+        return $storedPaths;
+    }
+
+    private function deleteSoalFiles($soalFiles): void
+    {
+        if (!is_array($soalFiles) || empty($soalFiles)) {
+            return;
+        }
+
+        foreach ($soalFiles as $path) {
+            if (!empty($path)) {
+                Storage::disk('public')->delete($path);
+            }
+        }
+    }
+
+    private function removeSelectedSoalFiles(array $existingFiles, array $filesToRemove): array
+    {
+        if (empty($existingFiles) || empty($filesToRemove)) {
+            return $existingFiles;
+        }
+
+        $removeLookup = collect($filesToRemove)
+            ->map(fn($path) => (string) $path)
+            ->filter()
+            ->values()
+            ->all();
+
+        $remaining = [];
+        foreach ($existingFiles as $path) {
+            if (in_array($path, $removeLookup, true)) {
+                Storage::disk('public')->delete($path);
+                continue;
+            }
+
+            $remaining[] = $path;
+        }
+
+        return $remaining;
+    }
+
+    private function ensureSoalSourceAvailable(array $essay, array $existingFiles, array $newFiles): void
+    {
+        $hasEssay = !empty($essay);
+        $hasFiles = !empty($existingFiles) || !empty($newFiles);
+
+        if ($hasEssay || $hasFiles) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'soal_essay' => 'Soal essay boleh kosong, tetapi Anda harus mengupload file soal (PDF/JPG) jika tidak mengisi soal essay.',
+        ]);
+    }
+
+    private function buildParsedPrompts(array $soalFiles, array $fallbackEssay): array
+    {
+        return app(WorksheetPromptExtractor::class)->extractFromTaskSources($soalFiles, $fallbackEssay);
     }
 }

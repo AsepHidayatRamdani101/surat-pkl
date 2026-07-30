@@ -135,6 +135,60 @@
                                         </div>
                                     @endif
 
+                                    @if (empty($tugas->soal_essay) && !empty($tugas->worksheet_prompts))
+                                        <div class="soal-pertanyaan mb-3">
+                                            <div class="soal-pertanyaan-label">Butir Soal dari File Upload</div>
+                                            <ol style="padding-left: 1.3rem; line-height: 1.8;">
+                                                @foreach ($tugas->worksheet_prompts as $soal)
+                                                    <li class="mb-1">{{ $soal }}</li>
+                                                @endforeach
+                                            </ol>
+                                        </div>
+                                    @endif
+
+                                    @if (is_array($tugas->soal_files) && count($tugas->soal_files) > 0)
+                                        <div class="soal-file-wrap mb-3">
+                                            <div class="soal-pertanyaan-label">File Soal Upload</div>
+                                            <div class="soal-file-list">
+                                                @foreach ($tugas->soal_files as $fileIndex => $path)
+                                                    @php
+                                                        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                                                        $fileUrl = asset('storage/' . $path);
+                                                        $fileName = basename($path);
+                                                        $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'webp']);
+                                                        $isPdf = $extension === 'pdf';
+                                                    @endphp
+                                                    <div class="soal-file-item">
+                                                        <div
+                                                            class="d-flex flex-wrap align-items-center justify-content-between mb-2">
+                                                            <div>
+                                                                <strong>File {{ $fileIndex + 1 }}</strong>
+                                                                <div class="text-muted small">{{ $fileName }}</div>
+                                                            </div>
+                                                            <a href="{{ $fileUrl }}" target="_blank"
+                                                                class="btn btn-xs btn-outline-primary mt-2 mt-sm-0">
+                                                                <i class="fas fa-external-link-alt mr-1"></i>Lihat File
+                                                            </a>
+                                                        </div>
+
+                                                        @if ($isImage)
+                                                            <img src="{{ $fileUrl }}"
+                                                                alt="File soal {{ $fileIndex + 1 }}"
+                                                                class="soal-file-preview-img">
+                                                        @elseif ($isPdf)
+                                                            <iframe
+                                                                src="{{ $fileUrl }}#toolbar=0&navpanes=0&scrollbar=1"
+                                                                class="soal-file-preview-pdf"
+                                                                title="Preview File {{ $fileIndex + 1 }}"></iframe>
+                                                        @endif
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                            <small class="text-muted d-block mt-2">Template worksheet akan mengikuti daftar
+                                                file soal ini bila pertanyaan essay tidak diisi.</small>
+                                        </div>
+                                    @endif
+
                                     @if ($isDeadlinePassed)
                                         <div class="alert alert-danger mb-3" style="margin-bottom: 1rem;">
                                             <i class="fas fa-exclamation-triangle mr-2"></i>
@@ -146,8 +200,40 @@
                                         <label class="soal-jawaban-label" for="jawaban_{{ $tugas->id }}">
                                             <i class="fas fa-pen mr-1"></i> Jawaban Kamu
                                         </label>
+                                        @if (!$isDeadlinePassed)
+                                            <div class="mb-2">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button" class="btn btn-outline-primary dropdown-toggle"
+                                                        data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        + Sisipkan Template Worksheet
+                                                    </button>
+                                                    <div class="dropdown-menu">
+                                                        <button type="button" class="dropdown-item btn-insert-template"
+                                                            data-target="jawaban_{{ $tugas->id }}"
+                                                            data-judul_tugas="{{ e($tugas->judul_tugas ?? '') }}"
+                                                            data-worksheet_prompts='@json($tugas->worksheet_prompts ?? [])'
+                                                            data-soal_files='@json($tugas->soal_files ?? [])'
+                                                            data-template="identity-blueprint">
+                                                            Template Sesuai Soal PDF
+                                                        </button>
+                                                        <button type="button" class="dropdown-item btn-insert-template"
+                                                            data-target="jawaban_{{ $tugas->id }}"
+                                                            data-judul_tugas="{{ e($tugas->judul_tugas ?? '') }}"
+                                                            data-worksheet_prompts='@json($tugas->worksheet_prompts ?? [])'
+                                                            data-soal_files='@json($tugas->soal_files ?? [])'
+                                                            data-template="generic-table">
+                                                            Worksheet Kosong (Generic)
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
                                         <textarea name="jawaban[{{ $tugas->id }}]" id="jawaban_{{ $tugas->id }}" class="soal-jawaban-textarea"
                                             rows="6" placeholder="Jawab semua pertanyaan di atas..." {{ $isDeadlinePassed ? 'disabled' : '' }}>{{ old('jawaban.' . $tugas->id, $jawaban?->jawaban_text ?? '') }}</textarea>
+                                        <small class="text-muted d-block mt-1">Bisa isi jawaban biasa atau format tabel
+                                            (worksheet)
+                                            langsung di kolom ini.</small>
                                     </div>
 
                                     @if ($nilaiTugas !== null)
@@ -201,6 +287,7 @@
                             </div>
                             <ul class="soal-petunjuk-list">
                                 <li>Isi jawaban pada masing-masing kolom.</li>
+                                <li>Jawaban dikerjakan langsung di aplikasi, tanpa upload lampiran.</li>
                                 <li>Klik tombol <strong>Kirim Semua Jawaban</strong> untuk menyimpan.</li>
                                 <li>Jawaban yang sudah dikirim masih bisa diubah.</li>
                                 <li>Jawaban kosong tidak akan disimpan.</li>
@@ -214,6 +301,7 @@
 @endsection
 
 @section('css')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-bs4.min.css">
     <style>
         .kerjakan-hero {
             background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
@@ -378,6 +466,43 @@
             display: block;
         }
 
+        .soal-file-wrap {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 0.9rem;
+        }
+
+        .soal-file-list {
+            display: grid;
+            gap: 0.85rem;
+        }
+
+        .soal-file-item {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.85rem;
+        }
+
+        .soal-file-preview-img {
+            display: block;
+            width: 100%;
+            max-height: 360px;
+            object-fit: contain;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+        }
+
+        .soal-file-preview-pdf {
+            width: 100%;
+            height: 360px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: #fff;
+        }
+
         .soal-jawaban-textarea {
             width: 100%;
             border: 1.5px solid #e2e8f0;
@@ -394,6 +519,17 @@
         .soal-jawaban-textarea:focus {
             border-color: #6366f1;
             background: #fff;
+        }
+
+        .note-editor.note-frame {
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .note-editor.note-frame .note-editing-area .note-editable {
+            background: #f8fafc;
+            min-height: 220px;
         }
 
         .soal-nilai-row {
@@ -566,9 +702,158 @@
 
 @section('js')
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-bs4.min.js"></script>
     <script>
         const successMessage = @json(session('success'));
         const errorMessage = @json(session('error'));
+
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function worksheetTableTemplate(judulTugas, worksheetPrompts, soalFiles) {
+            const soalList = Array.isArray(worksheetPrompts) ? worksheetPrompts.filter(s => String(s || '').trim() !== '') :
+                [];
+            const fileList = Array.isArray(soalFiles) ? soalFiles.filter(s => String(s || '').trim() !== '') : [];
+            const declarationPattern = /(deklara|saya\s+adalah|3\s+kalimat|kartu\s+identitas)/i;
+
+            const regularSoal = [];
+            const declarationPrompts = [];
+
+            soalList.forEach(soal => {
+                if (declarationPattern.test(String(soal || ''))) {
+                    declarationPrompts.push(String(soal || ''));
+                } else {
+                    regularSoal.push(String(soal || ''));
+                }
+            });
+
+            const fileReferenceRows = regularSoal.length === 0 && fileList.length > 0 ?
+                fileList.map((filePath, idx) => {
+                    const fileName = String(filePath || '').split('/').pop() || `File ${idx + 1}`;
+                    return `
+                        <tr>
+                            <td style="width:8%;">${idx + 1}</td>
+                            <td style="width:42%;">Jawab berdasarkan file upload: ${escapeHtml(fileName)}</td>
+                            <td style="width:50%;"></td>
+                        </tr>
+                    `;
+                }).join('') : '';
+
+            const rowsHtml = regularSoal.length > 0 ?
+                regularSoal.map((soal, idx) => `
+                        <tr>
+                            <td style="width:8%;">${idx + 1}</td>
+                            <td style="width:42%;">${escapeHtml(soal)}</td>
+                            <td style="width:50%;"></td>
+                        </tr>
+                    `).join('') :
+                (fileReferenceRows ||
+                    `<tr><td style="width:8%;">1</td><td style="width:42%;">(Soal utama belum terdeteksi)</td><td style="width:50%;"></td></tr>`
+                );
+
+            const fileReferenceText = fileList.length > 0 ? `
+                <p><strong>Referensi File Soal:</strong></p>
+                <ol>
+                    ${fileList.map((filePath, idx) => {
+                        const fileName = String(filePath || '').split('/').pop() || `File ${idx + 1}`;
+                        return `<li>File ${idx + 1}: ${escapeHtml(fileName)}</li>`;
+                    }).join('')}
+                </ol>
+            ` : '';
+
+            const declarationSectionHtml = declarationPrompts.length > 0 ? `
+                <p><strong>BAGIAN DEKLARASI</strong></p>
+                <p>${escapeHtml(declarationPrompts[0])}</p>
+                <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%;">
+                    <tbody>
+                        <tr>
+                            <td style="width:22%;"><strong>SAYA ADALAH</strong></td>
+                            <td>................................................................................................................</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SAYA ADALAH</strong></td>
+                            <td>................................................................................................................</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SAYA ADALAH</strong></td>
+                            <td>................................................................................................................</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p></p>
+            ` : '';
+
+            return `
+                <p><strong>WORKSHEET JAWABAN TUGAS</strong></p>
+                <p><strong>Judul Tugas:</strong> ${escapeHtml(judulTugas || '-')}</p>
+                <p>Nama: ........................................ | Kelas: ........................................ | Tanggal: ........................................</p>
+                <p><strong>Petunjuk:</strong> Isi jawaban pada kolom "Jawaban Siswa" sesuai soal dari PDF/worksheet.</p>
+                ${fileReferenceText}
+
+                <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%;">
+                    <thead>
+                        <tr>
+                            <th style="width:8%;">No</th>
+                            <th style="width:42%;">Soal</th>
+                            <th style="width:50%;">Jawaban Siswa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+                ${declarationSectionHtml}
+                <p></p>
+            `;
+        }
+
+        function genericWorksheetTemplate() {
+            return `
+                <p><strong>WORKSHEET</strong></p>
+                <p>Nama: ........................................ | Kelas: ........................................ | Tanggal: ........................................</p>
+                <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%;">
+                    <thead>
+                        <tr>
+                            <th style="width:8%;">No</th>
+                            <th style="width:32%;">Aspek/Soal</th>
+                            <th style="width:30%;">Jawaban</th>
+                            <th style="width:30%;">Catatan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1</td><td></td><td></td><td></td></tr>
+                        <tr><td>2</td><td></td><td></td><td></td></tr>
+                        <tr><td>3</td><td></td><td></td><td></td></tr>
+                        <tr><td>4</td><td></td><td></td><td></td></tr>
+                    </tbody>
+                </table>
+                <p></p>
+            `;
+        }
+
+        function initJawabanEditors() {
+            if (!(window.jQuery && $.fn.summernote)) return;
+
+            $('textarea.soal-jawaban-textarea:not([disabled])').each(function() {
+                $(this).summernote({
+                    height: 260,
+                    dialogsInBody: true,
+                    toolbar: [
+                        ['style', ['bold', 'italic', 'underline', 'clear']],
+                        ['para', ['ul', 'ol', 'paragraph']],
+                        ['table', ['table']],
+                        ['insert', ['link']],
+                        ['view', ['codeview']]
+                    ]
+                });
+            });
+        }
 
         if (successMessage) {
             Swal.fire({
@@ -588,9 +873,84 @@
             });
         }
 
+        initJawabanEditors();
+
+        function getEditorById(targetId) {
+            const $textarea = $('#' + targetId);
+            if ($textarea.length === 0 || !$textarea.next('.note-editor').length) {
+                return null;
+            }
+
+            return {
+                getHtml: () => $textarea.summernote('code') || '',
+                setHtml: (html) => $textarea.summernote('code', html),
+                appendHtml: (html) => $textarea.summernote('pasteHTML', html),
+                focus: () => $textarea.summernote('focus')
+            };
+        }
+
+        async function insertTemplateWithConfirm(editorApi, templateHtml) {
+            const currentHtml = editorApi.getHtml();
+            const plainText = currentHtml
+                .replace(/<[^>]*>/g, ' ')
+                .replace(/&nbsp;/gi, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+            const hasExistingContent = plainText !== '' || /<table[\s>]/i.test(currentHtml);
+
+            if (!hasExistingContent) {
+                editorApi.setHtml(templateHtml);
+                editorApi.focus();
+                return;
+            }
+
+            const result = await Swal.fire({
+                icon: 'question',
+                title: 'Kolom jawaban sudah terisi',
+                text: 'Mau ganti isi lama atau tambah template di bawah?',
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: 'Ganti',
+                denyButtonText: 'Tambahkan',
+                cancelButtonText: 'Batal'
+            });
+
+            if (result.isConfirmed) {
+                editorApi.setHtml(templateHtml);
+                editorApi.focus();
+            } else if (result.isDenied) {
+                editorApi.appendHtml('<p></p>' + templateHtml);
+                editorApi.focus();
+            }
+        }
+
+        document.querySelectorAll('.btn-insert-template').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const targetId = this.getAttribute('data-target');
+                const templateType = this.getAttribute('data-template');
+                const judulTugas = this.getAttribute('data-judul_tugas') || '';
+                const worksheetPrompts = $(this).data('worksheet_prompts') || [];
+                const soalFiles = $(this).data('soal_files') || [];
+                const editorApi = getEditorById(targetId);
+                if (editorApi) {
+                    const templateHtml = templateType === 'generic-table' ?
+                        genericWorksheetTemplate() :
+                        worksheetTableTemplate(judulTugas, worksheetPrompts, soalFiles);
+
+                    await insertTemplateWithConfirm(editorApi, templateHtml);
+                }
+            });
+        });
+
         document.getElementById('btnKirimJawaban')?.addEventListener('click', function(e) {
-            const allTextareas = document.querySelectorAll('.soal-jawaban-textarea');
-            const isEmpty = Array.from(allTextareas).every(t => t.value.trim() === '');
+            const isEmpty = Array.from(document.querySelectorAll('.soal-jawaban-textarea:not([disabled])')).every(
+                t => {
+                    const $t = $(t);
+                    const html = $t.next('.note-editor').length ? ($t.summernote('code') || '') : (t.value ||
+                        '');
+                    const textOnly = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+                    return textOnly === '';
+                });
 
             if (isEmpty) {
                 e.preventDefault();

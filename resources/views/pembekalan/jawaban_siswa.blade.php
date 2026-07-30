@@ -148,33 +148,75 @@
                                     <div class="mb-2">
                                         <strong>Siswa:</strong> {{ $item->siswa->nama_siswa ?? '-' }}
                                     </div>
-                                    <div class="mb-2">
-                                        <strong>Materi:</strong> {{ $item->tugasPembekalan?->materi?->topik ?? '-' }}
-                                    </div>
-                                    <div class="mb-2">
-                                        <strong>Judul Tugas:</strong> {{ $item->tugasPembekalan->judul_tugas ?? '-' }}
-                                    </div>
-                                    <div class="mb-2">
-                                        <strong>Tanggal Submit:</strong>
-                                        @if ($item->submitted_at)
-                                            {{ \Carbon\Carbon::parse($item->submitted_at)->format('d-m-Y H:i') }}
+
+                                    <div class="form-group">
+                                        <label class="mb-1"><strong>File Soal Upload</strong></label>
+                                        @if (is_array($item->tugasPembekalan?->soal_files) && count($item->tugasPembekalan->soal_files) > 0)
+                                            <div class="soal-file-list mb-0">
+                                                @foreach ($item->tugasPembekalan->soal_files as $idx => $path)
+                                                    @php
+                                                        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                                                        $fileUrl = asset('storage/' . $path);
+                                                        $fileName = basename($path);
+                                                        $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'webp']);
+                                                        $isPdf = $extension === 'pdf';
+                                                    @endphp
+                                                    <div class="soal-file-item">
+                                                        <div
+                                                            class="d-flex flex-wrap align-items-center justify-content-between mb-2">
+                                                            <div>
+                                                                <strong>File {{ $idx + 1 }}</strong>
+                                                                <div class="text-muted small">{{ $fileName }}</div>
+                                                            </div>
+                                                            <a href="{{ $fileUrl }}" target="_blank"
+                                                                class="btn btn-xs btn-outline-primary mt-2 mt-sm-0">
+                                                                <i class="fas fa-external-link-alt mr-1"></i>Buka File
+                                                            </a>
+                                                        </div>
+
+                                                        @if ($isImage)
+                                                            <img src="{{ $fileUrl }}"
+                                                                alt="File soal {{ $idx + 1 }}"
+                                                                class="soal-file-preview-img">
+                                                        @elseif ($isPdf)
+                                                            <iframe
+                                                                src="{{ $fileUrl }}#toolbar=0&navpanes=0&scrollbar=1"
+                                                                class="soal-file-preview-pdf"
+                                                                title="Preview File {{ $idx + 1 }}"></iframe>
+                                                        @else
+                                                            <div class="text-muted small">Preview tidak tersedia untuk
+                                                                format ini.</div>
+                                                        @endif
+                                                    </div>
+                                                @endforeach
+                                            </div>
                                         @else
-                                            -
+                                            <div class="text-muted">Tidak ada file soal upload.</div>
                                         @endif
                                     </div>
-                                    <div class="mb-2">
-                                        <strong>Lampiran:</strong>
-                                        @if ($item->lampiran_path)
-                                            <a href="{{ asset('storage/' . $item->lampiran_path) }}" target="_blank">Lihat
-                                                Lampiran</a>
+
+                                    <div class="form-group">
+                                        <label class="mb-1"><strong>Butir Soal Hasil Parsing</strong></label>
+                                        @if (is_array($item->tugasPembekalan?->soal_parsed_prompts) && count($item->tugasPembekalan->soal_parsed_prompts) > 0)
+                                            <ol class="pl-3 mb-0">
+                                                @foreach ($item->tugasPembekalan->soal_parsed_prompts as $parsed)
+                                                    <li class="mb-1">{{ $parsed }}</li>
+                                                @endforeach
+                                            </ol>
                                         @else
-                                            -
+                                            <div class="text-muted">Belum ada hasil parsing tersimpan.</div>
                                         @endif
                                     </div>
 
                                     <div class="form-group">
                                         <label class="mb-1"><strong>Jawaban Siswa</strong></label>
-                                        <textarea class="form-control form-control-sm" rows="8" readonly>{{ $item->jawaban_text ?? '-' }}</textarea>
+                                        @if (!empty(trim((string) $item->jawaban_text)))
+                                            <div class="jawaban-rendered border rounded p-2 bg-light">
+                                                {!! $item->jawaban_text !!}
+                                            </div>
+                                        @else
+                                            <div class="text-muted">-</div>
+                                        @endif
                                     </div>
 
                                     @if ($canInputNilai)
@@ -215,6 +257,68 @@
 @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
+    <style>
+        .jawaban-rendered {
+            max-height: 360px;
+            overflow: auto;
+        }
+
+        .jawaban-rendered table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .jawaban-rendered th,
+        .jawaban-rendered td {
+            border: 1px solid #d1d5db;
+            padding: 6px;
+            vertical-align: top;
+        }
+
+        .jawaban-rendered p {
+            margin-bottom: .5rem;
+        }
+
+        .jawaban-rendered small {
+            color: #6b7280;
+        }
+
+        .jawaban-rendered ul,
+        .jawaban-rendered ol {
+            padding-left: 1.2rem;
+            margin-bottom: .5rem;
+        }
+
+        .soal-file-list {
+            display: grid;
+            gap: .85rem;
+        }
+
+        .soal-file-item {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: .75rem;
+        }
+
+        .soal-file-preview-img {
+            display: block;
+            width: 100%;
+            max-height: 360px;
+            object-fit: contain;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+        }
+
+        .soal-file-preview-pdf {
+            width: 100%;
+            height: 360px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #fff;
+        }
+    </style>
 @endsection
 
 @section('plugins.Datatables', true)

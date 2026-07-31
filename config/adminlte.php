@@ -399,6 +399,12 @@ return [
                 ],
             ],
         ],
+        [
+            'text' => 'System Setting',
+            'url'  => 'setting/system',
+            'icon' => 'fas fa-tools',
+            'can'  => 'panitia',
+        ],
         // Menu untuk Kepala Program
         [
             'text' => 'Dashboard',

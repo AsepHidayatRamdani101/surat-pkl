@@ -206,78 +206,88 @@
                                     value="{{ $filters['keyword'] }}">
                             </div>
                         </div>
+                        <input type="hidden" name="filtered" value="1">
                     </form>
                 </div>
             </div>
 
             {{-- Dashboard Cards --}}
-            <div class="row pt-2">
-                {{-- Siswa Telah Diabsen --}}
-                <div class="col-lg-3 col-6">
-                    <div class="small-box bg-primary h-100">
-                        <div class="inner">
-                            <h3 id="card-siswa-telah-diabsen">{{ $siswaAbsenCount }}</h3>
-                            <p>Siswa Telah Diabsen</p>
-                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'siswa_absen'], array_filter($filters, fn($v) => !empty($v)))) }}"
-                                class="btn btn-block btn-primary" id="link-siswa-telah-diabsen">Lihat Detail</a>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-check-circle"></i>
+            @if ($isFiltered)
+                <div class="row pt-2">
+                    {{-- Siswa Telah Diabsen --}}
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-primary h-100">
+                            <div class="inner">
+                                <h3 id="card-siswa-telah-diabsen">{{ $siswaAbsenCount }}</h3>
+                                <p>Siswa Telah Diabsen</p>
+                                <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'siswa_absen'], array_filter($filters, fn($v) => !empty($v)))) }}"
+                                    class="btn btn-block btn-primary" id="link-siswa-telah-diabsen">Lihat Detail</a>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {{-- Guru Telah Mengabsen --}}
-                <div class="col-lg-3 col-6">
-                    <div class="small-box bg-success h-100">
-                        <div class="inner">
-                            <h3 id="card-guru-telah-mengabsen">{{ $pembimbingAbsenCount }}</h3>
-                            <p>Guru Telah Mengabsen</p>
-                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'guru_absen'], array_filter($filters, fn($v) => !empty($v)))) }}"
-                                class="btn btn-block btn-primary" id="link-guru-telah-mengabsen">Lihat Detail</a>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-user-check"></i>
+                    {{-- Guru Telah Mengabsen --}}
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-success h-100">
+                            <div class="inner">
+                                <h3 id="card-guru-telah-mengabsen">{{ $pembimbingAbsenCount }}</h3>
+                                <p>Guru Telah Mengabsen</p>
+                                <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'guru_absen'], array_filter($filters, fn($v) => !empty($v)))) }}"
+                                    class="btn btn-block btn-primary" id="link-guru-telah-mengabsen">Lihat Detail</a>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-user-check"></i>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {{-- Siswa Belum Diabsen --}}
-                <div class="col-lg-3 col-6">
-                    <div class="small-box bg-warning h-100">
-                        <div class="inner">
-                            <h3 id="card-siswa-belum-diabsen">{{ $siswaBelumAbs }}</h3>
-                            <p>Siswa Belum Diabsen</p>
-                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'siswa_belum'], array_filter($filters, fn($v) => !empty($v)))) }}"
-                                class="btn btn-block btn-primary" id="link-siswa-belum-diabsen">Lihat Detail</a>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-hourglass-half"></i>
+                    {{-- Siswa Belum Diabsen --}}
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-warning h-100">
+                            <div class="inner">
+                                <h3 id="card-siswa-belum-diabsen">{{ $siswaBelumAbs }}</h3>
+                                <p>Siswa Belum Diabsen</p>
+                                <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'siswa_belum'], array_filter($filters, fn($v) => !empty($v)))) }}"
+                                    class="btn btn-block btn-primary" id="link-siswa-belum-diabsen">Lihat Detail</a>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-hourglass-half"></i>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {{-- Guru Belum Mengabsen --}}
-                <div class="col-lg-3 col-6">
-                    <div class="small-box bg-danger h-100">
-                        <div class="inner">
-                            <h3 id="card-guru-belum-mengabsen">{{ $pembimbingBelumAbs }}</h3>
-                            <p>Guru Belum Mengabsen</p>
-                            <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'guru_belum'], array_filter($filters, fn($v) => !empty($v)))) }}"
-                                class="btn btn-block btn-primary" id="link-guru-belum-mengabsen">Lihat Detail</a>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-user-times"></i>
+                    {{-- Guru Belum Mengabsen --}}
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-danger h-100">
+                            <div class="inner">
+                                <h3 id="card-guru-belum-mengabsen">{{ $pembimbingBelumAbs }}</h3>
+                                <p>Guru Belum Mengabsen</p>
+                                <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'guru_belum'], array_filter($filters, fn($v) => !empty($v)))) }}"
+                                    class="btn btn-block btn-primary" id="link-guru-belum-mengabsen">Lihat Detail</a>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-user-times"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            @else
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-filter fa-2x mb-2 d-block"></i>
+                    Gunakan filter di atas lalu klik <strong>Filter</strong> untuk menampilkan data.
+                </div>
+            @endif
 
             <div class="card shadow-sm border-0 mb-3">
                 <div class="card-header bg-white d-flex align-items-center justify-content-between">
                     <div>
                         <h5 class="mb-0">Riwayat Absensi Pembekalan</h5>
-                        <small class="text-muted">{{ $absensi->count() }} data</small>
+                        @if ($isFiltered)
+                            <small class="text-muted">{{ $absensi->count() }} data</small>
+                        @endif
                     </div>
                     <div>
                         <button type="button" id="deleteSelectedBtn" class="btn btn-sm btn-danger d-none">
@@ -286,77 +296,85 @@
                     </div>
                 </div>
                 <div class="card-body table-responsive">
-                    <form id="bulkDeleteForm" method="POST" action="{{ route('pembekalan.absensi.bulk-delete') }}"
-                        style="display: none;">
-                        @csrf
-                        @method('POST')
-                        <input type="hidden" name="ids" id="bulkDeleteIds">
-                    </form>
-                    <table id="absensiTable" class="table table-bordered table-striped table-sm">
-                        <thead>
-                            <tr>
-                                <th style="width: 40px;">
-                                    <input type="checkbox" id="selectAllCheckbox" title="Pilih semua">
-                                </th>
-                                <th style="width: 95px;">Tanggal</th>
-                                <th style="width: 220px;">Siswa</th>
-                                <th style="width: 180px;">Kelompok</th>
-                                <th style="width: 220px;">Pembimbing</th>
-                                <th style="width: 90px;">Sesi</th>
-                                <th style="width: 100px;">Status</th>
-                                <th style="width: 120px;">Atribut</th>
-                                <th>Keterangan</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($absensi as $item)
+                    @if (!$isFiltered)
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-filter fa-2x mb-2 d-block"></i>
+                            Gunakan filter di atas lalu klik <strong>Filter</strong> untuk menampilkan data.
+                        </div>
+                    @else
+                        <form id="bulkDeleteForm" method="POST" action="{{ route('pembekalan.absensi.bulk-delete') }}"
+                            style="display: none;">
+                            @csrf
+                            @method('POST')
+                            <input type="hidden" name="ids" id="bulkDeleteIds">
+                        </form>
+                        <table id="absensiTable" class="table table-bordered table-striped table-sm">
+                            <thead>
                                 <tr>
-                                    <td>
-                                        <input type="checkbox" class="rowCheckbox" value="{{ $item->id }}">
-                                    </td>
-                                    <td>{{ \Carbon\Carbon::parse($item->tanggal_absensi)->format('d-m-Y') }}</td>
-                                    <td>
-                                        {{ $item->siswa->nama_siswa ?? '-' }}
-                                        @if ($item->siswa && $item->siswa->kelas)
-                                            <br><small class="text-muted">{{ $item->siswa->kelas->nama_kelas }}</small>
-                                        @endif
-                                    </td>
-                                    <td>{{ optional(optional($item->siswa)->kelompokBimbingan)->pluck('nama_kelompok')->first() ?? '-' }}
-                                    </td>
-                                    <td>{{ $item->pembimbing->nama_pembimbing ?? '-' }}</td>
-                                    <td><span
-                                            class="badge badge-light border">{{ ucfirst($item->sesi_absensi ?? 'datang') }}</span>
-                                    </td>
-                                    <td>
-                                        @php
-                                            $badge =
-                                                [
-                                                    'hadir' => 'success',
-                                                    'izin' => 'warning',
-                                                    'alpa' => 'danger',
-                                                    'sakit' => 'info',
-                                                    'terlambat' => 'primary',
-                                                ][$item->status] ?? 'secondary';
-                                        @endphp
-                                        <span
-                                            class="badge badge-{{ $badge }}">{{ strtoupper($item->status) }}</span>
-                                    </td>
-                                    <td>
-                                        @if ($item->atribut_lengkap === null)
-                                            <span class="badge badge-secondary">Belum Dicek</span>
-                                        @elseif ($item->atribut_lengkap)
-                                            <span class="badge badge-success">Lengkap</span>
-                                        @else
-                                            <span class="badge badge-danger">Tidak Lengkap</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ \Illuminate\Support\Str::limit($item->keterangan ?? '-', 180) }}</td>
+                                    <th style="width: 40px;">
+                                        <input type="checkbox" id="selectAllCheckbox" title="Pilih semua">
+                                    </th>
+                                    <th style="width: 95px;">Tanggal</th>
+                                    <th style="width: 220px;">Siswa</th>
+                                    <th style="width: 180px;">Kelompok</th>
+                                    <th style="width: 220px;">Pembimbing</th>
+                                    <th style="width: 90px;">Sesi</th>
+                                    <th style="width: 100px;">Status</th>
+                                    <th style="width: 120px;">Atribut</th>
+                                    <th>Keterangan</th>
                                 </tr>
-                            @empty
-                                {{-- Empty state handled by DataTables language.emptyTable. --}}
-                            @endforelse
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @forelse ($absensi as $item)
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" class="rowCheckbox" value="{{ $item->id }}">
+                                        </td>
+                                        <td>{{ \Carbon\Carbon::parse($item->tanggal_absensi)->format('d-m-Y') }}</td>
+                                        <td>
+                                            {{ $item->siswa->nama_siswa ?? '-' }}
+                                            @if ($item->siswa && $item->siswa->kelas)
+                                                <br><small
+                                                    class="text-muted">{{ $item->siswa->kelas->nama_kelas }}</small>
+                                            @endif
+                                        </td>
+                                        <td>{{ optional(optional($item->siswa)->kelompokBimbingan)->pluck('nama_kelompok')->first() ?? '-' }}
+                                        </td>
+                                        <td>{{ $item->pembimbing->nama_pembimbing ?? '-' }}</td>
+                                        <td><span
+                                                class="badge badge-light border">{{ ucfirst($item->sesi_absensi ?? 'datang') }}</span>
+                                        </td>
+                                        <td>
+                                            @php
+                                                $badge =
+                                                    [
+                                                        'hadir' => 'success',
+                                                        'izin' => 'warning',
+                                                        'alpa' => 'danger',
+                                                        'sakit' => 'info',
+                                                        'terlambat' => 'primary',
+                                                    ][$item->status] ?? 'secondary';
+                                            @endphp
+                                            <span
+                                                class="badge badge-{{ $badge }}">{{ strtoupper($item->status) }}</span>
+                                        </td>
+                                        <td>
+                                            @if ($item->atribut_lengkap === null)
+                                                <span class="badge badge-secondary">Belum Dicek</span>
+                                            @elseif ($item->atribut_lengkap)
+                                                <span class="badge badge-success">Lengkap</span>
+                                            @else
+                                                <span class="badge badge-danger">Tidak Lengkap</span>
+                                            @endif
+                                        </td>
+                                        <td>{{ \Illuminate\Support\Str::limit($item->keterangan ?? '-', 180) }}</td>
+                                    </tr>
+                                @empty
+                                    {{-- Empty state handled by DataTables language.emptyTable. --}}
+                                @endforelse
+                            </tbody>
+                        </table>
+                    @endif
                 </div>
             </div>
         @endif
@@ -367,6 +385,14 @@
 
 @section('js')
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @if ($isFiltered && $showRiwayatSection)
+        <script>
+            // Redirect to clean URL on browser reload so data doesn't auto-load
+            if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
+                window.location.replace('{{ route('pembekalan.absensi.riwayat') }}');
+            }
+        </script>
+    @endif
     <script>
         $(function() {
             const successMessage = @json(session('success'));
@@ -564,27 +590,29 @@
             }
 
             const riwayatTable = $('#absensiTable');
-            if (riwayatTable.length) {
-                if ($.fn.DataTable.isDataTable('#absensiTable')) {
-                    riwayatTable.DataTable().destroy();
-                }
-
-                riwayatTable.DataTable({
-                    pageLength: 10,
-                    lengthChange: true,
-                    ordering: true,
-                    searching: true,
-                    responsive: true,
-                    autoWidth: false,
-                    order: [
-                        [1, 'desc']
-                    ],
-                    language: {
-                        url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json',
-                        emptyTable: 'Belum ada data absensi pembekalan.'
+            @if ($isFiltered)
+                if (riwayatTable.length) {
+                    if ($.fn.DataTable.isDataTable('#absensiTable')) {
+                        riwayatTable.DataTable().destroy();
                     }
-                });
-            }
+
+                    riwayatTable.DataTable({
+                        pageLength: 10,
+                        lengthChange: true,
+                        ordering: true,
+                        searching: true,
+                        responsive: true,
+                        autoWidth: false,
+                        order: [
+                            [1, 'desc']
+                        ],
+                        language: {
+                            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json',
+                            emptyTable: 'Belum ada data absensi pembekalan.'
+                        }
+                    });
+                }
+            @endif
 
             const isInputPage = @json($showInputSection && $canManageAbsensi);
             if (!isInputPage) {

@@ -252,13 +252,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pembekalan/laporan', [PembekalanController::class, 'laporan'])->name('pembekalan.laporan');
     Route::get('/pembekalan/laporan/export-excel', [PembekalanController::class, 'exportExcel'])->name('pembekalan.laporan.export-excel');
     Route::get('/pembekalan/laporan/export-pdf', [PembekalanController::class, 'exportPdf'])->name('pembekalan.laporan.export-pdf');
-    
+
     // Laporan Absensi
     Route::get('/pembekalan/laporan-absensi', [AbsensiPembekalanController::class, 'laporan'])->name('pembekalan.laporan-absensi');
-    
+
     // Laporan Catatan Sikap
     Route::get('/pembekalan/laporan-sikap', [NilaiSikapPembekalanController::class, 'laporan'])->name('pembekalan.laporan-sikap');
-    
+
     // Laporan Kelengkapan
     Route::get('/pembekalan/laporan-kelengkapan', [CekKelengkapanSiswaController::class, 'laporan'])->name('pembekalan.laporan-kelengkapan');
 
@@ -340,10 +340,18 @@ Route::middleware(['auth', 'can:panitia'])->group(function () {
     Route::get('/template-informasi/{messageTemplate}/send', [MessageTemplateController::class, 'send'])->name('message-template.send');
     Route::post('/template-informasi/{messageTemplate}/send-personal', [MessageTemplateController::class, 'sendPersonal'])->name('message-template.send-personal');
     Route::post('/template-informasi/{messageTemplate}/send-mass', [MessageTemplateController::class, 'sendMass'])->name('message-template.send-mass');
-    
+
     Route::get('/api/siswa-list', [MessageTemplateController::class, 'apiSiswaList'])->name('api.siswa-list');
     Route::get('/api/guru-list', [MessageTemplateController::class, 'apiGuruList'])->name('api.guru-list');
     Route::get('/api/orangtua-list', [MessageTemplateController::class, 'apiOrangtuaList'])->name('api.orangtua-list');
+
+    Route::get('/setting/system', [\App\Http\Controllers\SystemSettingController::class, 'index'])->name('setting.system');
+    Route::post('/setting/system/clear-cache', [\App\Http\Controllers\SystemSettingController::class, 'clearCache'])->name('setting.clear-cache');
+    Route::post('/setting/system/clear-sessions', [\App\Http\Controllers\SystemSettingController::class, 'clearSessions'])->name('setting.clear-sessions');
+    Route::post('/setting/system/clear-views', [\App\Http\Controllers\SystemSettingController::class, 'clearViews'])->name('setting.clear-views');
+    Route::post('/setting/system/clear-config', [\App\Http\Controllers\SystemSettingController::class, 'clearConfig'])->name('setting.clear-config');
+    Route::post('/setting/system/clear-routes', [\App\Http\Controllers\SystemSettingController::class, 'clearRoutes'])->name('setting.clear-routes');
+    Route::post('/setting/system/clear-all', [\App\Http\Controllers\SystemSettingController::class, 'clearAll'])->name('setting.clear-all');
 });
 
 

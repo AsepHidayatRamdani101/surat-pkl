@@ -201,7 +201,8 @@ class AbsensiPembekalanController extends Controller
             });
         }
 
-        $absensi = $query->get();
+        $isFiltered = $request->has('filtered');
+        $absensi = $isFiltered ? $query->get() : collect();
         $pembimbingOptionsQuery = Pembimbing::orderBy('nama_pembimbing');
         if ($isPembimbing) {
             if (empty($pembimbingAuthId)) {
@@ -274,7 +275,7 @@ class AbsensiPembekalanController extends Controller
             }
         }
 
-        // Calculate statistics for dashboard cards
+        // Stats are only meaningful after filtering
         $siswaAbsenCount = $absensi->pluck('siswa_id')->unique()->count();
         $pembimbingAbsenCount = $absensi->pluck('pembimbing_id')->unique()->count();
         $totalSiswa = $siswaOptions->count();
@@ -285,6 +286,7 @@ class AbsensiPembekalanController extends Controller
         return view('pembekalan.absensi', compact(
             'absensi',
             'filters',
+            'isFiltered',
             'pembimbingOptions',
             'siswaOptions',
             'canManageAbsensi',
@@ -329,7 +331,7 @@ class AbsensiPembekalanController extends Controller
         ];
 
         $pembimbingOptions = Pembimbing::orderBy('nama_pembimbing')->get(['id', 'nama_pembimbing', 'nip_pembimbing']);
-        
+
         $detailData = [];
         $detailTitle = '';
         $detailDescription = '';
@@ -388,9 +390,9 @@ class AbsensiPembekalanController extends Controller
         if ($detailType === 'siswa_absen') {
             $detailTitle = 'Siswa yang Telah Diabsen';
             $detailDescription = 'Daftar siswa yang telah melakukan absensi pembekalan';
-            
+
             $siswaAbsenIds = $filteredAbsensi->pluck('siswa_id')->unique();
-            
+
             $query = Siswa::distinct()
                 ->with(['kelas', 'kelompokBimbingan'])
                 ->whereIn('id', $siswaAbsenIds);
@@ -402,13 +404,12 @@ class AbsensiPembekalanController extends Controller
             }
 
             $detailData = $query->orderBy('nama_siswa')->get();
-
         } elseif ($detailType === 'guru_absen') {
             $detailTitle = 'Guru yang Telah Mengabsen';
             $detailDescription = 'Daftar guru pembimbing yang telah melakukan absensi pembekalan';
-            
+
             $guruAbsenIds = $filteredAbsensi->pluck('pembimbing_id')->unique();
-            
+
             $query = Pembimbing::distinct()
                 ->with('kelompokBimbingan')
                 ->whereIn('id', $guruAbsenIds);
@@ -418,14 +419,13 @@ class AbsensiPembekalanController extends Controller
             }
 
             $detailData = $query->orderBy('nama_pembimbing')->get();
-
         } elseif ($detailType === 'siswa_belum') {
             $detailTitle = 'Siswa yang Belum Diabsen';
             $detailDescription = 'Daftar siswa yang belum melakukan absensi pembekalan';
-            
+
             // Get all siswa that do NOT have records in the filtered absensi data
             $siswaAbsenIds = $filteredAbsensi->pluck('siswa_id')->unique();
-            
+
             // Query all siswa from the filtered context
             $query = Siswa::with(['kelas', 'kelompokBimbingan']);
 
@@ -444,13 +444,12 @@ class AbsensiPembekalanController extends Controller
             $query->whereNotIn('id', $siswaAbsenIds);
 
             $detailData = $query->orderBy('nama_siswa')->get();
-
         } elseif ($detailType === 'guru_belum') {
             $detailTitle = 'Guru yang Belum Mengabsen';
             $detailDescription = 'Daftar guru pembimbing yang belum melakukan absensi pembekalan';
-            
+
             $guruAbsenIds = $filteredAbsensi->pluck('pembimbing_id')->unique();
-            
+
             $query = Pembimbing::with('kelompokBimbingan')
                 ->whereNotIn('id', $guruAbsenIds);
 
@@ -662,7 +661,7 @@ class AbsensiPembekalanController extends Controller
 
         $deletedCount = $query->delete();
 
-        $message = $deletedCount > 0 
+        $message = $deletedCount > 0
             ? "Berhasil menghapus {$deletedCount} data absensi."
             : 'Tidak ada data yang berhasil dihapus.';
 

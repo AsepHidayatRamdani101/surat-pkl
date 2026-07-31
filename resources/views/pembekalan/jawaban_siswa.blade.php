@@ -60,6 +60,7 @@
                                 value="{{ $filters['keyword'] }}">
                         </div>
                     </div>
+                    <input type="hidden" name="filtered" value="1">
                 </form>
             </div>
         </div>
@@ -68,7 +69,9 @@
             <div class="card-header bg-white d-flex align-items-center">
                 <div>
                     <h5 class="mb-0">Daftar Jawaban Siswa</h5>
-                    <small class="text-muted">{{ $jawaban->count() }} data</small>
+                    @if ($isFiltered)
+                        <small class="text-muted">{{ $jawaban->count() }} data</small>
+                    @endif
                 </div>
                 @if ($canInputNilai)
                     <button type="submit" form="bulkNilaiForm" class="btn btn-sm btn-primary ml-auto">
@@ -77,178 +80,193 @@
                 @endif
             </div>
             <div class="card-body table-responsive">
-                @if ($canInputNilai)
-                    <form method="POST" action="{{ route('pembekalan.jawaban-siswa.nilai.bulk-store') }}"
-                        id="bulkNilaiForm">
-                        @csrf
-                    </form>
-                @endif
-                <table id="jawabanTable" class="table table-bordered table-striped table-sm">
-                    <thead>
-                        <tr>
-                            <th style="width: 95px;">Tanggal Submit</th>
-                            <th style="width: 190px;">Siswa</th>
-                            <th style="width: 200px;">Materi</th>
-                            <th style="width: 170px;">Tugas</th>
-                            <th style="width: 120px;">Nilai</th>
-                            <th style="width: 160px;">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($jawaban as $item)
+                @if (!$isFiltered)
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-filter fa-2x mb-2 d-block"></i>
+                        Gunakan filter di atas lalu klik <strong>Filter</strong> untuk menampilkan data.
+                    </div>
+                @else
+                    @if ($canInputNilai)
+                        <form method="POST" action="{{ route('pembekalan.jawaban-siswa.nilai.bulk-store') }}"
+                            id="bulkNilaiForm">
+                            @csrf
+                        </form>
+                    @endif
+                    <table id="jawabanTable" class="table table-bordered table-striped table-sm">
+                        <thead>
                             <tr>
-                                <td>
-                                    @if ($item->submitted_at)
-                                        {{ \Carbon\Carbon::parse($item->submitted_at)->format('d-m-Y H:i') }}
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td>
-                                    {{ $item->siswa->nama_siswa ?? '-' }}
-                                    @if ($item->siswa && $item->siswa->kelas)
-                                        <br><small class="text-muted">{{ $item->siswa->kelas->nama_kelas }}</small>
-                                    @endif
-                                </td>
-                                <td>
-                                    {{ $item->tugasPembekalan?->materi?->topik ?? '-' }}
-                                    @if ($item->tugasPembekalan?->materi?->tanggal_materi)
-                                        <br><small
-                                            class="text-muted">{{ \Carbon\Carbon::parse($item->tugasPembekalan->materi->tanggal_materi)->format('d-m-Y') }}</small>
-                                    @endif
-                                </td>
-                                <td>{{ $item->tugasPembekalan->judul_tugas ?? '-' }}</td>
-                                <td>{{ $item->nilaiTugas?->nilai ?? '-' }}</td>
-                                <td>
-                                    <button type="button" class="btn btn-xs btn-info" data-toggle="modal"
-                                        data-target="#modalJawaban{{ $item->id }}">
-                                        Lihat Jawaban
-                                    </button>
-                                </td>
+                                <th style="width: 95px;">Tanggal Submit</th>
+                                <th style="width: 190px;">Siswa</th>
+                                <th style="width: 200px;">Materi</th>
+                                <th style="width: 170px;">Tugas</th>
+                                <th style="width: 120px;">Nilai</th>
+                                <th style="width: 160px;">Aksi</th>
                             </tr>
-                        @empty
-                            {{-- Empty state handled by DataTables language.emptyTable. --}}
-                        @endforelse
-                    </tbody>
-                </table>
-
-                @foreach ($jawaban as $item)
-                    <div class="modal fade" id="modalJawaban{{ $item->id }}" tabindex="-1" role="dialog"
-                        aria-labelledby="modalJawabanLabel{{ $item->id }}" aria-hidden="true">
-                        <div class="modal-dialog modal-lg" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="modalJawabanLabel{{ $item->id }}">Detail Jawaban Siswa
-                                    </h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="mb-2">
-                                        <strong>Siswa:</strong> {{ $item->siswa->nama_siswa ?? '-' }}
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label class="mb-1"><strong>File Soal Upload</strong></label>
-                                        @if (is_array($item->tugasPembekalan?->soal_files) && count($item->tugasPembekalan->soal_files) > 0)
-                                            <div class="soal-file-list mb-0">
-                                                @foreach ($item->tugasPembekalan->soal_files as $idx => $path)
-                                                    @php
-                                                        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-                                                        $fileUrl = asset('storage/' . $path);
-                                                        $fileName = basename($path);
-                                                        $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'webp']);
-                                                        $isPdf = $extension === 'pdf';
-                                                    @endphp
-                                                    <div class="soal-file-item">
-                                                        <div
-                                                            class="d-flex flex-wrap align-items-center justify-content-between mb-2">
-                                                            <div>
-                                                                <strong>File {{ $idx + 1 }}</strong>
-                                                                <div class="text-muted small">{{ $fileName }}</div>
-                                                            </div>
-                                                            <a href="{{ $fileUrl }}" target="_blank"
-                                                                class="btn btn-xs btn-outline-primary mt-2 mt-sm-0">
-                                                                <i class="fas fa-external-link-alt mr-1"></i>Buka File
-                                                            </a>
-                                                        </div>
-
-                                                        @if ($isImage)
-                                                            <img src="{{ $fileUrl }}"
-                                                                alt="File soal {{ $idx + 1 }}"
-                                                                class="soal-file-preview-img">
-                                                        @elseif ($isPdf)
-                                                            <iframe
-                                                                src="{{ $fileUrl }}#toolbar=0&navpanes=0&scrollbar=1"
-                                                                class="soal-file-preview-pdf"
-                                                                title="Preview File {{ $idx + 1 }}"></iframe>
-                                                        @else
-                                                            <div class="text-muted small">Preview tidak tersedia untuk
-                                                                format ini.</div>
-                                                        @endif
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        @else
-                                            <div class="text-muted">Tidak ada file soal upload.</div>
-                                        @endif
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label class="mb-1"><strong>Butir Soal Hasil Parsing</strong></label>
-                                        @if (is_array($item->tugasPembekalan?->soal_parsed_prompts) && count($item->tugasPembekalan->soal_parsed_prompts) > 0)
-                                            <ol class="pl-3 mb-0">
-                                                @foreach ($item->tugasPembekalan->soal_parsed_prompts as $parsed)
-                                                    <li class="mb-1">{{ $parsed }}</li>
-                                                @endforeach
-                                            </ol>
-                                        @else
-                                            <div class="text-muted">Belum ada hasil parsing tersimpan.</div>
-                                        @endif
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label class="mb-1"><strong>Jawaban Siswa</strong></label>
-                                        @if (!empty(trim((string) $item->jawaban_text)))
-                                            <div class="jawaban-rendered border rounded p-2 bg-light">
-                                                {!! $item->jawaban_text !!}
-                                            </div>
-                                        @else
-                                            <div class="text-muted">-</div>
-                                        @endif
-                                    </div>
-
-                                    @if ($canInputNilai)
-                                        <hr>
+                        </thead>
+                        <tbody>
+                            @forelse ($jawaban as $item)
+                                <tr>
+                                    <td>
                                         @if ($item->submitted_at)
-                                            <div class="form-row">
-                                                <div class="col-md-4 mb-2">
-                                                    <label class="mb-1">Nilai (0 - 100)</label>
-                                                    <input type="number" name="nilai[{{ $item->id }}]"
-                                                        form="bulkNilaiForm" class="form-control form-control-sm"
-                                                        min="0" max="100" step="0.01"
-                                                        value="{{ $item->nilaiTugas?->nilai ?? '' }}">
-                                                </div>
-                                                <div class="col-md-8 mb-2">
-                                                    <label class="mb-1">Catatan Penilaian</label>
-                                                    <input type="text" name="catatan[{{ $item->id }}]"
-                                                        form="bulkNilaiForm" class="form-control form-control-sm"
-                                                        value="{{ $item->nilaiTugas?->catatan ?? '' }}"
-                                                        placeholder="Catatan untuk siswa (opsional)">
-                                                </div>
-                                            </div>
+                                            {{ \Carbon\Carbon::parse($item->submitted_at)->format('d-m-Y H:i') }}
                                         @else
-                                            <div class="alert alert-secondary py-2 mb-0">
-                                                Jawaban belum disubmit, nilai belum bisa diinput.
-                                            </div>
+                                            -
                                         @endif
-                                    @endif
+                                    </td>
+                                    <td>
+                                        {{ $item->siswa->nama_siswa ?? '-' }}
+                                        @if ($item->siswa && $item->siswa->kelas)
+                                            <br><small class="text-muted">{{ $item->siswa->kelas->nama_kelas }}</small>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{ $item->tugasPembekalan?->materi?->topik ?? '-' }}
+                                        @if ($item->tugasPembekalan?->materi?->tanggal_materi)
+                                            <br><small
+                                                class="text-muted">{{ \Carbon\Carbon::parse($item->tugasPembekalan->materi->tanggal_materi)->format('d-m-Y') }}</small>
+                                        @endif
+                                    </td>
+                                    <td>{{ $item->tugasPembekalan->judul_tugas ?? '-' }}</td>
+                                    <td>{{ $item->nilaiTugas?->nilai ?? '-' }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-xs btn-info" data-toggle="modal"
+                                            data-target="#modalJawaban{{ $item->id }}">
+                                            Lihat Jawaban
+                                        </button>
+                                    </td>
+                                </tr>
+                            @empty
+                                {{-- Empty state handled by DataTables language.emptyTable. --}}
+                            @endforelse
+                        </tbody>
+                    </table>
+
+                    @foreach ($jawaban as $item)
+                        <div class="modal fade" id="modalJawaban{{ $item->id }}" tabindex="-1" role="dialog"
+                            aria-labelledby="modalJawabanLabel{{ $item->id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-lg" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="modalJawabanLabel{{ $item->id }}">Detail Jawaban
+                                            Siswa
+                                        </h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-2">
+                                            <strong>Siswa:</strong> {{ $item->siswa->nama_siswa ?? '-' }}
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="mb-1"><strong>File Soal Upload</strong></label>
+                                            @if (is_array($item->tugasPembekalan?->soal_files) && count($item->tugasPembekalan->soal_files) > 0)
+                                                <div class="soal-file-list mb-0">
+                                                    @foreach ($item->tugasPembekalan->soal_files as $idx => $path)
+                                                        @php
+                                                            $extension = strtolower(
+                                                                pathinfo($path, PATHINFO_EXTENSION),
+                                                            );
+                                                            $fileUrl = asset('storage/' . $path);
+                                                            $fileName = basename($path);
+                                                            $isImage = in_array($extension, [
+                                                                'jpg',
+                                                                'jpeg',
+                                                                'png',
+                                                                'webp',
+                                                            ]);
+                                                            $isPdf = $extension === 'pdf';
+                                                        @endphp
+                                                        <div class="soal-file-item">
+                                                            <div
+                                                                class="d-flex flex-wrap align-items-center justify-content-between mb-2">
+                                                                <div>
+                                                                    <strong>File {{ $idx + 1 }}</strong>
+                                                                    <div class="text-muted small">{{ $fileName }}</div>
+                                                                </div>
+                                                                <a href="{{ $fileUrl }}" target="_blank"
+                                                                    class="btn btn-xs btn-outline-primary mt-2 mt-sm-0">
+                                                                    <i class="fas fa-external-link-alt mr-1"></i>Buka File
+                                                                </a>
+                                                            </div>
+
+                                                            @if ($isImage)
+                                                                <img data-src="{{ $fileUrl }}"
+                                                                    alt="File soal {{ $idx + 1 }}" loading="lazy"
+                                                                    class="soal-file-preview-img">
+                                                            @elseif ($isPdf)
+                                                                <iframe
+                                                                    data-src="{{ $fileUrl }}#toolbar=0&navpanes=0&scrollbar=1"
+                                                                    class="soal-file-preview-pdf"
+                                                                    title="Preview File {{ $idx + 1 }}"></iframe>
+                                                            @else
+                                                                <div class="text-muted small">Preview tidak tersedia untuk
+                                                                    format ini.</div>
+                                                            @endif
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <div class="text-muted">Tidak ada file soal upload.</div>
+                                            @endif
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="mb-1"><strong>Butir Soal Hasil Parsing</strong></label>
+                                            @if (is_array($item->tugasPembekalan?->soal_parsed_prompts) && count($item->tugasPembekalan->soal_parsed_prompts) > 0)
+                                                <ol class="pl-3 mb-0">
+                                                    @foreach ($item->tugasPembekalan->soal_parsed_prompts as $parsed)
+                                                        <li class="mb-1">{{ $parsed }}</li>
+                                                    @endforeach
+                                                </ol>
+                                            @else
+                                                <div class="text-muted">Belum ada hasil parsing tersimpan.</div>
+                                            @endif
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="mb-1"><strong>Jawaban Siswa</strong></label>
+                                            @if (!empty(trim((string) $item->jawaban_text)))
+                                                <div class="jawaban-rendered border rounded p-2 bg-light">
+                                                    {!! $item->jawaban_text !!}
+                                                </div>
+                                            @else
+                                                <div class="text-muted">-</div>
+                                            @endif
+                                        </div>
+
+                                        @if ($canInputNilai)
+                                            <hr>
+                                            @if ($item->submitted_at)
+                                                <div class="form-row">
+                                                    <div class="col-md-4 mb-2">
+                                                        <label class="mb-1">Nilai (0 - 100)</label>
+                                                        <input type="number" name="nilai[{{ $item->id }}]"
+                                                            form="bulkNilaiForm" class="form-control form-control-sm"
+                                                            min="0" max="100" step="0.01"
+                                                            value="{{ $item->nilaiTugas?->nilai ?? '' }}">
+                                                    </div>
+                                                    <div class="col-md-8 mb-2">
+                                                        <label class="mb-1">Catatan Penilaian</label>
+                                                        <input type="text" name="catatan[{{ $item->id }}]"
+                                                            form="bulkNilaiForm" class="form-control form-control-sm"
+                                                            value="{{ $item->nilaiTugas?->catatan ?? '' }}"
+                                                            placeholder="Catatan untuk siswa (opsional)">
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <div class="alert alert-secondary py-2 mb-0">
+                                                    Jawaban belum disubmit, nilai belum bisa diinput.
+                                                </div>
+                                            @endif
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                @endforeach
+                    @endforeach
+                @endif
             </div>
         </div>
     </div>
@@ -329,32 +347,53 @@
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap4.min.js"></script>
 
-    <script>
-        $(function() {
-            if (!$.fn.DataTable) {
-                console.error('DataTables library gagal dimuat.');
-                return;
+    @if ($isFiltered)
+        <script>
+            // Redirect to clean URL on browser reload so data doesn't auto-load
+            if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
+                window.location.replace('{{ route('pembekalan.jawaban-siswa') }}');
             }
+        </script>
+    @endif
 
-            if ($.fn.DataTable.isDataTable('#jawabanTable')) {
-                $('#jawabanTable').DataTable().destroy();
-            }
-
-            $('#jawabanTable').DataTable({
-                pageLength: 10,
-                lengthChange: true,
-                ordering: true,
-                searching: true,
-                responsive: true,
-                autoWidth: false,
-                order: [
-                    [0, 'desc']
-                ],
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json',
-                    emptyTable: 'Belum ada jawaban tugas siswa.'
+    @if ($isFiltered)
+        <script>
+            $(function() {
+                if (!$.fn.DataTable) {
+                    console.error('DataTables library gagal dimuat.');
+                    return;
                 }
+
+                if ($.fn.DataTable.isDataTable('#jawabanTable')) {
+                    $('#jawabanTable').DataTable().destroy();
+                }
+
+                $('#jawabanTable').DataTable({
+                    pageLength: 10,
+                    lengthChange: true,
+                    ordering: true,
+                    searching: true,
+                    responsive: true,
+                    autoWidth: false,
+                    order: [
+                        [0, 'desc']
+                    ],
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json',
+                        emptyTable: 'Belum ada jawaban tugas siswa.'
+                    }
+                });
+
+                // Load iframe/img assets only when the modal is first opened
+                $(document).on('show.bs.modal', '.modal', function() {
+                    $(this).find('iframe[data-src]').each(function() {
+                        $(this).attr('src', $(this).data('src')).removeAttr('data-src');
+                    });
+                    $(this).find('img[data-src]').each(function() {
+                        $(this).attr('src', $(this).data('src')).removeAttr('data-src');
+                    });
+                });
             });
-        });
-    </script>
+        </script>
+    @endif
 @endsection

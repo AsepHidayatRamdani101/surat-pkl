@@ -77,7 +77,8 @@ class JawabanTugasSiswaController extends Controller
             });
         }
 
-        $jawaban = $query->get();
+        $isFiltered = $request->has('filtered');
+        $jawaban = $isFiltered ? $query->get() : collect();
 
         $kelompokOptionsQuery = KelompokBimbingan::with('pembimbing')
             ->withCount('siswa')
@@ -99,7 +100,7 @@ class JawabanTugasSiswaController extends Controller
 
         $pembimbingOptions = $pembimbingOptionsQuery->get(['id', 'nama_pembimbing']);
 
-        return view('pembekalan.jawaban_siswa', compact('jawaban', 'filters', 'kelompokOptions', 'pembimbingOptions', 'canInputNilai'));
+        return view('pembekalan.jawaban_siswa', compact('jawaban', 'filters', 'kelompokOptions', 'pembimbingOptions', 'canInputNilai', 'isFiltered'));
     }
 
     public function index(Request $request)

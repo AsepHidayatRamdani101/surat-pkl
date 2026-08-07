@@ -55,7 +55,6 @@
                             <div class="mb-2 mb-md-0">
                                 <h5 class="mb-1">Selamat datang, {{ $siswa->nama_siswa }}</h5>
                                 <small class="text-muted">{{ $currentDescription }}</small>
-                                <p class="mb-0 mt-1" id="dashboard-clock" style="font-size: 1rem; font-weight: 500;"></p>
                             </div>
                             <div class="dashboard-anchor-nav">
                                 <a href="{{ route('dashboard.siswa.absensi') }}"
@@ -1484,32 +1483,5 @@
                 }
             });
         }
-    </script>
-    <script>
-        (function() {
-            var clockEl = document.getElementById('dashboard-clock');
-            if (!clockEl) return;
-            var hariIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-            var bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September',
-                'Oktober', 'November', 'Desember'
-            ];
-
-            function updateClock() {
-                var now = new Date(new Date().toLocaleString('en-US', {
-                    timeZone: 'Asia/Jakarta'
-                }));
-                var hari = hariIndo[now.getDay()];
-                var tgl = now.getDate();
-                var bln = bulanIndo[now.getMonth()];
-                var thn = now.getFullYear();
-                var jam = String(now.getHours()).padStart(2, '0');
-                var mnt = String(now.getMinutes()).padStart(2, '0');
-                var dtk = String(now.getSeconds()).padStart(2, '0');
-                clockEl.textContent = hari + ', ' + tgl + ' ' + bln + ' ' + thn + '  ·  ' + jam + ':' + mnt + ':' +
-                    dtk + ' WIB';
-            }
-            updateClock();
-            setInterval(updateClock, 1000);
-        })();
     </script>
 @endsection

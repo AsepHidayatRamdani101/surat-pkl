@@ -424,6 +424,11 @@
                     }
                 });
 
+                // Move modals to <body> so iOS Safari stacking contexts don't bleed through the backdrop
+                document.querySelectorAll('.modal[id^="modalJawaban"]').forEach(function(el) {
+                    document.body.appendChild(el);
+                });
+
                 // Load iframe/img assets only when the modal is first opened
                 $(document).on('show.bs.modal', '.modal', function() {
                     $(this).find('iframe[data-src]').each(function() {

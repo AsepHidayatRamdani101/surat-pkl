@@ -54,6 +54,9 @@
         }
         $kelasOptions = $kelasOptionsQuery->get(['id', 'nama_kelas']);
 
+        // Total unique session dates across all absensi (denominator for kehadiran %)
+        $totalHariAbsensi = max(1, \App\Models\AbsensiPembekalan::distinct()->count('tanggal_absensi'));
+
         $topSiswaQuery = \App\Models\Siswa::query()
             ->leftJoin('jawaban_tugas_siswas as jts', 'jts.siswa_id', '=', 'siswa.id')
             ->leftJoin('nilai_tugas_pembekalans as ntp', 'ntp.jawaban_tugas_siswa_id', '=', 'jts.id')
@@ -61,8 +64,13 @@
             ->leftJoin('kelas', 'kelas.id', '=', 'siswa.kelas_id')
             ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas', 'kelas.jurusan_id')
             ->selectRaw('COALESCE(ROUND(AVG(ntp.nilai),2),0) as rata_nilai')
-            ->selectRaw("SUM(CASE WHEN ap.status = 'hadir' THEN 1 ELSE 0 END) as total_hadir")
-            ->selectRaw('COUNT(DISTINCT ntp.id) as tugas_terkumpul');
+            ->selectRaw(
+                "COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN ap.tanggal_absensi ELSE NULL END) as total_hadir",
+            )
+            ->selectRaw('COUNT(DISTINCT ntp.id) as tugas_terkumpul')->selectRaw("ROUND(
+                (COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN ap.tanggal_absensi ELSE NULL END) / {$totalHariAbsensi}) * 80
+                + COALESCE(AVG(ntp.nilai), 0) * 0.20
+            , 2) as skor");
 
         if (!empty($selectedJurusanId)) {
             $topSiswaQuery->where('kelas.jurusan_id', $selectedJurusanId);
@@ -74,8 +82,7 @@
 
         $topSiswa = $topSiswaQuery
             ->groupBy('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas', 'kelas.jurusan_id')
-            ->orderByDesc('rata_nilai')
-            ->orderByDesc('total_hadir')
+            ->orderByDesc('skor')
             ->limit(10)
             ->get();
 
@@ -91,12 +98,19 @@
                     ->leftJoin('kelas', 'kelas.id', '=', 'siswa.kelas_id')
                     ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
                     ->selectRaw('COALESCE(ROUND(AVG(ntp.nilai),2),0) as rata_nilai')
-                    ->selectRaw("SUM(CASE WHEN ap.status = 'hadir' THEN 1 ELSE 0 END) as total_hadir")
+                    ->selectRaw(
+                        "COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN ap.tanggal_absensi ELSE NULL END) as total_hadir",
+                    )
                     ->selectRaw('COUNT(DISTINCT ntp.id) as tugas_terkumpul')
+                    ->selectRaw(
+                        "ROUND(
+                        (COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN ap.tanggal_absensi ELSE NULL END) / {$totalHariAbsensi}) * 80
+                        + COALESCE(AVG(ntp.nilai), 0) * 0.20
+                    , 2) as skor",
+                    )
                     ->where('kelas.jurusan_id', $jurusan->id)
                     ->groupBy('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
-                    ->orderByDesc('rata_nilai')
-                    ->orderByDesc('total_hadir')
+                    ->orderByDesc('skor')
                     ->limit(10)
                     ->get();
             }
@@ -375,7 +389,8 @@
                                     <th>No</th>
                                     <th>Nama Siswa</th>
                                     <th>Kelas</th>
-                                    <th>Rata Nilai</th>
+                                    <th title="20% nilai + 80% kehadiran">Skor</th>
+                                    <th>Nilai</th>
                                     <th>Hadir</th>
                                 </tr>
                             </thead>
@@ -388,12 +403,13 @@
                                             <small>NIS: {{ $row->nis }}</small>
                                         </td>
                                         <td>{{ $row->nama_kelas ?? '-' }}</td>
+                                        <td><span class="badge badge-primary">{{ $row->skor }}</span></td>
                                         <td><span class="badge badge-success">{{ $row->rata_nilai }}</span></td>
-                                        <td>{{ $row->total_hadir }}</td>
+                                        <td>{{ $row->total_hadir }} hari</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center">Data nilai siswa belum tersedia.</td>
+                                        <td colspan="6" class="text-center">Data nilai siswa belum tersedia.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -421,7 +437,8 @@
                                         <tr>
                                             <th style="width: 30px;">No</th>
                                             <th>Nama Siswa</th>
-                                            <th style="width: 80px;">Nilai</th>
+                                            <th style="width: 60px;" title="20% nilai + 80% kehadiran">Skor</th>
+                                            <th style="width: 60px;">Nilai</th>
                                             <th style="width: 50px;">Hadir</th>
                                         </tr>
                                     </thead>
@@ -433,6 +450,7 @@
                                                     <small>{{ $row->nama_siswa }}<br>
                                                         <span class="text-muted">{{ $row->nis }}</span></small>
                                                 </td>
+                                                <td><span class="badge badge-primary">{{ $row->skor }}</span></td>
                                                 <td>
                                                     <span
                                                         class="badge badge-{{ $row->rata_nilai >= 80 ? 'success' : ($row->rata_nilai >= 70 ? 'warning' : 'danger') }}">
@@ -443,7 +461,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="4" class="text-center text-muted py-3">Belum ada data</td>
+                                                <td colspan="5" class="text-center text-muted py-3">Belum ada data</td>
                                             </tr>
                                         @endforelse
                                     </tbody>

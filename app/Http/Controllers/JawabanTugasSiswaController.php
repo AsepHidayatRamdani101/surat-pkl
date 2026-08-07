@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\JawabanTugasSiswa;
 use App\Models\KelompokBimbingan;
+use App\Models\Materi;
 use App\Models\Pembimbing;
+use App\Models\Siswa;
+use App\Models\TugasPembekalan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -24,61 +27,134 @@ class JawabanTugasSiswaController extends Controller
         }
 
         $filters = [
-            'kelompok_id' => $request->get('kelompok_id'),
+            'kelompok_id'   => $request->get('kelompok_id'),
             'pembimbing_id' => $request->get('pembimbing_id'),
-            'keyword' => $request->get('keyword'),
+            'materi_id'     => $request->get('materi_id'),
+            'status'        => $request->get('status'),
+            'keyword'       => $request->get('keyword'),
         ];
 
         if ($isPembimbing && !empty($pembimbingAuthId)) {
             $filters['pembimbing_id'] = (string) $pembimbingAuthId;
         }
 
-        $query = JawabanTugasSiswa::with([
-            'siswa.kelas',
-            'tugasPembekalan.materi',
-            'nilaiTugas.pembimbing',
-        ])->latest('submitted_at')->latest('id');
+        $isFiltered = $request->has('filtered');
+        $rows = collect();
 
-        if ($isPembimbing) {
-            if (empty($pembimbingAuthId)) {
-                $query->whereRaw('1 = 0');
-            } else {
-                $query->whereHas('siswa.kelompokBimbingan', function ($q) use ($pembimbingAuthId) {
-                    $q->where('kelompok_bimbingan.pembimbing_id', $pembimbingAuthId);
+        if ($isFiltered) {
+            if (!empty($filters['materi_id'])) {
+                // Student-centric: show all students in bimbingan with their jawaban for this materi
+                $tugas = TugasPembekalan::with(['materi'])
+                    ->where('materi_id', $filters['materi_id'])
+                    ->first();
+
+                $siswaQuery = Siswa::with(['kelas'])->orderBy('nama_siswa');
+
+                if ($isPembimbing) {
+                    if (empty($pembimbingAuthId)) {
+                        $siswaQuery->whereRaw('1 = 0');
+                    } else {
+                        $siswaQuery->whereHas('kelompokBimbingan', fn ($q) => $q->where('kelompok_bimbingan.pembimbing_id', $pembimbingAuthId));
+                    }
+                }
+
+                if (!empty($filters['kelompok_id'])) {
+                    $siswaQuery->whereHas('kelompokBimbingan', fn ($q) => $q->where('kelompok_bimbingan.id', $filters['kelompok_id']));
+                } elseif (!empty($filters['pembimbing_id'])) {
+                    $siswaQuery->whereHas('kelompokBimbingan', fn ($q) => $q->where('kelompok_bimbingan.pembimbing_id', $filters['pembimbing_id']));
+                }
+
+                $siswaList = $siswaQuery->get();
+
+                $jawabanMap = $tugas
+                    ? JawabanTugasSiswa::with(['nilaiTugas'])->where('tugas_pembekalan_id', $tugas->id)->get()->keyBy('siswa_id')
+                    : collect();
+
+                $rows = $siswaList->map(function ($siswa) use ($tugas, $jawabanMap) {
+                    $jawaban = $jawabanMap->get($siswa->id);
+                    if (!$jawaban || !$jawaban->submitted_at) {
+                        $status = 'belum';
+                    } elseif ($jawaban->nilaiTugas) {
+                        $status = 'selesai';
+                    } else {
+                        $status = 'proses';
+                    }
+
+                    return (object) [
+                        'jawaban_id'      => $jawaban?->id,
+                        'submitted_at'    => $jawaban?->submitted_at,
+                        'jawaban_text'    => $jawaban?->jawaban_text,
+                        'siswa'           => $siswa,
+                        'tugasPembekalan' => $tugas,
+                        'nilaiTugas'      => $jawaban?->nilaiTugas,
+                        'status'          => $status,
+                    ];
                 });
+
+                if (!empty($filters['status'])) {
+                    $rows = $rows->filter(fn ($r) => $r->status === $filters['status'])->values();
+                }
+            } else {
+                // Jawaban-centric: show submitted jawaban (existing behavior)
+                $query = JawabanTugasSiswa::with([
+                    'siswa.kelas',
+                    'tugasPembekalan.materi',
+                    'nilaiTugas.pembimbing',
+                ])->latest('submitted_at')->latest('id');
+
+                if ($isPembimbing) {
+                    if (empty($pembimbingAuthId)) {
+                        $query->whereRaw('1 = 0');
+                    } else {
+                        $query->whereHas('siswa.kelompokBimbingan', fn ($q) => $q->where('kelompok_bimbingan.pembimbing_id', $pembimbingAuthId));
+                    }
+                }
+
+                if (!empty($filters['kelompok_id'])) {
+                    $query->whereHas('siswa.kelompokBimbingan', fn ($q) => $q->where('kelompok_bimbingan.id', $filters['kelompok_id']));
+                }
+
+                if (!empty($filters['pembimbing_id'])) {
+                    $query->whereHas('siswa.kelompokBimbingan', fn ($q) => $q->where('kelompok_bimbingan.pembimbing_id', $filters['pembimbing_id']));
+                }
+
+                if (!empty($filters['keyword'])) {
+                    $keyword = trim((string) $filters['keyword']);
+                    $query->where(function ($q) use ($keyword) {
+                        $q->where('jawaban_text', 'like', '%' . $keyword . '%')
+                            ->orWhereHas('siswa', fn ($sq) => $sq->where('nama_siswa', 'like', '%' . $keyword . '%'))
+                            ->orWhereHas('tugasPembekalan', fn ($tq) => $tq->where('judul_tugas', 'like', '%' . $keyword . '%'))
+                            ->orWhereHas('tugasPembekalan.materi', fn ($mq) => $mq->where('topik', 'like', '%' . $keyword . '%'));
+                    });
+                }
+
+                $jawabanList = $query->get();
+
+                $rows = $jawabanList->map(function ($item) {
+                    if (!$item->submitted_at) {
+                        $status = 'belum';
+                    } elseif ($item->nilaiTugas) {
+                        $status = 'selesai';
+                    } else {
+                        $status = 'proses';
+                    }
+
+                    return (object) [
+                        'jawaban_id'      => $item->id,
+                        'submitted_at'    => $item->submitted_at,
+                        'jawaban_text'    => $item->jawaban_text,
+                        'siswa'           => $item->siswa,
+                        'tugasPembekalan' => $item->tugasPembekalan,
+                        'nilaiTugas'      => $item->nilaiTugas,
+                        'status'          => $status,
+                    ];
+                });
+
+                if (!empty($filters['status'])) {
+                    $rows = $rows->filter(fn ($r) => $r->status === $filters['status'])->values();
+                }
             }
         }
-
-        if (!empty($filters['kelompok_id'])) {
-            $query->whereHas('siswa.kelompokBimbingan', function ($q) use ($filters) {
-                $q->where('kelompok_bimbingan.id', $filters['kelompok_id']);
-            });
-        }
-
-        if (!empty($filters['pembimbing_id'])) {
-            $query->whereHas('siswa.kelompokBimbingan', function ($q) use ($filters) {
-                $q->where('kelompok_bimbingan.pembimbing_id', $filters['pembimbing_id']);
-            });
-        }
-
-        if (!empty($filters['keyword'])) {
-            $keyword = trim((string) $filters['keyword']);
-            $query->where(function ($q) use ($keyword) {
-                $q->where('jawaban_text', 'like', '%' . $keyword . '%')
-                    ->orWhereHas('siswa', function ($sq) use ($keyword) {
-                        $sq->where('nama_siswa', 'like', '%' . $keyword . '%');
-                    })
-                    ->orWhereHas('tugasPembekalan', function ($tq) use ($keyword) {
-                        $tq->where('judul_tugas', 'like', '%' . $keyword . '%');
-                    })
-                    ->orWhereHas('tugasPembekalan.materi', function ($mq) use ($keyword) {
-                        $mq->where('topik', 'like', '%' . $keyword . '%');
-                    });
-            });
-        }
-
-        $isFiltered = $request->has('filtered');
-        $jawaban = $isFiltered ? $query->get() : collect();
 
         $kelompokOptionsQuery = KelompokBimbingan::with('pembimbing')
             ->withCount('siswa')
@@ -97,10 +173,13 @@ class JawabanTugasSiswaController extends Controller
         }
 
         $kelompokOptions = $kelompokOptionsQuery->get();
-
         $pembimbingOptions = $pembimbingOptionsQuery->get(['id', 'nama_pembimbing']);
+        $materiOptions = Materi::orderByDesc('tanggal_materi')->get(['id', 'topik', 'tanggal_materi']);
 
-        return view('pembekalan.jawaban_siswa', compact('jawaban', 'filters', 'kelompokOptions', 'pembimbingOptions', 'canInputNilai', 'isFiltered'));
+        return view('pembekalan.jawaban_siswa', compact(
+            'rows', 'filters', 'kelompokOptions', 'pembimbingOptions',
+            'materiOptions', 'canInputNilai', 'isFiltered'
+        ));
     }
 
     public function index(Request $request)

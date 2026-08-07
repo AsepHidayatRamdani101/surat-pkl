@@ -16,7 +16,7 @@
             <div class="card-body py-3">
                 <form method="GET" action="{{ route('pembekalan.jawaban-siswa') }}">
                     <div class="form-row align-items-end">
-                        <div class="col-md-4 mb-2">
+                        <div class="col-md-3 mb-2">
                             <label class="mb-1">Kelompok Bimbingan</label>
                             <select name="kelompok_id" class="form-control form-control-sm">
                                 <option value="">Semua Kelompok</option>
@@ -33,7 +33,7 @@
                             </select>
                         </div>
 
-                        <div class="col-md-4 mb-2">
+                        <div class="col-md-3 mb-2">
                             <label class="mb-1">Guru Pembimbing</label>
                             <select name="pembimbing_id" class="form-control form-control-sm">
                                 <option value="">Semua Pembimbing</option>
@@ -46,18 +46,46 @@
                             </select>
                         </div>
 
-                        <div class="col-md-4 mb-2 d-flex">
-                            <button type="submit" class="btn btn-sm btn-primary mr-1 w-100">Filter</button>
-                            <a href="{{ route('pembekalan.jawaban-siswa') }}"
-                                class="btn btn-sm btn-outline-secondary w-100">Reset</a>
+                        <div class="col-md-3 mb-2">
+                            <label class="mb-1">Materi</label>
+                            <select name="materi_id" class="form-control form-control-sm">
+                                <option value="">Semua Materi</option>
+                                @foreach ($materiOptions as $materi)
+                                    <option value="{{ $materi->id }}"
+                                        {{ (string) $filters['materi_id'] === (string) $materi->id ? 'selected' : '' }}>
+                                        {{ $materi->topik }}
+                                        @if ($materi->tanggal_materi)
+                                            ({{ \Carbon\Carbon::parse($materi->tanggal_materi)->format('d/m/Y') }})
+                                        @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-3 mb-2">
+                            <label class="mb-1">Status Pengerjaan</label>
+                            <select name="status" class="form-control form-control-sm">
+                                <option value="">Semua Status</option>
+                                <option value="belum" {{ ($filters['status'] ?? '') === 'belum' ? 'selected' : '' }}>Belum
+                                </option>
+                                <option value="proses" {{ ($filters['status'] ?? '') === 'proses' ? 'selected' : '' }}>
+                                    Proses</option>
+                                <option value="selesai" {{ ($filters['status'] ?? '') === 'selesai' ? 'selected' : '' }}>
+                                    Selesai</option>
+                            </select>
                         </div>
                     </div>
 
-                    <div class="form-row mt-1">
-                        <div class="col-md-12">
+                    <div class="form-row mt-1 align-items-end">
+                        <div class="col-md-9 mb-2">
                             <input type="text" name="keyword" class="form-control form-control-sm"
                                 placeholder="Cari siswa, materi, judul tugas, atau isi jawaban"
                                 value="{{ $filters['keyword'] }}">
+                        </div>
+                        <div class="col-md-3 mb-2 d-flex">
+                            <button type="submit" class="btn btn-sm btn-primary mr-1 w-100">Filter</button>
+                            <a href="{{ route('pembekalan.jawaban-siswa') }}"
+                                class="btn btn-sm btn-outline-secondary w-100">Reset</a>
                         </div>
                     </div>
                     <input type="hidden" name="filtered" value="1">
@@ -70,7 +98,7 @@
                 <div>
                     <h5 class="mb-0">Daftar Jawaban Siswa</h5>
                     @if ($isFiltered)
-                        <small class="text-muted">{{ $jawaban->count() }} data</small>
+                        <small class="text-muted">{{ $rows->count() }} data</small>
                     @endif
                 </div>
                 @if ($canInputNilai)
@@ -99,12 +127,13 @@
                                 <th style="width: 190px;">Siswa</th>
                                 <th style="width: 200px;">Materi</th>
                                 <th style="width: 170px;">Tugas</th>
+                                <th style="width: 90px;">Status</th>
                                 <th style="width: 120px;">Nilai</th>
                                 <th style="width: 160px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($jawaban as $item)
+                            @forelse ($rows as $item)
                                 <tr>
                                     <td>
                                         @if ($item->submitted_at)
@@ -126,13 +155,26 @@
                                                 class="text-muted">{{ \Carbon\Carbon::parse($item->tugasPembekalan->materi->tanggal_materi)->format('d-m-Y') }}</small>
                                         @endif
                                     </td>
-                                    <td>{{ $item->tugasPembekalan->judul_tugas ?? '-' }}</td>
+                                    <td>{{ $item->tugasPembekalan?->judul_tugas ?? '-' }}</td>
+                                    <td>
+                                        @if ($item->status === 'selesai')
+                                            <span class="badge badge-success">Selesai</span>
+                                        @elseif ($item->status === 'proses')
+                                            <span class="badge badge-warning text-white">Proses</span>
+                                        @else
+                                            <span class="badge badge-secondary">Belum</span>
+                                        @endif
+                                    </td>
                                     <td>{{ $item->nilaiTugas?->nilai ?? '-' }}</td>
                                     <td>
-                                        <button type="button" class="btn btn-xs btn-info" data-toggle="modal"
-                                            data-target="#modalJawaban{{ $item->id }}">
-                                            Lihat Jawaban
-                                        </button>
+                                        @if ($item->jawaban_id)
+                                            <button type="button" class="btn btn-xs btn-info" data-toggle="modal"
+                                                data-target="#modalJawaban{{ $item->jawaban_id }}">
+                                                Lihat Jawaban
+                                            </button>
+                                        @else
+                                            <span class="text-muted small">-</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty
@@ -141,13 +183,14 @@
                         </tbody>
                     </table>
 
-                    @foreach ($jawaban as $item)
-                        <div class="modal fade" id="modalJawaban{{ $item->id }}" tabindex="-1" role="dialog"
-                            aria-labelledby="modalJawabanLabel{{ $item->id }}" aria-hidden="true">
+                    @foreach ($rows->filter(fn($r) => $r->jawaban_id) as $item)
+                        <div class="modal fade" id="modalJawaban{{ $item->jawaban_id }}" tabindex="-1" role="dialog"
+                            aria-labelledby="modalJawabanLabel{{ $item->jawaban_id }}" aria-hidden="true">
                             <div class="modal-dialog modal-lg" role="document">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title" id="modalJawabanLabel{{ $item->id }}">Detail Jawaban
+                                        <h5 class="modal-title" id="modalJawabanLabel{{ $item->jawaban_id }}">Detail
+                                            Jawaban
                                             Siswa
                                         </h5>
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -183,7 +226,8 @@
                                                                 class="d-flex flex-wrap align-items-center justify-content-between mb-2">
                                                                 <div>
                                                                     <strong>File {{ $idx + 1 }}</strong>
-                                                                    <div class="text-muted small">{{ $fileName }}</div>
+                                                                    <div class="text-muted small">{{ $fileName }}
+                                                                    </div>
                                                                 </div>
                                                                 <a href="{{ $fileUrl }}" target="_blank"
                                                                     class="btn btn-xs btn-outline-primary mt-2 mt-sm-0">
@@ -242,14 +286,14 @@
                                                 <div class="form-row">
                                                     <div class="col-md-4 mb-2">
                                                         <label class="mb-1">Nilai (0 - 100)</label>
-                                                        <input type="number" name="nilai[{{ $item->id }}]"
+                                                        <input type="number" name="nilai[{{ $item->jawaban_id }}]"
                                                             form="bulkNilaiForm" class="form-control form-control-sm"
                                                             min="0" max="100" step="0.01"
                                                             value="{{ $item->nilaiTugas?->nilai ?? '' }}">
                                                     </div>
                                                     <div class="col-md-8 mb-2">
                                                         <label class="mb-1">Catatan Penilaian</label>
-                                                        <input type="text" name="catatan[{{ $item->id }}]"
+                                                        <input type="text" name="catatan[{{ $item->jawaban_id }}]"
                                                             form="bulkNilaiForm" class="form-control form-control-sm"
                                                             value="{{ $item->nilaiTugas?->catatan ?? '' }}"
                                                             placeholder="Catatan untuk siswa (opsional)">

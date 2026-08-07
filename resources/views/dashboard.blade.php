@@ -110,6 +110,7 @@
                     <div class="inner">
                         <h3>Welcome</h3>
                         <p>Anda login sebagai Kepala Program.</p>
+                        <p id="dashboard-clock" style="font-size: 0.85rem; font-weight: 500; margin-bottom: 0;"></p>
                     </div>
                     <div class="icon">
                         <i class="fas fa-user-tie"></i>
@@ -204,6 +205,7 @@
                         <h5 class="mb-1">Dashboard Panitia PKL</h5>
                         <small class="text-muted">Pantau progres administrasi PKL, pembekalan, dan performa siswa dalam satu
                             tampilan.</small>
+                        <p class="mb-0 mt-1" id="dashboard-clock" style="font-size: 1rem; font-weight: 500;"></p>
                     </div>
                     <div>
                         <a href="/siswa" class="btn btn-sm btn-outline-primary mb-1">Data Siswa</a>
@@ -569,5 +571,32 @@
                 });
             });
         }
+    </script>
+    <script>
+        (function() {
+            var clockEl = document.getElementById('dashboard-clock');
+            if (!clockEl) return;
+            var hariIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            var bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September',
+                'Oktober', 'November', 'Desember'
+            ];
+
+            function updateClock() {
+                var now = new Date(new Date().toLocaleString('en-US', {
+                    timeZone: 'Asia/Jakarta'
+                }));
+                var hari = hariIndo[now.getDay()];
+                var tgl = now.getDate();
+                var bln = bulanIndo[now.getMonth()];
+                var thn = now.getFullYear();
+                var jam = String(now.getHours()).padStart(2, '0');
+                var mnt = String(now.getMinutes()).padStart(2, '0');
+                var dtk = String(now.getSeconds()).padStart(2, '0');
+                clockEl.textContent = hari + ', ' + tgl + ' ' + bln + ' ' + thn + '  ·  ' + jam + ':' + mnt + ':' +
+                    dtk + ' WIB';
+            }
+            updateClock();
+            setInterval(updateClock, 1000);
+        })();
     </script>
 @endsection

@@ -51,14 +51,6 @@
         }
         $kelasOptions = $kelasOptionsQuery->get(['id', 'nama_kelas']);
 
-        // Total unique sesi kehadiran (tanggal + sesi) across all absensi.
-        $totalSlotAbsensi = max(
-            1,
-            \App\Models\AbsensiPembekalan::query()
-                ->selectRaw("COUNT(DISTINCT CONCAT(tanggal_absensi, '-', sesi_absensi)) as total")
-                ->value('total'),
-        );
-
         $topSiswaQuery = \App\Models\Siswa::query()
             ->leftJoin('jawaban_tugas_siswas as jts', 'jts.siswa_id', '=', 'siswa.id')
             ->leftJoin('nilai_tugas_pembekalans as ntp', 'ntp.jawaban_tugas_siswa_id', '=', 'jts.id')
@@ -69,9 +61,14 @@
             ->selectRaw(
                 "COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi) ELSE NULL END) as total_hadir",
             )
+            ->selectRaw('COUNT(DISTINCT CONCAT(ap.tanggal_absensi, "-", ap.sesi_absensi)) as total_sesi_absensi')
             ->selectRaw('COUNT(DISTINCT ntp.id) as tugas_terkumpul')->selectRaw("ROUND(
-                (COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi) ELSE NULL END) / {$totalSlotAbsensi})
-* 80
+                COALESCE(
+                    (COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi) ELSE NULL END)
+                        / NULLIF(COUNT(DISTINCT CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi)), 0))
+* 80,
+                    0
+                )
                 + COALESCE(AVG(ntp.nilai), 0) * 0.20
             , 2) as skor");
 
@@ -104,10 +101,19 @@
                     ->selectRaw(
                         "COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi) ELSE NULL END) as total_hadir",
                     )
+                    ->selectRaw(
+                        'COUNT(DISTINCT CONCAT(ap.tanggal_absensi, "-", ap.sesi_absensi)) as total_sesi_absensi',
+                    )
                     ->selectRaw('COUNT(DISTINCT ntp.id) as tugas_terkumpul')
                     ->selectRaw(
                         "ROUND(
-                        (COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi) ELSE NULL END) / {$totalSlotAbsensi}) * 80
+                        COALESCE(
+                            (
+                                COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi) ELSE NULL END)
+                                / NULLIF(COUNT(DISTINCT CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi)), 0)
+                            ) * 80,
+                            0
+                        )
                         + COALESCE(AVG(ntp.nilai), 0) * 0.20
                     , 2) as skor",
                     )

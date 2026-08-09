@@ -647,7 +647,6 @@ class AbsensiPembekalanController extends Controller
     public function pageDestroy(AbsensiPembekalan $absensiPembekalan)
     {
         $pembimbingAuthId = $this->getAuthorizedPembimbingForAbsensiPage();
-        $this->ensurePembimbingCanInputAbsensi();
         if (!empty($pembimbingAuthId) && (int) $absensiPembekalan->pembimbing_id !== (int) $pembimbingAuthId) {
             throw new UnauthorizedException('Anda tidak berwenang menghapus absensi ini.');
         }
@@ -660,7 +659,6 @@ class AbsensiPembekalanController extends Controller
     public function bulkDelete(Request $request)
     {
         $pembimbingAuthId = $this->getAuthorizedPembimbingForAbsensiPage();
-        $this->ensurePembimbingCanInputAbsensi();
 
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1'],

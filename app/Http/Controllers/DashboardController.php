@@ -18,10 +18,14 @@ use App\Models\TempatPkl;
 use App\Support\WorksheetPromptExtractor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
@@ -157,7 +161,43 @@ class DashboardController extends Controller
             ));
         }
 
-        return view('dashboard');
+        $topGuru = collect();
+        $guruWeights = [
+            'absensi' => 25,
+            'sikap' => 25,
+            'kelengkapan' => 25,
+            'nilai' => 25,
+        ];
+        $guruTotalBobot = 100;
+        $guruTanggalAwal = null;
+        $guruTanggalAkhir = null;
+        $guruRankingQueryParams = [];
+
+        if ($user->role === 'panitia') {
+            $ranking = $this->buildTopGuruPanitiaRanking($request);
+            $topGuru = $ranking['topGuru'];
+            $guruWeights = $ranking['weights'];
+            $guruTotalBobot = $ranking['totalWeight'];
+            $guruTanggalAwal = $ranking['tanggal_awal'];
+            $guruTanggalAkhir = $ranking['tanggal_akhir'];
+            $guruRankingQueryParams = [
+                'guru_tanggal_awal' => $guruTanggalAwal,
+                'guru_tanggal_akhir' => $guruTanggalAkhir,
+                'bobot_absensi' => $guruWeights['absensi'],
+                'bobot_sikap' => $guruWeights['sikap'],
+                'bobot_kelengkapan' => $guruWeights['kelengkapan'],
+                'bobot_nilai' => $guruWeights['nilai'],
+            ];
+        }
+
+        return view('dashboard', compact(
+            'topGuru',
+            'guruWeights',
+            'guruTotalBobot',
+            'guruTanggalAwal',
+            'guruTanggalAkhir',
+            'guruRankingQueryParams'
+        ));
     }
 
     public function siswaAbsensi()
@@ -578,6 +618,101 @@ class DashboardController extends Controller
         return $pdf->download($filename);
     }
 
+    public function exportTopGuruPanitiaExcel(Request $request)
+    {
+        $this->ensurePanitiaRole();
+
+        $ranking = $this->buildTopGuruPanitiaRanking($request);
+        $topGuru = $ranking['topGuru'];
+        $weights = $ranking['weights'];
+        $totalWeight = $ranking['totalWeight'];
+        $tanggalAwal = $ranking['tanggal_awal'];
+        $tanggalAkhir = $ranking['tanggal_akhir'];
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Top Guru Panitia');
+
+        $sheet->setCellValue('A1', 'Top 10 Guru Terbaik - Dashboard Panitia');
+        $sheet->setCellValue('A2', 'Periode: ' . ($tanggalAwal ?: '-') . ' s/d ' . ($tanggalAkhir ?: '-'));
+        $sheet->setCellValue(
+            'A3',
+            'Bobot (Total ' . round($totalWeight, 2) . '): Absensi=' . $weights['absensi'] . ', Sikap=' . $weights['sikap'] . ', Kelengkapan=' . $weights['kelengkapan'] . ', Nilai=' . $weights['nilai'],
+        );
+
+        $headers = [
+            'No',
+            'Nama Guru',
+            'NIP',
+            'Skor Akhir',
+            'Skor Absensi',
+            'Skor Sikap',
+            'Skor Kelengkapan',
+            'Skor Nilai',
+            'Siswa Bimbingan',
+            'Absensi Lengkap',
+            'Sikap Siswa-Hari',
+            'Kelengkapan Siswa-Hari',
+            'Nilai Terisi',
+        ];
+
+        $startRow = 5;
+        $columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
+        foreach ($headers as $index => $header) {
+            $sheet->setCellValue($columns[$index] . $startRow, $header);
+        }
+
+        $rowNumber = $startRow + 1;
+        foreach ($topGuru as $index => $guru) {
+            $sheet->setCellValue('A' . $rowNumber, $index + 1);
+            $sheet->setCellValue('B' . $rowNumber, $guru->nama_pembimbing);
+            $sheet->setCellValue('C' . $rowNumber, $guru->nip_pembimbing ?? '-');
+            $sheet->setCellValue('D' . $rowNumber, $guru->skor_akhir);
+            $sheet->setCellValue('E' . $rowNumber, $guru->score_absensi);
+            $sheet->setCellValue('F' . $rowNumber, $guru->score_sikap);
+            $sheet->setCellValue('G' . $rowNumber, $guru->score_kelengkapan);
+            $sheet->setCellValue('H' . $rowNumber, $guru->score_nilai);
+            $sheet->setCellValue('I' . $rowNumber, $guru->total_siswa_bimbingan);
+            $sheet->setCellValue('J' . $rowNumber, $guru->absensi_hari_lengkap . '/' . $guru->absensi_hari_total);
+            $sheet->setCellValue('K' . $rowNumber, $guru->sikap_siswa_hari_tercatat . '/' . $guru->sikap_siswa_hari_target);
+            $sheet->setCellValue('L' . $rowNumber, $guru->kelengkapan_siswa_hari_tercatat . '/' . $guru->kelengkapan_siswa_hari_target);
+            $sheet->setCellValue('M' . $rowNumber, $guru->nilai_tugas_terisi . '/' . $guru->nilai_tugas_submitted);
+            $rowNumber++;
+        }
+
+        foreach (range('A', 'M') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'top-10-guru-panitia-' . now()->format('Ymd-His') . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    public function exportTopGuruPanitiaPdf(Request $request)
+    {
+        $this->ensurePanitiaRole();
+
+        $ranking = $this->buildTopGuruPanitiaRanking($request);
+        $filename = 'top-10-guru-panitia-' . now()->format('Ymd-His') . '.pdf';
+
+        $pdf = Pdf::loadView('exports.top_guru_panitia_pdf', [
+            'topGuru' => $ranking['topGuru'],
+            'weights' => $ranking['weights'],
+            'totalWeight' => $ranking['totalWeight'],
+            'tanggalAwal' => $ranking['tanggal_awal'],
+            'tanggalAkhir' => $ranking['tanggal_akhir'],
+            'generatedAt' => now(),
+        ])->setPaper('A4', 'landscape');
+
+        return $pdf->download($filename);
+    }
+
     public function updateNilaiTugasPembimbing(Request $request, $id)
     {
         $request->validate([
@@ -676,5 +811,271 @@ class DashboardController extends Controller
         if (!$isOwnSession && !$isSiswaInKelompok) {
             abort(403);
         }
+    }
+
+    private function ensurePanitiaRole(): void
+    {
+        $user = auth()->user();
+
+        if (!$user || $user->role !== 'panitia') {
+            abort(403);
+        }
+    }
+
+    private function buildTopGuruPanitiaRanking(Request $request): array
+    {
+        $validated = $this->validateTopGuruFilterInput($request);
+        $tanggalAwal = $validated['guru_tanggal_awal'];
+        $tanggalAkhir = $validated['guru_tanggal_akhir'];
+        $weights = $validated['weights'];
+
+        $totalWeight = array_sum($weights);
+        if ($totalWeight <= 0) {
+            $weights = [
+                'absensi' => 25,
+                'sikap' => 25,
+                'kelengkapan' => 25,
+                'nilai' => 25,
+            ];
+            $totalWeight = array_sum($weights);
+        }
+
+        $hasKelompokPembimbingPivot = Schema::hasTable('kelompok_bimbingan_pembimbing');
+
+        $buildAssignedPairsQuery = function () use ($hasKelompokPembimbingPivot) {
+            $baseQuery = DB::table('kelompok_bimbingan_siswa as kbs')
+                ->join('kelompok_bimbingan as kb', 'kb.id', '=', 'kbs.kelompok_bimbingan_id')
+                ->whereNotNull('kb.pembimbing_id')
+                ->selectRaw('kb.pembimbing_id as pembimbing_id, kbs.siswa_id');
+
+            if ($hasKelompokPembimbingPivot) {
+                $pivotQuery = DB::table('kelompok_bimbingan_siswa as kbs')
+                    ->join('kelompok_bimbingan_pembimbing as kbp', 'kbp.kelompok_bimbingan_id', '=', 'kbs.kelompok_bimbingan_id')
+                    ->selectRaw('kbp.pembimbing_id as pembimbing_id, kbs.siswa_id');
+
+                $baseQuery->union($pivotQuery);
+            }
+
+            return $baseQuery;
+        };
+
+        $assignedSiswaRows = DB::query()
+            ->fromSub($buildAssignedPairsQuery(), 'assigned_pairs')
+            ->select('pembimbing_id', 'siswa_id')
+            ->distinct()
+            ->get();
+
+        $assignedSiswaCountByPembimbing = $assignedSiswaRows
+            ->groupBy('pembimbing_id')
+            ->map(fn($rows) => $rows->pluck('siswa_id')->unique()->count());
+
+        $absensiCompletenessRows = DB::query()
+            ->fromSub(
+                DB::table('absensi_pembekalans')
+                    ->selectRaw("pembimbing_id, siswa_id, tanggal_absensi,
+                        MAX(CASE WHEN sesi_absensi = 'datang' THEN 1 ELSE 0 END) as has_datang,
+                        MAX(CASE WHEN sesi_absensi = 'pulang' THEN 1 ELSE 0 END) as has_pulang")
+                    ->when(!empty($tanggalAwal), function ($query) use ($tanggalAwal) {
+                        $query->whereDate('tanggal_absensi', '>=', $tanggalAwal);
+                    })
+                    ->when(!empty($tanggalAkhir), function ($query) use ($tanggalAkhir) {
+                        $query->whereDate('tanggal_absensi', '<=', $tanggalAkhir);
+                    })
+                    ->groupBy('pembimbing_id', 'siswa_id', 'tanggal_absensi'),
+                'absensi_harian'
+            )
+            ->selectRaw('pembimbing_id, COUNT(*) as total_hari, SUM(CASE WHEN has_datang = 1 AND has_pulang = 1 THEN 1 ELSE 0 END) as hari_lengkap')
+            ->groupBy('pembimbing_id')
+            ->get()
+            ->keyBy('pembimbing_id');
+
+        $sikapSiswaPerHariByPembimbing = DB::query()
+            ->fromSub(
+                DB::table('nilai_sikap_pembekalans')
+                    ->when(!empty($tanggalAwal), function ($query) use ($tanggalAwal) {
+                        $query->whereDate('tanggal_penilaian', '>=', $tanggalAwal);
+                    })
+                    ->when(!empty($tanggalAkhir), function ($query) use ($tanggalAkhir) {
+                        $query->whereDate('tanggal_penilaian', '<=', $tanggalAkhir);
+                    })
+                    ->selectRaw('pembimbing_id, tanggal_penilaian, COUNT(DISTINCT siswa_id) as jumlah_siswa_harian')
+                    ->groupBy('pembimbing_id', 'tanggal_penilaian'),
+                'sikap_harian'
+            )
+            ->selectRaw('pembimbing_id, COUNT(*) as total_hari, SUM(jumlah_siswa_harian) as total_siswa_hari')
+            ->groupBy('pembimbing_id')
+            ->get()
+            ->keyBy('pembimbing_id');
+
+        $kelengkapanSiswaPerHariByPembimbing = DB::query()
+            ->fromSub(
+                DB::table('cek_kelengkapan_siswas')
+                    ->when(!empty($tanggalAwal), function ($query) use ($tanggalAwal) {
+                        $query->whereDate('tanggal_cek', '>=', $tanggalAwal);
+                    })
+                    ->when(!empty($tanggalAkhir), function ($query) use ($tanggalAkhir) {
+                        $query->whereDate('tanggal_cek', '<=', $tanggalAkhir);
+                    })
+                    ->selectRaw('pembimbing_id, tanggal_cek, COUNT(DISTINCT siswa_id) as jumlah_siswa_harian')
+                    ->groupBy('pembimbing_id', 'tanggal_cek'),
+                'kelengkapan_harian'
+            )
+            ->selectRaw('pembimbing_id, COUNT(*) as total_hari, SUM(jumlah_siswa_harian) as total_siswa_hari')
+            ->groupBy('pembimbing_id')
+            ->get()
+            ->keyBy('pembimbing_id');
+
+        $submittedTugasByPembimbing = DB::query()
+            ->fromSub($buildAssignedPairsQuery(), 'assigned_pairs')
+            ->join('jawaban_tugas_siswas as jts', function ($join) {
+                $join->on('jts.siswa_id', '=', 'assigned_pairs.siswa_id')
+                    ->whereNotNull('jts.submitted_at');
+            })
+            ->when(!empty($tanggalAwal), function ($query) use ($tanggalAwal) {
+                $query->whereDate('jts.submitted_at', '>=', $tanggalAwal);
+            })
+            ->when(!empty($tanggalAkhir), function ($query) use ($tanggalAkhir) {
+                $query->whereDate('jts.submitted_at', '<=', $tanggalAkhir);
+            })
+            ->selectRaw('assigned_pairs.pembimbing_id, COUNT(DISTINCT jts.id) as total_submitted')
+            ->groupBy('assigned_pairs.pembimbing_id')
+            ->get()
+            ->keyBy('pembimbing_id');
+
+        $gradedTugasByPembimbing = DB::query()
+            ->fromSub($buildAssignedPairsQuery(), 'assigned_pairs')
+            ->join('jawaban_tugas_siswas as jts', function ($join) {
+                $join->on('jts.siswa_id', '=', 'assigned_pairs.siswa_id')
+                    ->whereNotNull('jts.submitted_at');
+            })
+            ->join('nilai_tugas_pembekalans as ntp', function ($join) {
+                $join->on('ntp.jawaban_tugas_siswa_id', '=', 'jts.id')
+                    ->on('ntp.pembimbing_id', '=', 'assigned_pairs.pembimbing_id');
+            })
+            ->when(!empty($tanggalAwal), function ($query) use ($tanggalAwal) {
+                $query->whereDate('jts.submitted_at', '>=', $tanggalAwal)
+                    ->whereRaw('DATE(COALESCE(ntp.dinilai_at, ntp.created_at)) >= ?', [$tanggalAwal]);
+            })
+            ->when(!empty($tanggalAkhir), function ($query) use ($tanggalAkhir) {
+                $query->whereDate('jts.submitted_at', '<=', $tanggalAkhir)
+                    ->whereRaw('DATE(COALESCE(ntp.dinilai_at, ntp.created_at)) <= ?', [$tanggalAkhir]);
+            })
+            ->selectRaw('assigned_pairs.pembimbing_id, COUNT(DISTINCT ntp.jawaban_tugas_siswa_id) as total_graded')
+            ->groupBy('assigned_pairs.pembimbing_id')
+            ->get()
+            ->keyBy('pembimbing_id');
+
+        $topGuru = Pembimbing::query()
+            ->orderBy('nama_pembimbing')
+            ->get(['id', 'nama_pembimbing', 'nip_pembimbing'])
+            ->map(function ($pembimbing) use (
+                $assignedSiswaCountByPembimbing,
+                $absensiCompletenessRows,
+                $sikapSiswaPerHariByPembimbing,
+                $kelengkapanSiswaPerHariByPembimbing,
+                $submittedTugasByPembimbing,
+                $gradedTugasByPembimbing,
+                $weights,
+                $totalWeight
+            ) {
+                $pembimbingId = (int) $pembimbing->id;
+                $totalSiswaBimbingan = (int) ($assignedSiswaCountByPembimbing[$pembimbingId] ?? 0);
+
+                $absensiRow = $absensiCompletenessRows->get($pembimbingId);
+                $totalHariAbsensi = (int) ($absensiRow->total_hari ?? 0);
+                $hariAbsensiLengkap = (int) ($absensiRow->hari_lengkap ?? 0);
+                $absensiScore = $totalHariAbsensi > 0 ? ($hariAbsensiLengkap / $totalHariAbsensi) * 100 : 0;
+
+                $sikapRow = $sikapSiswaPerHariByPembimbing->get($pembimbingId);
+                $sikapTotalHari = (int) ($sikapRow->total_hari ?? 0);
+                $sikapSiswaHariTercatat = (int) ($sikapRow->total_siswa_hari ?? 0);
+                $sikapSiswaHariTarget = $totalSiswaBimbingan > 0 ? $totalSiswaBimbingan * $sikapTotalHari : 0;
+                $sikapScore = $sikapSiswaHariTarget > 0 ? ($sikapSiswaHariTercatat / $sikapSiswaHariTarget) * 100 : 0;
+
+                $kelengkapanRow = $kelengkapanSiswaPerHariByPembimbing->get($pembimbingId);
+                $kelengkapanTotalHari = (int) ($kelengkapanRow->total_hari ?? 0);
+                $kelengkapanSiswaHariTercatat = (int) ($kelengkapanRow->total_siswa_hari ?? 0);
+                $kelengkapanSiswaHariTarget = $totalSiswaBimbingan > 0 ? $totalSiswaBimbingan * $kelengkapanTotalHari : 0;
+                $kelengkapanScore = $kelengkapanSiswaHariTarget > 0 ? ($kelengkapanSiswaHariTercatat / $kelengkapanSiswaHariTarget) * 100 : 0;
+
+                $totalSubmitted = (int) optional($submittedTugasByPembimbing->get($pembimbingId))->total_submitted;
+                $totalGraded = (int) optional($gradedTugasByPembimbing->get($pembimbingId))->total_graded;
+                $nilaiScore = $totalSubmitted > 0 ? ($totalGraded / $totalSubmitted) * 100 : 0;
+
+                $skorAkhir = round((
+                    ($absensiScore * $weights['absensi'])
+                    + ($sikapScore * $weights['sikap'])
+                    + ($kelengkapanScore * $weights['kelengkapan'])
+                    + ($nilaiScore * $weights['nilai'])
+                ) / $totalWeight, 2);
+
+                return (object) [
+                    'id' => $pembimbingId,
+                    'nama_pembimbing' => $pembimbing->nama_pembimbing,
+                    'nip_pembimbing' => $pembimbing->nip_pembimbing,
+                    'total_siswa_bimbingan' => $totalSiswaBimbingan,
+                    'absensi_hari_lengkap' => $hariAbsensiLengkap,
+                    'absensi_hari_total' => $totalHariAbsensi,
+                    'sikap_hari_total' => $sikapTotalHari,
+                    'sikap_siswa_hari_tercatat' => $sikapSiswaHariTercatat,
+                    'sikap_siswa_hari_target' => $sikapSiswaHariTarget,
+                    'kelengkapan_hari_total' => $kelengkapanTotalHari,
+                    'kelengkapan_siswa_hari_tercatat' => $kelengkapanSiswaHariTercatat,
+                    'kelengkapan_siswa_hari_target' => $kelengkapanSiswaHariTarget,
+                    'nilai_tugas_terisi' => $totalGraded,
+                    'nilai_tugas_submitted' => $totalSubmitted,
+                    'score_absensi' => round($absensiScore, 2),
+                    'score_sikap' => round($sikapScore, 2),
+                    'score_kelengkapan' => round($kelengkapanScore, 2),
+                    'score_nilai' => round($nilaiScore, 2),
+                    'skor_akhir' => $skorAkhir,
+                ];
+            })
+            ->filter(fn($row) => $row->total_siswa_bimbingan > 0)
+            ->sortByDesc(fn($row) => sprintf('%010.2f-%08d', $row->skor_akhir, $row->total_siswa_bimbingan))
+            ->take(10)
+            ->values();
+
+        return [
+            'topGuru' => $topGuru,
+            'weights' => $weights,
+            'totalWeight' => $totalWeight,
+            'tanggal_awal' => $tanggalAwal,
+            'tanggal_akhir' => $tanggalAkhir,
+        ];
+    }
+
+    private function validateTopGuruFilterInput(Request $request): array
+    {
+        $validator = Validator::make($request->all(), [
+            'guru_tanggal_awal' => ['nullable', 'date'],
+            'guru_tanggal_akhir' => ['nullable', 'date', 'after_or_equal:guru_tanggal_awal'],
+            'bobot_absensi' => ['nullable', 'numeric', 'min:0', 'max:1000'],
+            'bobot_sikap' => ['nullable', 'numeric', 'min:0', 'max:1000'],
+            'bobot_kelengkapan' => ['nullable', 'numeric', 'min:0', 'max:1000'],
+            'bobot_nilai' => ['nullable', 'numeric', 'min:0', 'max:1000'],
+        ]);
+
+        $validated = $validator->validate();
+
+        $weightsDefault = [
+            'absensi' => 25,
+            'sikap' => 25,
+            'kelengkapan' => 25,
+            'nilai' => 25,
+        ];
+
+        $weights = [
+            'absensi' => max(0, (float) ($validated['bobot_absensi'] ?? $weightsDefault['absensi'])),
+            'sikap' => max(0, (float) ($validated['bobot_sikap'] ?? $weightsDefault['sikap'])),
+            'kelengkapan' => max(0, (float) ($validated['bobot_kelengkapan'] ?? $weightsDefault['kelengkapan'])),
+            'nilai' => max(0, (float) ($validated['bobot_nilai'] ?? $weightsDefault['nilai'])),
+        ];
+
+        return [
+            'guru_tanggal_awal' => $validated['guru_tanggal_awal'] ?? null,
+            'guru_tanggal_akhir' => $validated['guru_tanggal_akhir'] ?? null,
+            'weights' => $weights,
+        ];
     }
 }

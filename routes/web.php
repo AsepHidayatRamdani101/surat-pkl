@@ -57,6 +57,8 @@ Route::get('/dashboard/siswa/cetak-sertifikat', [DashboardController::class, 'ce
 Route::get('/dashboard/siswa/cetak-sertifikat/download', [DashboardController::class, 'downloadSertifikatPembekalan'])->middleware(['auth'])->name('dashboard.siswa.download-sertifikat');
 Route::post('/dashboard/pembimbing/bimbingan/{id}/update-nilai', [DashboardController::class, 'updateNilaiTugasPembimbing'])->middleware(['auth'])->name('dashboard.pembimbing.update-nilai');
 Route::post('/dashboard/pembimbing/bimbingan/{id}/update-evaluasi', [DashboardController::class, 'updateEvaluasiSiswaPembimbing'])->middleware(['auth'])->name('dashboard.pembimbing.update-evaluasi');
+Route::get('/dashboard/panitia/top-guru/export-excel', [DashboardController::class, 'exportTopGuruPanitiaExcel'])->middleware(['auth'])->name('dashboard.panitia.top-guru.export-excel');
+Route::get('/dashboard/panitia/top-guru/export-pdf', [DashboardController::class, 'exportTopGuruPanitiaPdf'])->middleware(['auth'])->name('dashboard.panitia.top-guru.export-pdf');
 
 Route::middleware('auth')->group(function () {
     Route::view('/evaluasi/jurnal', 'evaluasi.penilaian_jurnal')->name('evaluasi.jurnal');

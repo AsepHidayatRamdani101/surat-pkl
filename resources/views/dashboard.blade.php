@@ -51,12 +51,30 @@
         }
         $kelasOptions = $kelasOptionsQuery->get(['id', 'nama_kelas']);
 
+        $latestSikapSub = \Illuminate\Support\Facades\DB::table('nilai_sikap_pembekalans')
+            ->selectRaw('siswa_id, MAX(id) as max_id')
+            ->groupBy('siswa_id');
+
+        $latestKelengkapanSub = \Illuminate\Support\Facades\DB::table('cek_kelengkapan_siswas')
+            ->selectRaw('siswa_id, MAX(id) as max_id')
+            ->groupBy('siswa_id');
+
         $topSiswaQuery = \App\Models\Siswa::query()
             ->leftJoin('jawaban_tugas_siswas as jts', 'jts.siswa_id', '=', 'siswa.id')
             ->leftJoin('nilai_tugas_pembekalans as ntp', 'ntp.jawaban_tugas_siswa_id', '=', 'jts.id')
             ->leftJoin('absensi_pembekalans as ap', 'ap.siswa_id', '=', 'siswa.id')
+            ->leftJoinSub($latestSikapSub, 'nsl', function ($join) {
+                $join->on('nsl.siswa_id', '=', 'siswa.id');
+            })
+            ->leftJoin('nilai_sikap_pembekalans as nsp', 'nsp.id', '=', 'nsl.max_id')
+            ->leftJoinSub($latestKelengkapanSub, 'ckl', function ($join) {
+                $join->on('ckl.siswa_id', '=', 'siswa.id');
+            })
+            ->leftJoin('cek_kelengkapan_siswas as cks', 'cks.id', '=', 'ckl.max_id')
             ->leftJoin('kelas', 'kelas.id', '=', 'siswa.kelas_id')
             ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas', 'kelas.jurusan_id')
+            ->selectRaw('nsp.nilai_sikap as nilai_sikap_terakhir')
+            ->selectRaw('cks.is_lengkap as kelengkapan_terakhir')
             ->selectRaw('COALESCE(ROUND(AVG(ntp.nilai),2),0) as rata_nilai')
             ->selectRaw(
                 "COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi) ELSE NULL END) as total_hadir",
@@ -81,7 +99,15 @@
         }
 
         $topSiswa = $topSiswaQuery
-            ->groupBy('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas', 'kelas.jurusan_id')
+            ->groupBy(
+                'siswa.id',
+                'siswa.nama_siswa',
+                'siswa.nis',
+                'kelas.nama_kelas',
+                'kelas.jurusan_id',
+                'nsp.nilai_sikap',
+                'cks.is_lengkap',
+            )
             ->orderByDesc('skor')
             ->limit(10)
             ->get();
@@ -95,8 +121,18 @@
                     ->leftJoin('jawaban_tugas_siswas as jts', 'jts.siswa_id', '=', 'siswa.id')
                     ->leftJoin('nilai_tugas_pembekalans as ntp', 'ntp.jawaban_tugas_siswa_id', '=', 'jts.id')
                     ->leftJoin('absensi_pembekalans as ap', 'ap.siswa_id', '=', 'siswa.id')
+                    ->leftJoinSub($latestSikapSub, 'nsl', function ($join) {
+                        $join->on('nsl.siswa_id', '=', 'siswa.id');
+                    })
+                    ->leftJoin('nilai_sikap_pembekalans as nsp', 'nsp.id', '=', 'nsl.max_id')
+                    ->leftJoinSub($latestKelengkapanSub, 'ckl', function ($join) {
+                        $join->on('ckl.siswa_id', '=', 'siswa.id');
+                    })
+                    ->leftJoin('cek_kelengkapan_siswas as cks', 'cks.id', '=', 'ckl.max_id')
                     ->leftJoin('kelas', 'kelas.id', '=', 'siswa.kelas_id')
                     ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
+                    ->selectRaw('nsp.nilai_sikap as nilai_sikap_terakhir')
+                    ->selectRaw('cks.is_lengkap as kelengkapan_terakhir')
                     ->selectRaw('COALESCE(ROUND(AVG(ntp.nilai),2),0) as rata_nilai')
                     ->selectRaw(
                         "COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi) ELSE NULL END) as total_hadir",
@@ -118,12 +154,34 @@
                     , 2) as skor",
                     )
                     ->where('kelas.jurusan_id', $jurusan->id)
-                    ->groupBy('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
+                    ->groupBy(
+                        'siswa.id',
+                        'siswa.nama_siswa',
+                        'siswa.nis',
+                        'kelas.nama_kelas',
+                        'nsp.nilai_sikap',
+                        'cks.is_lengkap',
+                    )
                     ->orderByDesc('skor')
                     ->limit(10)
                     ->get();
             }
         }
+
+        // Disuplai dari DashboardController agar view lebih ringan.
+        $topGuru = $topGuru ?? collect();
+        $guruWeights = $guruWeights ?? ['absensi' => 25, 'sikap' => 25, 'kelengkapan' => 25, 'nilai' => 25];
+        $guruTotalBobot = $guruTotalBobot ?? array_sum($guruWeights);
+        $guruTanggalAwal = $guruTanggalAwal ?? request('guru_tanggal_awal');
+        $guruTanggalAkhir = $guruTanggalAkhir ?? request('guru_tanggal_akhir');
+        $guruRankingQueryParams = $guruRankingQueryParams ?? [
+            'guru_tanggal_awal' => $guruTanggalAwal,
+            'guru_tanggal_akhir' => $guruTanggalAkhir,
+            'bobot_absensi' => $guruWeights['absensi'],
+            'bobot_sikap' => $guruWeights['sikap'],
+            'bobot_kelengkapan' => $guruWeights['kelengkapan'],
+            'bobot_nilai' => $guruWeights['nilai'],
+        ];
     @endphp
 
     @if (auth()->user()->role == 'kepala_program')
@@ -400,6 +458,8 @@
                                     <th>Kelas</th>
                                     <th title="20% nilai + 80% kehadiran">Skor</th>
                                     <th>Nilai</th>
+                                    <th>Catatan Sikap</th>
+                                    <th>Kelengkapan</th>
                                     <th>Hadir (Sesi)</th>
                                 </tr>
                             </thead>
@@ -414,11 +474,166 @@
                                         <td>{{ $row->nama_kelas ?? '-' }}</td>
                                         <td><span class="badge badge-primary">{{ $row->skor }}</span></td>
                                         <td><span class="badge badge-success">{{ $row->rata_nilai }}</span></td>
+                                        <td>
+                                            @php
+                                                $sikapLabel = $row->nilai_sikap_terakhir
+                                                    ? ucwords(str_replace('_', ' ', $row->nilai_sikap_terakhir))
+                                                    : 'Belum Dinilai';
+                                                $sikapBadge =
+                                                    [
+                                                        'sangat_baik' => 'success',
+                                                        'baik' => 'primary',
+                                                        'cukup' => 'warning',
+                                                        'kurang' => 'danger',
+                                                    ][$row->nilai_sikap_terakhir] ?? 'secondary';
+                                            @endphp
+                                            <span class="badge badge-{{ $sikapBadge }}">{{ $sikapLabel }}</span>
+                                        </td>
+                                        <td>
+                                            @if (is_null($row->kelengkapan_terakhir))
+                                                <span class="badge badge-secondary">Belum Dicek</span>
+                                            @elseif ((int) $row->kelengkapan_terakhir === 1)
+                                                <span class="badge badge-success">Lengkap</span>
+                                            @else
+                                                <span class="badge badge-danger">Belum Lengkap</span>
+                                            @endif
+                                        </td>
                                         <td>{{ $row->total_hadir }} sesi</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center">Data nilai siswa belum tersedia.</td>
+                                        <td colspan="8" class="text-center">Data nilai siswa belum tersedia.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-0 pb-0">
+                        <div class="d-flex flex-wrap align-items-start justify-content-between">
+                            <div>
+                                <h4 class="mb-0">10 Guru Terbaik (Kelengkapan Pengisian)</h4>
+                                <small class="text-muted">Skor akhir berbobot dari 4 komponen: absensi lengkap,
+                                    catatan sikap, cek kelengkapan, dan pengisian nilai tugas.</small>
+                            </div>
+                            <div class="mt-2 mt-md-0">
+                                <a href="{{ route('dashboard.panitia.top-guru.export-excel', array_filter($guruRankingQueryParams, fn($v) => $v !== null && $v !== '')) }}"
+                                    class="btn btn-sm btn-outline-success mr-1">
+                                    <i class="fas fa-file-excel mr-1"></i> Export Excel
+                                </a>
+                                <a href="{{ route('dashboard.panitia.top-guru.export-pdf', array_filter($guruRankingQueryParams, fn($v) => $v !== null && $v !== '')) }}"
+                                    class="btn btn-sm btn-outline-danger" target="_blank">
+                                    <i class="fas fa-file-pdf mr-1"></i> Export PDF
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body pt-2 pb-1 border-bottom">
+                        <form method="GET" action="{{ url('/dashboard') }}">
+                            <div class="form-row align-items-end">
+                                <div class="col-md-2 mb-2">
+                                    <label class="mb-1">Dari Tanggal</label>
+                                    <input type="date" name="guru_tanggal_awal" class="form-control form-control-sm"
+                                        value="{{ $guruTanggalAwal }}">
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="mb-1">Sampai Tanggal</label>
+                                    <input type="date" name="guru_tanggal_akhir" class="form-control form-control-sm"
+                                        value="{{ $guruTanggalAkhir }}">
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="mb-1">Bobot Absensi</label>
+                                    <input type="number" min="0" step="0.01" name="bobot_absensi"
+                                        class="form-control form-control-sm" value="{{ $guruWeights['absensi'] }}">
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="mb-1">Bobot Sikap</label>
+                                    <input type="number" min="0" step="0.01" name="bobot_sikap"
+                                        class="form-control form-control-sm" value="{{ $guruWeights['sikap'] }}">
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="mb-1">Bobot Kelengkapan</label>
+                                    <input type="number" min="0" step="0.01" name="bobot_kelengkapan"
+                                        class="form-control form-control-sm" value="{{ $guruWeights['kelengkapan'] }}">
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="mb-1">Bobot Nilai</label>
+                                    <input type="number" min="0" step="0.01" name="bobot_nilai"
+                                        class="form-control form-control-sm" value="{{ $guruWeights['nilai'] }}">
+                                </div>
+                            </div>
+                            <div class="form-row align-items-center">
+                                <div class="col-md-8 mb-2">
+                                    <small class="text-muted">Total bobot aktif: {{ number_format($guruTotalBobot, 2) }}.
+                                        Jika semua bobot 0, sistem otomatis pakai 25-25-25-25.</small>
+                                </div>
+                                <div class="col-md-4 mb-2 d-flex justify-content-md-end">
+                                    <button type="submit" class="btn btn-sm btn-primary mr-1">Terapkan</button>
+                                    <a href="{{ url('/dashboard') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="card-body table-responsive pt-2">
+                        <table class="table table-bordered table-striped table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">No</th>
+                                    <th>Nama Guru</th>
+                                    <th style="width: 110px;">Skor Akhir</th>
+                                    <th style="width: 160px;" title="Hari lengkap datang+pulang / total hari absensi">
+                                        Absensi</th>
+                                    <th style="width: 160px;" title="Total siswa tercatat per hari / target siswa-hari">
+                                        Sikap
+                                    </th>
+                                    <th style="width: 170px;" title="Total siswa dicek per hari / target siswa-hari">
+                                        Kelengkapan</th>
+                                    <th style="width: 150px;"
+                                        title="Jawaban tugas yang sudah dinilai / jawaban yang sudah dikumpulkan">Nilai
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($topGuru as $index => $guru)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>
+                                            <strong>{{ $guru->nama_pembimbing }}</strong><br>
+                                            <small>NIP: {{ $guru->nip_pembimbing ?? '-' }} | Siswa:
+                                                {{ $guru->total_siswa_bimbingan }}</small>
+                                        </td>
+                                        <td><span class="badge badge-primary">{{ $guru->skor_akhir }}</span></td>
+                                        <td>
+                                            <span class="badge badge-info">{{ $guru->score_absensi }}%</span>
+                                            <div><small>{{ $guru->absensi_hari_lengkap }}/{{ $guru->absensi_hari_total }}
+                                                    hari</small></div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-warning">{{ $guru->score_sikap }}%</span>
+                                            <div><small>{{ $guru->sikap_siswa_hari_tercatat }}/{{ $guru->sikap_siswa_hari_target }}
+                                                    siswa-hari</small></div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-secondary">{{ $guru->score_kelengkapan }}%</span>
+                                            <div><small>{{ $guru->kelengkapan_siswa_hari_tercatat }}/{{ $guru->kelengkapan_siswa_hari_target }}
+                                                    siswa-hari</small></div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-success">{{ $guru->score_nilai }}%</span>
+                                            <div><small>{{ $guru->nilai_tugas_terisi }}/{{ $guru->nilai_tugas_submitted }}
+                                                    tugas</small></div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-3">Belum ada data pembimbing
+                                            yang cukup untuk dinilai.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -448,6 +663,8 @@
                                             <th>Nama Siswa</th>
                                             <th style="width: 60px;" title="20% nilai + 80% kehadiran">Skor</th>
                                             <th style="width: 60px;">Nilai</th>
+                                            <th style="width: 90px;">Sikap</th>
+                                            <th style="width: 90px;">Kelengkapan</th>
                                             <th style="width: 50px;">Hadir</th>
                                         </tr>
                                     </thead>
@@ -466,11 +683,36 @@
                                                         {{ $row->rata_nilai }}
                                                     </span>
                                                 </td>
+                                                <td>
+                                                    @php
+                                                        $sikapLabel = $row->nilai_sikap_terakhir
+                                                            ? ucwords(str_replace('_', ' ', $row->nilai_sikap_terakhir))
+                                                            : 'Belum';
+                                                        $sikapBadge =
+                                                            [
+                                                                'sangat_baik' => 'success',
+                                                                'baik' => 'primary',
+                                                                'cukup' => 'warning',
+                                                                'kurang' => 'danger',
+                                                            ][$row->nilai_sikap_terakhir] ?? 'secondary';
+                                                    @endphp
+                                                    <span
+                                                        class="badge badge-{{ $sikapBadge }}">{{ $sikapLabel }}</span>
+                                                </td>
+                                                <td>
+                                                    @if (is_null($row->kelengkapan_terakhir))
+                                                        <span class="badge badge-secondary">Belum</span>
+                                                    @elseif ((int) $row->kelengkapan_terakhir === 1)
+                                                        <span class="badge badge-success">Lengkap</span>
+                                                    @else
+                                                        <span class="badge badge-danger">Belum</span>
+                                                    @endif
+                                                </td>
                                                 <td class="text-center">{{ $row->total_hadir ?? 0 }}</td>
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="5" class="text-center text-muted py-3">Belum ada data</td>
+                                                <td colspan="7" class="text-center text-muted py-3">Belum ada data</td>
                                             </tr>
                                         @endforelse
                                     </tbody>

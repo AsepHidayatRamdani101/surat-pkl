@@ -118,10 +118,25 @@
                     <div class="small-box bg-info shadow-sm dashboard-metric-box dashboard-mini-box">
                         <div class="inner">
                             <h3>{{ $summaryPembimbing['hadir'] }}</h3>
-                            <p>Total Absensi Hadir</p>
+                            <p>Kehadiran Lengkap (Datang+Pulang)</p>
                         </div>
                         <div class="icon">
                             <i class="fas fa-user-check"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row dashboard-summary-row">
+                <div class="col-md-4 col-12">
+                    <div class="small-box bg-warning shadow-sm dashboard-metric-box dashboard-mini-box">
+                        <div class="inner">
+                            <h3>{{ $summaryPembimbing['avg_nilai_tugas'] !== null ? $summaryPembimbing['avg_nilai_tugas'] : '-' }}
+                            </h3>
+                            <p>Rata-rata Nilai Tugas</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-star"></i>
                         </div>
                     </div>
                 </div>
@@ -191,7 +206,8 @@
                                 <h6 class="mb-2">Riwayat Absensi</h6>
                                 <p class="text-muted small mb-3">Lihat riwayat absensi siswa dengan filter pembimbing dan
                                     kelompok.</p>
-                                <a href="{{ url('pembekalan/absensi/riwayat') }}" class="btn btn-sm btn-outline-info">Buka
+                                <a href="{{ url('pembekalan/absensi/riwayat') }}"
+                                    class="btn btn-sm btn-outline-info">Buka
                                     Riwayat</a>
                             </div>
                         </div>
@@ -237,7 +253,11 @@
                                     <li class="mb-2">Tugas terkumpul:
                                         <strong>{{ $summaryPembimbing['tugas_terkumpul'] }}</strong>
                                     </li>
-                                    <li>Total hadir pembekalan tercatat: <strong>{{ $summaryPembimbing['hadir'] }}</strong>
+                                    <li class="mb-2">Rata-rata nilai tugas:
+                                        <strong>{{ $summaryPembimbing['avg_nilai_tugas'] !== null ? $summaryPembimbing['avg_nilai_tugas'] : '-' }}</strong>
+                                    </li>
+                                    <li>Total kehadiran lengkap tercatat:
+                                        <strong>{{ $summaryPembimbing['hadir'] }}</strong>
                                     </li>
                                 </ul>
                             </div>

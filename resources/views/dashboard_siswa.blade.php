@@ -119,7 +119,7 @@
                         <div class="small-box bg-primary shadow-sm dashboard-metric-box dashboard-summary-box">
                             <div class="inner">
                                 <h3>{{ $summary['total_sesi'] }}</h3>
-                                <p>Total Sesi Pembekalan</p>
+                                <p>Total Hari Pembekalan</p>
                             </div>
                             <div class="icon">
                                 <i class="fas fa-calendar-check"></i>
@@ -131,7 +131,7 @@
                         <div class="small-box bg-success shadow-sm dashboard-metric-box dashboard-summary-box">
                             <div class="inner">
                                 <h3>{{ $summary['hadir'] }}</h3>
-                                <p>Absensi Hadir</p>
+                                <p>Hadir Lengkap (Datang+Pulang)</p>
                             </div>
                             <div class="icon">
                                 <i class="fas fa-user-check"></i>

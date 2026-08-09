@@ -234,6 +234,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pembekalan/pembinaan/{pembinaanPembekalan}/pdf', [PembinaanPembekalanController::class, 'pdf'])->name('pembekalan.pembinaan.pdf');
     Route::post('/pembekalan/absensi/bulk', [AbsensiPembekalanController::class, 'pageBulkStore'])->name('pembekalan.absensi.bulk-store');
     Route::post('/pembekalan/absensi/bulk-delete', [AbsensiPembekalanController::class, 'bulkDelete'])->name('pembekalan.absensi.bulk-delete');
+    Route::put('/pembekalan/absensi/toggle', [AbsensiPembekalanController::class, 'toggleActivation'])->middleware('can:panitia')->name('pembekalan.absensi.toggle');
     Route::post('/pembekalan/absensi', [AbsensiPembekalanController::class, 'pageStore'])->name('pembekalan.absensi.store');
     Route::put('/pembekalan/absensi/{absensiPembekalan}', [AbsensiPembekalanController::class, 'pageUpdate'])->name('pembekalan.absensi.update');
     Route::delete('/pembekalan/absensi/{absensiPembekalan}', [AbsensiPembekalanController::class, 'pageDestroy'])->name('pembekalan.absensi.destroy');

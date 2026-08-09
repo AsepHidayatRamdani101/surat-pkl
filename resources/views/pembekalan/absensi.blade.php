@@ -110,6 +110,10 @@
                         <button type="submit" id="submitBulkAbsensiBtn" class="btn btn-sm btn-success" disabled>
                             Simpan Absensi Kelompok
                         </button>
+                        <button type="button" id="toggleSelectAllSiswaBtn" class="btn btn-sm btn-outline-primary ml-2"
+                            disabled>
+                            <i class="fas fa-check-square mr-1"></i> Pilih Semua Siswa
+                        </button>
                     </form>
                 </div>
             </div>
@@ -131,7 +135,8 @@
                         <div class="form-row align-items-end">
                             <div class="col-md-3 mb-2">
                                 <label class="mb-1">Dari</label>
-                                <input type="date" name="tanggal_awal" class="form-control form-control-sm filter-input"
+                                <input type="date" name="tanggal_awal"
+                                    class="form-control form-control-sm filter-input"
                                     value="{{ $filters['tanggal_awal'] }}">
                             </div>
                             <div class="col-md-3 mb-2">
@@ -213,15 +218,16 @@
 
             {{-- Dashboard Cards --}}
             @if ($isFiltered)
-                <div class="row pt-2">
+                <div class="row pt-2 absensi-metric-row">
                     {{-- Siswa Telah Diabsen --}}
-                    <div class="col-lg-3 col-6">
-                        <div class="small-box bg-primary h-100">
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-12 d-flex">
+                        <div class="small-box bg-primary h-100 w-100 absensi-metric-box">
                             <div class="inner">
                                 <h3 id="card-siswa-telah-diabsen">{{ $siswaAbsenCount }}</h3>
                                 <p>Siswa Telah Diabsen</p>
                                 <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'siswa_absen'], array_filter($filters, fn($v) => !empty($v)))) }}"
-                                    class="btn btn-block btn-primary" id="link-siswa-telah-diabsen">Lihat Detail</a>
+                                    class="btn btn-sm btn-block absensi-metric-btn" id="link-siswa-telah-diabsen">Lihat
+                                    Detail</a>
                             </div>
                             <div class="icon">
                                 <i class="fas fa-check-circle"></i>
@@ -230,13 +236,14 @@
                     </div>
 
                     {{-- Guru Telah Mengabsen --}}
-                    <div class="col-lg-3 col-6">
-                        <div class="small-box bg-success h-100">
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-12 d-flex">
+                        <div class="small-box bg-success h-100 w-100 absensi-metric-box">
                             <div class="inner">
                                 <h3 id="card-guru-telah-mengabsen">{{ $pembimbingAbsenCount }}</h3>
                                 <p>Guru Telah Mengabsen</p>
                                 <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'guru_absen'], array_filter($filters, fn($v) => !empty($v)))) }}"
-                                    class="btn btn-block btn-primary" id="link-guru-telah-mengabsen">Lihat Detail</a>
+                                    class="btn btn-sm btn-block absensi-metric-btn" id="link-guru-telah-mengabsen">Lihat
+                                    Detail</a>
                             </div>
                             <div class="icon">
                                 <i class="fas fa-user-check"></i>
@@ -245,13 +252,14 @@
                     </div>
 
                     {{-- Siswa Belum Diabsen --}}
-                    <div class="col-lg-3 col-6">
-                        <div class="small-box bg-warning h-100">
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-12 d-flex">
+                        <div class="small-box bg-warning h-100 w-100 absensi-metric-box">
                             <div class="inner">
                                 <h3 id="card-siswa-belum-diabsen">{{ $siswaBelumAbs }}</h3>
                                 <p>Siswa Belum Diabsen</p>
                                 <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'siswa_belum'], array_filter($filters, fn($v) => !empty($v)))) }}"
-                                    class="btn btn-block btn-primary" id="link-siswa-belum-diabsen">Lihat Detail</a>
+                                    class="btn btn-sm btn-block absensi-metric-btn" id="link-siswa-belum-diabsen">Lihat
+                                    Detail</a>
                             </div>
                             <div class="icon">
                                 <i class="fas fa-hourglass-half"></i>
@@ -260,16 +268,31 @@
                     </div>
 
                     {{-- Guru Belum Mengabsen --}}
-                    <div class="col-lg-3 col-6">
-                        <div class="small-box bg-danger h-100">
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-12 d-flex">
+                        <div class="small-box bg-danger h-100 w-100 absensi-metric-box">
                             <div class="inner">
                                 <h3 id="card-guru-belum-mengabsen">{{ $pembimbingBelumAbs }}</h3>
                                 <p>Guru Belum Mengabsen</p>
                                 <a href="{{ route('pembekalan.absensi.detail', array_merge(['type' => 'guru_belum'], array_filter($filters, fn($v) => !empty($v)))) }}"
-                                    class="btn btn-block btn-primary" id="link-guru-belum-mengabsen">Lihat Detail</a>
+                                    class="btn btn-sm btn-block absensi-metric-btn" id="link-guru-belum-mengabsen">Lihat
+                                    Detail</a>
                             </div>
                             <div class="icon">
                                 <i class="fas fa-user-times"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Jumlah Hari Diabsen Guru --}}
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-12 d-flex">
+                        <div class="small-box bg-secondary h-100 w-100 absensi-metric-box">
+                            <div class="inner">
+                                <h3 id="card-guru-hari-absen">{{ $guruHariAbsenCount }}</h3>
+                                <p>Hari Diabsen Guru</p>
+                                <small class="absensi-metric-subtitle">Hitung per guru per tanggal</small>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-calendar-check"></i>
                             </div>
                         </div>
                     </div>
@@ -290,6 +313,9 @@
                         @endif
                     </div>
                     <div>
+                        <button type="button" id="selectAllRowsBtn" class="btn btn-sm btn-outline-primary mr-2">
+                            <i class="fas fa-check-square mr-1"></i> Pilih Semua
+                        </button>
                         <button type="button" id="deleteSelectedBtn" class="btn btn-sm btn-danger d-none">
                             <i class="fas fa-trash mr-1"></i> Hapus Terpilih (<span id="selectedCount">0</span>)
                         </button>
@@ -305,8 +331,7 @@
                         <form id="bulkDeleteForm" method="POST" action="{{ route('pembekalan.absensi.bulk-delete') }}"
                             style="display: none;">
                             @csrf
-                            @method('POST')
-                            <input type="hidden" name="ids" id="bulkDeleteIds">
+                            <div id="bulkDeleteIdsContainer"></div>
                         </form>
                         <table id="absensiTable" class="table table-bordered table-striped table-sm">
                             <thead>
@@ -382,6 +407,75 @@
 @endsection
 
 @section('plugins.Datatables', true)
+
+@section('css')
+    <style>
+        .absensi-metric-row {
+            row-gap: 0.75rem;
+        }
+
+        .absensi-metric-box {
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 0;
+        }
+
+        .absensi-metric-box .inner {
+            min-height: 170px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .absensi-metric-box .inner p {
+            margin-bottom: 0.6rem;
+            font-weight: 600;
+        }
+
+        .absensi-metric-btn {
+            margin-top: auto;
+            border: 0;
+            font-weight: 600;
+            color: #fff;
+            transition: transform 0.15s ease, opacity 0.2s ease;
+        }
+
+        .absensi-metric-btn:hover,
+        .absensi-metric-btn:focus {
+            color: #fff;
+            transform: translateY(-1px);
+            opacity: 0.95;
+        }
+
+        .bg-primary .absensi-metric-btn {
+            background-color: #004a99;
+        }
+
+        .bg-success .absensi-metric-btn {
+            background-color: #1f7a3d;
+        }
+
+        .bg-warning .absensi-metric-btn {
+            background-color: #b7791f;
+        }
+
+        .bg-danger .absensi-metric-btn {
+            background-color: #9f1e2e;
+        }
+
+        .absensi-metric-subtitle {
+            display: block;
+            margin-top: auto;
+            color: rgba(255, 255, 255, 0.92);
+        }
+
+        @media (max-width: 767.98px) {
+            .absensi-metric-box .inner {
+                min-height: 150px;
+            }
+        }
+    </style>
+@endsection
 
 @section('js')
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -488,6 +582,7 @@
                             // Update card values with animation
                             updateCardValue('card-siswa-telah-diabsen', data.siswa_telah_diabsen);
                             updateCardValue('card-guru-telah-mengabsen', data.guru_telah_mengabsen);
+                            updateCardValue('card-guru-hari-absen', data.guru_hari_absen);
                             updateCardValue('card-siswa-belum-diabsen', data.siswa_belum_diabsen);
                             updateCardValue('card-guru-belum-mengabsen', data.guru_belum_mengabsen);
                             // Update detail links with new filter parameters
@@ -524,43 +619,108 @@
 
             // Bulk delete functionality
             const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-            const rowCheckboxes = document.querySelectorAll('.rowCheckbox');
+            const selectAllRowsBtn = document.getElementById('selectAllRowsBtn');
             const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
             const selectedCountSpan = document.getElementById('selectedCount');
             const bulkDeleteForm = document.getElementById('bulkDeleteForm');
-            const bulkDeleteIds = document.getElementById('bulkDeleteIds');
+            const bulkDeleteIdsContainer = document.getElementById('bulkDeleteIdsContainer');
+            const selectedAbsensiIds = new Set();
+
+            const parseIdFromCellHtml = (cellHtml) => {
+                const raw = String(cellHtml ?? '');
+                const match = raw.match(/value\s*=\s*["'](\d+)["']/i);
+                return match ? Number(match[1]) : null;
+            };
+
+            const getFilteredIds = () => {
+                if ($.fn.DataTable.isDataTable('#absensiTable')) {
+                    const dt = $('#absensiTable').DataTable();
+                    return dt.rows({
+                        search: 'applied'
+                    }).data().toArray().map((row) => parseIdFromCellHtml(row[0])).filter((id) => Number
+                        .isInteger(id));
+                }
+
+                return Array.from(document.querySelectorAll('.rowCheckbox'))
+                    .map((cb) => Number(cb.value))
+                    .filter((id) => Number.isInteger(id));
+            };
+
+            const getAllRowCheckboxes = () => Array.from(document.querySelectorAll('.rowCheckbox'));
+
+            const syncVisibleCheckboxesFromSelected = () => {
+                getAllRowCheckboxes().forEach((checkbox) => {
+                    const id = Number(checkbox.value);
+                    checkbox.checked = selectedAbsensiIds.has(id);
+                });
+            };
 
             function updateDeleteButton() {
-                const checkedCount = document.querySelectorAll('.rowCheckbox:checked').length;
+                const filteredIds = getFilteredIds();
+                const checkedCount = selectedAbsensiIds.size;
                 selectedCountSpan.textContent = checkedCount;
                 deleteSelectedBtn.classList.toggle('d-none', checkedCount === 0);
+
+                if (selectAllRowsBtn) {
+                    const totalRows = filteredIds.length;
+                    const allChecked = totalRows > 0 && filteredIds.every((id) => selectedAbsensiIds.has(id));
+                    selectAllRowsBtn.innerHTML = allChecked ?
+                        '<i class="fas fa-times-square mr-1"></i> Batal Pilih Semua (Terfilter)' :
+                        '<i class="fas fa-check-square mr-1"></i> Pilih Semua (Terfilter)';
+                }
+
+                if (selectAllCheckbox) {
+                    const totalRows = filteredIds.length;
+                    const checkedRows = filteredIds.filter((id) => selectedAbsensiIds.has(id)).length;
+                    selectAllCheckbox.checked = totalRows > 0 && checkedRows === totalRows;
+                    selectAllCheckbox.indeterminate = checkedRows > 0 && checkedRows < totalRows;
+                }
+            }
+
+            function setFilteredRowsChecked(checked) {
+                const filteredIds = getFilteredIds();
+                filteredIds.forEach((id) => {
+                    if (checked) {
+                        selectedAbsensiIds.add(id);
+                    } else {
+                        selectedAbsensiIds.delete(id);
+                    }
+                });
+
+                syncVisibleCheckboxesFromSelected();
+                updateDeleteButton();
             }
 
             if (selectAllCheckbox) {
                 selectAllCheckbox.addEventListener('change', function() {
-                    rowCheckboxes.forEach(checkbox => {
-                        checkbox.checked = this.checked;
-                    });
-                    updateDeleteButton();
+                    setFilteredRowsChecked(this.checked);
                 });
             }
 
-            rowCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const allChecked = Array.from(rowCheckboxes).every(cb => cb.checked);
-                    const someChecked = Array.from(rowCheckboxes).some(cb => cb.checked);
-                    if (selectAllCheckbox) {
-                        selectAllCheckbox.checked = allChecked;
-                        selectAllCheckbox.indeterminate = someChecked && !allChecked;
-                    }
-                    updateDeleteButton();
+            if (selectAllRowsBtn) {
+                selectAllRowsBtn.addEventListener('click', function() {
+                    const filteredIds = getFilteredIds();
+                    const checkedCount = filteredIds.filter((id) => selectedAbsensiIds.has(id)).length;
+                    const shouldCheckAll = checkedCount !== filteredIds.length;
+                    setFilteredRowsChecked(shouldCheckAll);
                 });
+            }
+
+            $(document).on('change', '#absensiTable .rowCheckbox', function() {
+                const id = Number(this.value);
+                if (Number.isInteger(id)) {
+                    if (this.checked) {
+                        selectedAbsensiIds.add(id);
+                    } else {
+                        selectedAbsensiIds.delete(id);
+                    }
+                }
+                updateDeleteButton();
             });
 
             if (deleteSelectedBtn) {
                 deleteSelectedBtn.addEventListener('click', function() {
-                    const checkedIds = Array.from(document.querySelectorAll('.rowCheckbox:checked'))
-                        .map(checkbox => checkbox.value);
+                    const checkedIds = Array.from(selectedAbsensiIds).map((id) => String(id));
 
                     if (checkedIds.length === 0) {
                         Swal.fire({
@@ -582,12 +742,20 @@
                         cancelButtonText: 'Batal'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            bulkDeleteIds.value = JSON.stringify(checkedIds);
+                            if (bulkDeleteIdsContainer) {
+                                bulkDeleteIdsContainer.innerHTML = checkedIds
+                                    .map((id) =>
+                                        `<input type="hidden" name="ids[]" value="${String(id).replace(/"/g, '&quot;')}">`
+                                    )
+                                    .join('');
+                            }
                             bulkDeleteForm.submit();
                         }
                     });
                 });
             }
+
+            updateDeleteButton();
 
             const riwayatTable = $('#absensiTable');
             @if ($isFiltered)
@@ -611,6 +779,11 @@
                             emptyTable: 'Belum ada data absensi pembekalan.'
                         }
                     });
+
+                    riwayatTable.on('draw.dt search.dt', function() {
+                        syncVisibleCheckboxesFromSelected();
+                        updateDeleteButton();
+                    });
                 }
             @endif
 
@@ -633,6 +806,7 @@
             const $submitBtn = $('#submitBulkAbsensiBtn');
             const $checkAll = $('#checkAllSiswaAbsensi');
             const $sesi = $('#sesiInputSelect');
+            const $toggleSelectAllSiswaBtn = $('#toggleSelectAllSiswaBtn');
 
             const hideWarning = () => {
                 $inputWarning.addClass('d-none').text('');
@@ -664,6 +838,8 @@
                 $bulkSesiAbsensi.val('');
                 clearInfo();
                 $checkAll.prop('checked', false);
+                $toggleSelectAllSiswaBtn.prop('disabled', true)
+                    .html('<i class="fas fa-check-square mr-1"></i> Pilih Semua Siswa');
                 setupInputDataTable('Pilih kelompok bimbingan untuk menampilkan data siswa.');
                 updateSubmitState();
             };
@@ -744,7 +920,16 @@
 
             const updateSubmitState = () => {
                 const selectedCount = $('#inputAbsensiTable .siswa-checkbox:checked').length;
-                $submitBtn.prop('disabled', selectedCount === 0 || !$bulkKelompokId.val());
+                const totalCount = $('#inputAbsensiTable .siswa-checkbox').length;
+                const hasKelompok = Boolean($bulkKelompokId.val());
+                const allChecked = totalCount > 0 && selectedCount === totalCount;
+
+                $submitBtn.prop('disabled', selectedCount === 0 || !hasKelompok);
+
+                $toggleSelectAllSiswaBtn.prop('disabled', totalCount === 0 || !hasKelompok)
+                    .html(allChecked ?
+                        '<i class="fas fa-times-square mr-1"></i> Batal Pilih Semua' :
+                        '<i class="fas fa-check-square mr-1"></i> Pilih Semua Siswa');
             };
 
             const syncCheckAllState = () => {
@@ -811,6 +996,20 @@
             $(document).on('change', '#checkAllSiswaAbsensi', function() {
                 const isChecked = $(this).is(':checked');
                 $('#inputAbsensiTable .siswa-checkbox').prop('checked', isChecked);
+                updateSubmitState();
+            });
+
+            $toggleSelectAllSiswaBtn.on('click', function() {
+                const $studentCheckboxes = $('#inputAbsensiTable .siswa-checkbox');
+                if ($studentCheckboxes.length === 0) {
+                    return;
+                }
+
+                const checkedCount = $studentCheckboxes.filter(':checked').length;
+                const shouldCheckAll = checkedCount !== $studentCheckboxes.length;
+
+                $studentCheckboxes.prop('checked', shouldCheckAll);
+                $checkAll.prop('checked', shouldCheckAll);
                 updateSubmitState();
             });
 

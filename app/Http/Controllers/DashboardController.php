@@ -48,6 +48,7 @@ class DashboardController extends Controller
                 'tugas_terkumpul' => 0,
                 'belum_dinilai' => 0,
                 'hadir' => 0,
+                'avg_nilai_tugas' => null,
                 'total_cek_kelengkapan' => 0,
                 'lengkap' => 0,
                 'belum_lengkap' => 0,
@@ -90,9 +91,30 @@ class DashboardController extends Controller
                         ->orderByDesc('id')
                         ->get();
 
-                    $tugasSiswa = $bimbinganPembimbing
-                        ->filter(fn($item) => !empty($item->tugas))
+                    $jawabanTugasPembimbing = JawabanTugasSiswa::with(['nilaiTugas'])
+                        ->whereIn('siswa_id', $siswaBimbinganIds)
+                        ->get();
+
+                    $tugasSiswa = $jawabanTugasPembimbing
+                        ->filter(fn($item) => !empty($item->submitted_at))
                         ->values();
+
+                    $hadirLengkapSiswaPerHari = $absensiPembekalanPembimbing
+                        ->groupBy(function ($item) {
+                            return $item->siswa_id . '|' . $item->tanggal_absensi;
+                        })
+                        ->filter(function ($group) {
+                            $statusDatang = optional($group->firstWhere('sesi_absensi', 'datang'))->status;
+                            $statusPulang = optional($group->firstWhere('sesi_absensi', 'pulang'))->status;
+
+                            return $statusDatang === 'hadir' && $statusPulang === 'hadir';
+                        })
+                        ->count();
+
+                    $avgNilaiTugasPembimbing = $jawabanTugasPembimbing
+                        ->map(fn($jawaban) => $jawaban->nilaiTugas?->nilai)
+                        ->filter(fn($nilai) => $nilai !== null)
+                        ->avg();
 
                     $kelengkapanTerbaru = $cekKelengkapanPembimbing
                         ->groupBy('siswa_id')
@@ -112,9 +134,10 @@ class DashboardController extends Controller
 
                     $summaryPembimbing = [
                         'total_sesi' => $bimbinganPembimbing->count(),
-                        'tugas_terkumpul' => $tugasSiswa->filter(fn($item) => !empty($item->tugas_siswa))->count(),
-                        'belum_dinilai' => $tugasSiswa->whereNull('nilai_tugas')->count(),
-                        'hadir' => $absensiPembekalanPembimbing->where('status', 'hadir')->count(),
+                        'tugas_terkumpul' => $tugasSiswa->count(),
+                        'belum_dinilai' => $tugasSiswa->filter(fn($item) => $item->nilaiTugas === null)->count(),
+                        'hadir' => $hadirLengkapSiswaPerHari,
+                        'avg_nilai_tugas' => $avgNilaiTugasPembimbing !== null ? round((float) $avgNilaiTugasPembimbing, 2) : null,
                         'total_cek_kelengkapan' => $cekKelengkapanPembimbing->count(),
                         'lengkap' => $cekKelengkapanPembimbing->where('is_lengkap', true)->count(),
                         'belum_lengkap' => $cekKelengkapanPembimbing->where('is_lengkap', false)->count(),
@@ -283,10 +306,29 @@ class DashboardController extends Controller
                 ->orderByDesc('id')
                 ->get();
 
-            $totalSesi = $absensiPembekalan->count();
-            $hadir = $absensiPembekalan->where('status', 'hadir')->count();
-            $izin = $absensiPembekalan->where('status', 'izin')->count();
-            $alpa = $absensiPembekalan->where('status', 'alpa')->count();
+            $dailyAbsensi = $absensiPembekalan
+                ->groupBy(fn($entry) => (string) $entry->tanggal_absensi)
+                ->sortKeys();
+
+            $totalSesi = $dailyAbsensi->count();
+            $hadir = $dailyAbsensi->filter(function ($entries) {
+                $statusDatang = optional($entries->firstWhere('sesi_absensi', 'datang'))->status;
+                $statusPulang = optional($entries->firstWhere('sesi_absensi', 'pulang'))->status;
+
+                return $statusDatang === 'hadir' && $statusPulang === 'hadir';
+            })->count();
+
+            $izin = $dailyAbsensi->filter(function ($entries) {
+                $statuses = $entries->pluck('status')->filter()->all();
+
+                return in_array('izin', $statuses, true);
+            })->count();
+
+            $alpa = $dailyAbsensi->filter(function ($entries) {
+                $statuses = $entries->pluck('status')->filter()->all();
+
+                return in_array('alpa', $statuses, true);
+            })->count();
             $totalTugas = $tugasPembekalan->count();
             $tugasSelesai = $tugasPembekalan->filter(function ($item) {
                 $jawaban = $item->jawabanSiswa->first();
@@ -312,18 +354,23 @@ class DashboardController extends Controller
                 'progres' => $progres,
             ];
 
-            $timeline = $absensiPembekalan->sortBy('tanggal_absensi')->values();
+            $timeline = $dailyAbsensi;
             $runningTotal = 0;
             $runningHadir = 0;
 
             foreach ($timeline as $entry) {
                 $runningTotal++;
-                if ($entry->status === 'hadir') {
+                $statusDatang = optional($entry->firstWhere('sesi_absensi', 'datang'))->status;
+                $statusPulang = optional($entry->firstWhere('sesi_absensi', 'pulang'))->status;
+
+                if ($statusDatang === 'hadir' && $statusPulang === 'hadir') {
                     $runningHadir++;
                 }
 
-                $chartLabels[] = $entry->tanggal_absensi
-                    ? \Carbon\Carbon::parse($entry->tanggal_absensi)->format('d M')
+                $firstEntry = $entry->first();
+
+                $chartLabels[] = $firstEntry?->tanggal_absensi
+                    ? \Carbon\Carbon::parse($firstEntry->tanggal_absensi)->format('d M')
                     : 'Sesi ' . $runningTotal;
                 $chartProgres[] = (int) round(($runningHadir / $runningTotal) * 100);
             }

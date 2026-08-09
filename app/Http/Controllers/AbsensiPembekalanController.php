@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\AbsensiPembekalan;
+use App\Models\AbsensiControl;
 use App\Models\KelompokBimbingan;
 use App\Models\Pembimbing;
 use App\Models\Siswa;
@@ -50,6 +51,7 @@ class AbsensiPembekalanController extends Controller
     public function pageInputStudents(Request $request)
     {
         $pembimbingAuthId = $this->getAuthorizedPembimbingForAbsensiPage();
+        $this->ensurePembimbingCanInputAbsensi();
 
         $validated = $request->validate([
             'kelompok_id' => ['required', 'exists:kelompok_bimbingan,id'],
@@ -101,6 +103,7 @@ class AbsensiPembekalanController extends Controller
             'kelompok' => [
                 'id' => (int) $selectedKelompok->id,
                 'nama_kelompok' => (string) $selectedKelompok->nama_kelompok,
+                'group_label' => (string) $this->resolveKelompokGroupLabel($selectedKelompok),
                 'pembimbing' => $selectedKelompok->pembimbing
                     ? (string) $selectedKelompok->pembimbing->nama_pembimbing
                     : null,
@@ -117,6 +120,8 @@ class AbsensiPembekalanController extends Controller
         $isPanitia = $authUser && Gate::forUser($authUser)->allows('panitia');
         $isPembimbing = $authUser && (Gate::forUser($authUser)->allows('pembimbing') || $authUser->role === 'pembimbing');
         $canManageAbsensi = $isPanitia || $isPembimbing;
+        $absensiControl = $this->getAbsensiControl();
+        $absensiAktif = (bool) $absensiControl->is_active;
         $showInputSection = $pageMode === 'input';
         $showRiwayatSection = $pageMode === 'riwayat';
         $pembimbingAuthId = null;
@@ -239,6 +244,7 @@ class AbsensiPembekalanController extends Controller
         }
 
         $kelompokOptions = $kelompokOptionsQuery->get();
+        $kelompokOptions = $this->decorateKelompokWithGroup($kelompokOptions);
 
         $selectedKelompok = null;
         $selectedKelompokStudents = collect();
@@ -278,6 +284,10 @@ class AbsensiPembekalanController extends Controller
         // Stats are only meaningful after filtering
         $siswaAbsenCount = $absensi->pluck('siswa_id')->unique()->count();
         $pembimbingAbsenCount = $absensi->pluck('pembimbing_id')->unique()->count();
+        $guruHariAbsenCount = $absensi
+            ->map(fn($item) => (string) $item->pembimbing_id . '|' . (string) $item->tanggal_absensi)
+            ->unique()
+            ->count();
         $totalSiswa = $siswaOptions->count();
         $totalPembimbing = $pembimbingOptions->count();
         $siswaBelumAbs = max(0, $totalSiswa - $siswaAbsenCount);
@@ -296,8 +306,12 @@ class AbsensiPembekalanController extends Controller
             'selectedKelompokStudents',
             'showInputSection',
             'showRiwayatSection',
+            'isPanitia',
+            'isPembimbing',
+            'absensiAktif',
             'siswaAbsenCount',
             'pembimbingAbsenCount',
+            'guruHariAbsenCount',
             'totalSiswa',
             'totalPembimbing',
             'siswaBelumAbs',
@@ -478,6 +492,7 @@ class AbsensiPembekalanController extends Controller
     public function pageBulkStore(Request $request)
     {
         $pembimbingAuthId = $this->getAuthorizedPembimbingForAbsensiPage();
+        $this->ensurePembimbingCanInputAbsensi();
 
         $validated = $request->validate([
             'kelompok_id' => ['required', 'exists:kelompok_bimbingan,id'],
@@ -553,6 +568,7 @@ class AbsensiPembekalanController extends Controller
     public function pageStore(Request $request)
     {
         $pembimbingAuthId = $this->getAuthorizedPembimbingForAbsensiPage();
+        $this->ensurePembimbingCanInputAbsensi();
 
         $validated = $request->validate([
             'pembimbing_id' => ['required', 'exists:pembimbings,id'],
@@ -589,6 +605,7 @@ class AbsensiPembekalanController extends Controller
     public function pageUpdate(Request $request, AbsensiPembekalan $absensiPembekalan)
     {
         $pembimbingAuthId = $this->getAuthorizedPembimbingForAbsensiPage();
+        $this->ensurePembimbingCanInputAbsensi();
 
         $validated = $request->validate([
             'pembimbing_id' => ['required', 'exists:pembimbings,id'],
@@ -630,6 +647,7 @@ class AbsensiPembekalanController extends Controller
     public function pageDestroy(AbsensiPembekalan $absensiPembekalan)
     {
         $pembimbingAuthId = $this->getAuthorizedPembimbingForAbsensiPage();
+        $this->ensurePembimbingCanInputAbsensi();
         if (!empty($pembimbingAuthId) && (int) $absensiPembekalan->pembimbing_id !== (int) $pembimbingAuthId) {
             throw new UnauthorizedException('Anda tidak berwenang menghapus absensi ini.');
         }
@@ -642,14 +660,20 @@ class AbsensiPembekalanController extends Controller
     public function bulkDelete(Request $request)
     {
         $pembimbingAuthId = $this->getAuthorizedPembimbingForAbsensiPage();
+        $this->ensurePembimbingCanInputAbsensi();
 
         $validated = $request->validate([
-            'ids' => ['required', 'json'],
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'distinct'],
         ]);
 
-        $ids = json_decode($validated['ids'], true);
+        $ids = collect($validated['ids'])
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
 
-        if (!is_array($ids) || empty($ids)) {
+        if (empty($ids)) {
             return redirect()->route('pembekalan.absensi.riwayat')->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
         }
 
@@ -685,6 +709,8 @@ class AbsensiPembekalanController extends Controller
 
     public function store(Request $request)
     {
+        $this->ensurePembimbingCanInputAbsensi();
+
         $validated = $request->validate([
             'pembimbing_id' => ['required', 'exists:pembimbings,id'],
             'siswa_id' => ['required', 'exists:siswa,id'],
@@ -716,6 +742,8 @@ class AbsensiPembekalanController extends Controller
 
     public function update(Request $request, AbsensiPembekalan $absensiPembekalan)
     {
+        $this->ensurePembimbingCanInputAbsensi();
+
         $validated = $request->validate([
             'pembimbing_id' => ['required', 'exists:pembimbings,id'],
             'siswa_id' => ['required', 'exists:siswa,id'],
@@ -735,6 +763,8 @@ class AbsensiPembekalanController extends Controller
 
     public function destroy(AbsensiPembekalan $absensiPembekalan)
     {
+        $this->ensurePembimbingCanInputAbsensi();
+
         $absensiPembekalan->delete();
 
         return response()->json(['message' => 'Absensi deleted']);
@@ -857,6 +887,92 @@ class AbsensiPembekalanController extends Controller
         });
     }
 
+    public function toggleActivation(Request $request)
+    {
+        $authUser = auth()->user();
+        if (!$authUser || !Gate::forUser($authUser)->allows('panitia')) {
+            throw new UnauthorizedException('Hanya admin/panitia yang dapat mengubah status absensi.');
+        }
+
+        $validated = $request->validate([
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        $control = $this->getAbsensiControl();
+        $control->is_active = (bool) $validated['is_active'];
+        $control->updated_by = $authUser->id;
+        $control->save();
+
+        $message = $control->is_active
+            ? 'Absensi berhasil diaktifkan. Pembimbing sudah bisa melakukan absensi.'
+            : 'Absensi berhasil dinonaktifkan. Pembimbing sementara tidak bisa melakukan absensi.';
+
+        return back()->with('success', $message);
+    }
+
+    private function ensurePembimbingCanInputAbsensi(): void
+    {
+        $authUser = auth()->user();
+        if (!$authUser) {
+            return;
+        }
+
+        $isPembimbing = Gate::forUser($authUser)->allows('pembimbing') || $authUser->role === 'pembimbing';
+
+        if ($isPembimbing && !$this->getAbsensiControl()->is_active) {
+            throw new UnauthorizedException('Absensi belum diaktifkan oleh admin/panitia.');
+        }
+    }
+
+    private function getAbsensiControl(): AbsensiControl
+    {
+        return AbsensiControl::query()->firstOrCreate(
+            ['id' => 1],
+            ['is_active' => false]
+        );
+    }
+
+    private function decorateKelompokWithGroup($kelompokCollection)
+    {
+        return $kelompokCollection
+            ->map(function ($kelompok) {
+                $group = $this->resolveKelompokGroupLabel($kelompok);
+                $kelompok->setAttribute('group_label', $group['label']);
+                $kelompok->setAttribute('group_sort', $group['sort']);
+
+                return $kelompok;
+            })
+            ->sortBy([
+                ['group_sort', 'asc'],
+                ['nama_kelompok', 'asc'],
+            ])
+            ->values();
+    }
+
+    private function resolveKelompokGroupLabel($kelompok): array
+    {
+        $number = $this->resolveKelompokNumber((string) $kelompok->nama_kelompok);
+
+        if ($number !== null && $number >= 1 && $number <= 18) {
+            return ['label' => 'Group 1', 'sort' => 1];
+        }
+
+        if ($number !== null && $number >= 19 && $number <= 42) {
+            return ['label' => 'Group 2', 'sort' => 2];
+        }
+
+        return ['label' => 'Lainnya', 'sort' => 3];
+    }
+
+    private function resolveKelompokNumber(string $namaKelompok): ?int
+    {
+        if (preg_match('/(\d+)/', $namaKelompok, $matches) === 1) {
+            return (int) $matches[1];
+        }
+
+        return null;
+    }
+
     public function getDashboardCardCounts(Request $request)
     {
         $authUser = auth()->user();
@@ -973,12 +1089,17 @@ class AbsensiPembekalanController extends Controller
         // Calculate statistics
         $siswaAbsenCount = $absensi->pluck('siswa_id')->unique()->count();
         $pembimbingAbsenCount = $absensi->pluck('pembimbing_id')->unique()->count();
+        $guruHariAbsenCount = $absensi
+            ->map(fn($item) => (string) $item->pembimbing_id . '|' . (string) $item->tanggal_absensi)
+            ->unique()
+            ->count();
         $siswaBelumAbs = max(0, $totalSiswa - $siswaAbsenCount);
         $pembimbingBelumAbs = max(0, $totalPembimbing - $pembimbingAbsenCount);
 
         return response()->json([
             'siswa_telah_diabsen' => $siswaAbsenCount,
             'guru_telah_mengabsen' => $pembimbingAbsenCount,
+            'guru_hari_absen' => $guruHariAbsenCount,
             'siswa_belum_diabsen' => $siswaBelumAbs,
             'guru_belum_mengabsen' => $pembimbingBelumAbs,
         ]);
@@ -1023,7 +1144,7 @@ class AbsensiPembekalanController extends Controller
             $kelompokOptionsQuery->where('pembimbing_id', $filters['pembimbing_id']);
         }
 
-        $kelompokOptions = $kelompokOptionsQuery->get();
+        $kelompokOptions = $this->decorateKelompokWithGroup($kelompokOptionsQuery->get());
 
         $selectedKelompok = null;
         $students = collect();

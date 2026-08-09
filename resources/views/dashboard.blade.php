@@ -37,10 +37,7 @@
         $totalPembimbing = \App\Models\Pembimbing::count();
         $totalKelompokBimbingan = \App\Models\KelompokBimbingan::count();
         $totalSesiBimbingan = \App\Models\Bimbingan::count();
-        $rataNilaiGlobal = round(
-            (float) (\App\Models\Bimbingan::whereNotNull('nilai_tugas')->avg('nilai_tugas') ?? 0),
-            2,
-        );
+        $rataNilaiGlobal = round((float) (\App\Models\NilaiTugasPembekalan::avg('nilai') ?? 0), 2);
         $siswaBelumTempat = max(0, $totalSiswa - $totalTempatPkl);
 
         $selectedJurusanId = request('jurusan_id');
@@ -54,8 +51,13 @@
         }
         $kelasOptions = $kelasOptionsQuery->get(['id', 'nama_kelas']);
 
-        // Total unique session dates across all absensi (denominator for kehadiran %)
-        $totalHariAbsensi = max(1, \App\Models\AbsensiPembekalan::distinct()->count('tanggal_absensi'));
+        // Total unique sesi kehadiran (tanggal + sesi) across all absensi.
+        $totalSlotAbsensi = max(
+            1,
+            \App\Models\AbsensiPembekalan::query()
+                ->selectRaw("COUNT(DISTINCT CONCAT(tanggal_absensi, '-', sesi_absensi)) as total")
+                ->value('total'),
+        );
 
         $topSiswaQuery = \App\Models\Siswa::query()
             ->leftJoin('jawaban_tugas_siswas as jts', 'jts.siswa_id', '=', 'siswa.id')
@@ -65,10 +67,11 @@
             ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas', 'kelas.jurusan_id')
             ->selectRaw('COALESCE(ROUND(AVG(ntp.nilai),2),0) as rata_nilai')
             ->selectRaw(
-                "COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN ap.tanggal_absensi ELSE NULL END) as total_hadir",
+                "COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi) ELSE NULL END) as total_hadir",
             )
             ->selectRaw('COUNT(DISTINCT ntp.id) as tugas_terkumpul')->selectRaw("ROUND(
-                (COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN ap.tanggal_absensi ELSE NULL END) / {$totalHariAbsensi}) * 80
+                (COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi) ELSE NULL END) / {$totalSlotAbsensi})
+* 80
                 + COALESCE(AVG(ntp.nilai), 0) * 0.20
             , 2) as skor");
 
@@ -99,12 +102,12 @@
                     ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
                     ->selectRaw('COALESCE(ROUND(AVG(ntp.nilai),2),0) as rata_nilai')
                     ->selectRaw(
-                        "COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN ap.tanggal_absensi ELSE NULL END) as total_hadir",
+                        "COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi) ELSE NULL END) as total_hadir",
                     )
                     ->selectRaw('COUNT(DISTINCT ntp.id) as tugas_terkumpul')
                     ->selectRaw(
                         "ROUND(
-                        (COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN ap.tanggal_absensi ELSE NULL END) / {$totalHariAbsensi}) * 80
+                        (COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi) ELSE NULL END) / {$totalSlotAbsensi}) * 80
                         + COALESCE(AVG(ntp.nilai), 0) * 0.20
                     , 2) as skor",
                     )
@@ -391,7 +394,7 @@
                                     <th>Kelas</th>
                                     <th title="20% nilai + 80% kehadiran">Skor</th>
                                     <th>Nilai</th>
-                                    <th>Hadir</th>
+                                    <th>Hadir (Sesi)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -405,7 +408,7 @@
                                         <td>{{ $row->nama_kelas ?? '-' }}</td>
                                         <td><span class="badge badge-primary">{{ $row->skor }}</span></td>
                                         <td><span class="badge badge-success">{{ $row->rata_nilai }}</span></td>
-                                        <td>{{ $row->total_hadir }} hari</td>
+                                        <td>{{ $row->total_hadir }} sesi</td>
                                     </tr>
                                 @empty
                                     <tr>

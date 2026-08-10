@@ -51,7 +51,6 @@ class AbsensiPembekalanController extends Controller
     public function pageInputStudents(Request $request)
     {
         $pembimbingAuthId = $this->getAuthorizedPembimbingForAbsensiPage();
-        $this->ensurePembimbingCanInputAbsensi();
 
         $validated = $request->validate([
             'kelompok_id' => ['required', 'exists:kelompok_bimbingan,id'],
@@ -59,20 +58,8 @@ class AbsensiPembekalanController extends Controller
             'sesi_absensi' => ['required', 'in:datang,pulang'],
         ]);
 
-        $selectedKelompokQuery = KelompokBimbingan::with(['pembimbing', 'siswa.kelas'])
-            ->whereKey($validated['kelompok_id']);
-
-        if (!empty($pembimbingAuthId)) {
-            $this->scopeKelompokForPembimbing($selectedKelompokQuery, $pembimbingAuthId);
-        }
-
-        $selectedKelompok = $selectedKelompokQuery->first();
-
-        if (!$selectedKelompok) {
-            return response()->json([
-                'message' => 'Kelompok tidak ditemukan atau tidak dapat diakses.',
-            ], 404);
-        }
+        $selectedKelompok = KelompokBimbingan::with(['pembimbing', 'siswa.kelas'])
+            ->findOrFail($validated['kelompok_id']);
 
         $studentIds = $selectedKelompok->siswa->pluck('id')->all();
 
@@ -103,7 +90,7 @@ class AbsensiPembekalanController extends Controller
             'kelompok' => [
                 'id' => (int) $selectedKelompok->id,
                 'nama_kelompok' => (string) $selectedKelompok->nama_kelompok,
-                'group_label' => (string) $this->resolveKelompokGroupLabel($selectedKelompok),
+                'group_label' => (string) $this->resolveKelompokGroupLabel($selectedKelompok)['label'],
                 'pembimbing' => $selectedKelompok->pembimbing
                     ? (string) $selectedKelompok->pembimbing->nama_pembimbing
                     : null,
@@ -245,6 +232,11 @@ class AbsensiPembekalanController extends Controller
 
         $kelompokOptions = $kelompokOptionsQuery->get();
         $kelompokOptions = $this->decorateKelompokWithGroup($kelompokOptions);
+
+        // Auto-select the only kelompok so pembimbing can absen immediately on page load
+        if (empty($bulkInput['kelompok_id']) && $isPembimbing && $kelompokOptions->count() === 1) {
+            $bulkInput['kelompok_id'] = (string) $kelompokOptions->first()->id;
+        }
 
         $selectedKelompok = null;
         $selectedKelompokStudents = collect();
@@ -492,7 +484,6 @@ class AbsensiPembekalanController extends Controller
     public function pageBulkStore(Request $request)
     {
         $pembimbingAuthId = $this->getAuthorizedPembimbingForAbsensiPage();
-        $this->ensurePembimbingCanInputAbsensi();
 
         $validated = $request->validate([
             'kelompok_id' => ['required', 'exists:kelompok_bimbingan,id'],
@@ -533,8 +524,6 @@ class AbsensiPembekalanController extends Controller
                     'statuses' => 'Status absensi untuk semua siswa wajib dipilih.',
                 ]);
             }
-
-            $this->validatePembimbingForSiswa((int) $siswaId, (int) $pembimbingIdToSave);
 
             $absensi = AbsensiPembekalan::updateOrCreate(
                 [
@@ -853,7 +842,7 @@ class AbsensiPembekalanController extends Controller
     {
         $authUser = auth()->user();
         if (!$authUser) {
-            throw new UnauthorizedException('Silakan login terlebih dahulu.');
+            abort(401, 'Silakan login terlebih dahulu.');
         }
 
         if (Gate::forUser($authUser)->allows('panitia')) {
@@ -866,13 +855,13 @@ class AbsensiPembekalanController extends Controller
                 ->value('id');
 
             if (empty($pembimbingAuthId)) {
-                throw new UnauthorizedException('Data pembimbing untuk akun ini tidak ditemukan.');
+                abort(403, 'Data pembimbing untuk akun ini tidak ditemukan.');
             }
 
             return (int) $pembimbingAuthId;
         }
 
-        throw new UnauthorizedException('Anda tidak memiliki akses ke modul absensi ini.');
+        abort(403, 'Anda tidak memiliki akses ke modul absensi ini.');
     }
 
     private function scopeKelompokForPembimbing($query, int $pembimbingId): void
@@ -918,7 +907,7 @@ class AbsensiPembekalanController extends Controller
         $isPembimbing = Gate::forUser($authUser)->allows('pembimbing') || $authUser->role === 'pembimbing';
 
         if ($isPembimbing && !$this->getAbsensiControl()->is_active) {
-            throw new UnauthorizedException('Absensi belum diaktifkan oleh admin/panitia.');
+            abort(403, 'Absensi belum diaktifkan oleh admin/panitia.');
         }
     }
 

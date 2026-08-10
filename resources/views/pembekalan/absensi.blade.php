@@ -62,10 +62,12 @@
                                 <select id="sesiInputSelect" name="sesi_absensi_input" class="form-control form-control-sm"
                                     required>
                                     <option value="datang"
-                                        {{ ($bulkInput['sesi_absensi'] ?? 'datang') === 'datang' ? 'selected' : '' }}>Datang
+                                        {{ ($bulkInput['sesi_absensi'] ?? 'datang') === 'datang' ? 'selected' : '' }}>
+                                        Datang
                                     </option>
                                     <option value="pulang"
-                                        {{ ($bulkInput['sesi_absensi'] ?? 'datang') === 'pulang' ? 'selected' : '' }}>Pulang
+                                        {{ ($bulkInput['sesi_absensi'] ?? 'datang') === 'pulang' ? 'selected' : '' }}>
+                                        Pulang
                                     </option>
                                 </select>
                             </div>
@@ -91,7 +93,7 @@
                         <input type="hidden" name="sesi_absensi" id="bulkSesiAbsensi">
 
                         <div class="table-responsive">
-                            <table id="inputAbsensiTable" class="table table-bordered table-striped table-sm mb-2">
+                            <table class="table table-bordered table-striped table-sm mb-2">
                                 <thead>
                                     <tr>
                                         <th style="width: 44px;" class="text-center">
@@ -105,6 +107,7 @@
                                 </thead>
                                 <tbody id="inputAbsensiBody"></tbody>
                             </table>
+                            <p id="inputAbsensiEmptyState" class="text-center text-muted py-2 mb-0"></p>
                         </div>
 
                         <button type="submit" id="submitBulkAbsensiBtn" class="btn btn-sm btn-success" disabled>
@@ -656,6 +659,9 @@
             };
 
             function updateDeleteButton() {
+                if (!selectedCountSpan || !deleteSelectedBtn) {
+                    return;
+                }
                 const filteredIds = getFilteredIds();
                 const checkedCount = selectedAbsensiIds.size;
                 selectedCountSpan.textContent = checkedCount;
@@ -829,9 +835,6 @@
             };
 
             const resetInputTable = () => {
-                if ($.fn.DataTable.isDataTable('#inputAbsensiTable')) {
-                    $('#inputAbsensiTable').DataTable().destroy();
-                }
                 $tbody.empty();
                 $bulkKelompokId.val('');
                 $bulkTanggalAbsensi.val('');
@@ -840,7 +843,7 @@
                 $checkAll.prop('checked', false);
                 $toggleSelectAllSiswaBtn.prop('disabled', true)
                     .html('<i class="fas fa-check-square mr-1"></i> Pilih Semua Siswa');
-                setupInputDataTable('Pilih kelompok bimbingan untuk menampilkan data siswa.');
+                setupInputEmptyState('Pilih kelompok bimbingan untuk menampilkan data siswa.');
                 updateSubmitState();
             };
 
@@ -862,8 +865,14 @@
             };
 
             const buildRows = (students) => {
-                const rows = [];
+                if (students.length === 0) {
+                    setupInputEmptyState('Belum ada siswa pada kelompok ini.');
+                    $checkAll.prop('checked', false);
+                    updateSubmitState();
+                    return;
+                }
 
+                const rows = [];
                 students.forEach((student, index) => {
                     const siswaId = Number(student.siswa_id);
                     const status = student.status || 'hadir';
@@ -895,32 +904,20 @@
                     `);
                 });
 
+                $('#inputAbsensiEmptyState').addClass('d-none');
                 $tbody.html(rows.join(''));
-                $checkAll.prop('checked', students.length > 0);
+                $checkAll.prop('checked', true);
                 updateSubmitState();
             };
 
-            const setupInputDataTable = (emptyTableMessage = 'Belum ada siswa pada kelompok ini.') => {
-                $('#inputAbsensiTable').DataTable({
-                    pageLength: 10,
-                    lengthChange: true,
-                    ordering: true,
-                    searching: true,
-                    responsive: true,
-                    autoWidth: false,
-                    order: [
-                        [1, 'asc']
-                    ],
-                    language: {
-                        url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json',
-                        emptyTable: emptyTableMessage
-                    }
-                });
+            const setupInputEmptyState = (message) => {
+                $tbody.html('');
+                $('#inputAbsensiEmptyState').removeClass('d-none').text(message);
             };
 
             const updateSubmitState = () => {
-                const selectedCount = $('#inputAbsensiTable .siswa-checkbox:checked').length;
-                const totalCount = $('#inputAbsensiTable .siswa-checkbox').length;
+                const selectedCount = $('#inputAbsensiBody .siswa-checkbox:checked').length;
+                const totalCount = $('#inputAbsensiBody .siswa-checkbox').length;
                 const hasKelompok = Boolean($bulkKelompokId.val());
                 const allChecked = totalCount > 0 && selectedCount === totalCount;
 
@@ -933,8 +930,8 @@
             };
 
             const syncCheckAllState = () => {
-                const totalCheckbox = $('#inputAbsensiTable .siswa-checkbox').length;
-                const checkedCheckbox = $('#inputAbsensiTable .siswa-checkbox:checked').length;
+                const totalCheckbox = $('#inputAbsensiBody .siswa-checkbox').length;
+                const checkedCheckbox = $('#inputAbsensiBody .siswa-checkbox:checked').length;
                 $checkAll.prop('checked', totalCheckbox > 0 && totalCheckbox === checkedCheckbox);
             };
 
@@ -963,16 +960,10 @@
                     },
                     success: function(response) {
                         const students = Array.isArray(response.students) ? response.students : [];
-
-                        if ($.fn.DataTable.isDataTable('#inputAbsensiTable')) {
-                            $('#inputAbsensiTable').DataTable().destroy();
-                        }
-
                         $bulkKelompokId.val(response.kelompok.id);
                         $bulkTanggalAbsensi.val(response.tanggal_absensi);
                         $bulkSesiAbsensi.val(response.sesi_absensi);
                         buildRows(students);
-                        setupInputDataTable();
                         setInfo(response.kelompok.nama_kelompok, response.kelompok.pembimbing);
                         updateSubmitState();
                     },
@@ -995,12 +986,12 @@
 
             $(document).on('change', '#checkAllSiswaAbsensi', function() {
                 const isChecked = $(this).is(':checked');
-                $('#inputAbsensiTable .siswa-checkbox').prop('checked', isChecked);
+                $('#inputAbsensiBody .siswa-checkbox').prop('checked', isChecked);
                 updateSubmitState();
             });
 
             $toggleSelectAllSiswaBtn.on('click', function() {
-                const $studentCheckboxes = $('#inputAbsensiTable .siswa-checkbox');
+                const $studentCheckboxes = $('#inputAbsensiBody .siswa-checkbox');
                 if ($studentCheckboxes.length === 0) {
                     return;
                 }
@@ -1013,13 +1004,13 @@
                 updateSubmitState();
             });
 
-            $(document).on('change', '#inputAbsensiTable .siswa-checkbox', function() {
+            $(document).on('change', '#inputAbsensiBody .siswa-checkbox', function() {
                 syncCheckAllState();
                 updateSubmitState();
             });
 
             $bulkForm.on('submit', function(event) {
-                if ($('#inputAbsensiTable .siswa-checkbox:checked').length === 0) {
+                if ($('#inputAbsensiBody .siswa-checkbox:checked').length === 0) {
                     event.preventDefault();
                     showWarning('Pilih minimal satu siswa untuk menyimpan absensi.');
                 }

@@ -260,11 +260,13 @@ class MonitoringController extends Controller
             'Kelas',
             'Jurusan',
             'Perusahaan',
-            'Pembimbing',
-            'No HP Pembimbing',
-            'Alamat Perusahaan',
+            'Alamat',
+            'Nama Pemilik (PIC)',
+            'No. Telpon Pemilik (No. Telp PIC)',
             'Tanggal Mulai',
-            'Tanggal Selesai'
+            'Tanggal Selesai',
+            'Pembimbing Monitoring',
+            'Pembimbing Sekolah',
         ];
 
         $col = 'A';
@@ -300,7 +302,7 @@ class MonitoringController extends Controller
                 $row++;
             }
 
-            // Merge kolom E sampai H untuk perusahaan yang sama
+            // Merge kolom perusahaan untuk setiap kelompok perusahaan
             foreach (['E', 'F', 'G', 'H'] as $column) {
                 $sheet->mergeCells($column . $firstRow . ':' . $column . $lastRow);
             }
@@ -309,20 +311,22 @@ class MonitoringController extends Controller
 
             // Isi merged cell (tampil sekali saja)
             $sheet->setCellValue('E' . $firstRow, $firstItem->perusahaan->nama_perusahaan ?? '-');
-            $sheet->setCellValue('F' . $firstRow, $firstItem->pembimbing->nama_pembimbing ?? '-');
-            $sheet->setCellValue('G' . $firstRow, $firstItem->pembimbing->no_hp ?? '-');
-            $sheet->setCellValue('H' . $firstRow, $firstItem->perusahaan->alamat ?? '-');
+            $sheet->setCellValue('F' . $firstRow, $firstItem->perusahaan->alamat ?? '-');
+            $sheet->setCellValue('G' . $firstRow, $firstItem->perusahaan->nama_pemilik_perusahaan ?? '-');
+            $sheet->setCellValueExplicit('H' . $firstRow, $firstItem->perusahaan->telepon_pemilik_perusahaan ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
 
             // Isi tanggal mulai & selesai tetap per siswa
             $tempRow = $firstRow;
             foreach ($items as $item) {
                 $sheet->setCellValue('I' . $tempRow, $item->tanggal_mulai ?? '-');
                 $sheet->setCellValue('J' . $tempRow, $item->tanggal_selesai ?? '-');
+                $sheet->setCellValue('K' . $tempRow, $item->nama_pembimbing ?? '-');
+                $sheet->setCellValue('L' . $tempRow, $item->pembimbing->nama_pembimbing ?? '-');
                 $tempRow++;
             }
         }
 
-        $this->applyExcelTableFormatting($sheet, 'J', $row - 1);
+        $this->applyExcelTableFormatting($sheet, 'L', $row - 1);
 
         // Save file
         $fileName = 'monitoring_pkl_merge_' . now()->format('Y-m-d_H-i-s') . '.xlsx';

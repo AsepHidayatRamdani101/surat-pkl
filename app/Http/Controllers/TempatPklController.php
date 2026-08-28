@@ -83,7 +83,16 @@ class TempatPklController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Set header
-        $headers = ['Nama Siswa', 'NISN', 'Kelas', 'Perusahaan', 'Alamat', 'Tanggal Daftar'];
+        $headers = [
+            'Nama Siswa',
+            'NISN',
+            'Kelas',
+            'Perusahaan',
+            'Alamat',
+            'Nama Pemilik (PIC)',
+            'No. Telpon Pemilik (No. Telp PIC)',
+            'Tanggal Daftar',
+        ];
         $col = 'A';
         foreach ($headers as $header) {
             $sheet->setCellValue($col . '1', $header);
@@ -102,11 +111,13 @@ class TempatPklController extends Controller
             $sheet->setCellValue('C' . $row, $item->siswa->kelas->nama_kelas ?? '-');
             $sheet->setCellValue('D' . $row, $item->perusahaan->nama_perusahaan ?? '-');
             $sheet->setCellValue('E' . $row, $item->perusahaan->alamat ?? '-');
-            $sheet->setCellValue('F' . $row, $item->created_at->format('Y-m-d') ?? '-');
+            $sheet->setCellValue('F' . $row, $item->perusahaan->nama_pemilik_perusahaan ?? '-');
+            $sheet->setCellValueExplicit('G' . $row, $item->perusahaan->telepon_pemilik_perusahaan ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue('H' . $row, $item->created_at?->format('Y-m-d') ?? '-');
             $row++;
         }
 
-        $this->applyExcelTableFormatting($sheet, 'F', $row - 1);
+        $this->applyExcelTableFormatting($sheet, 'H', $row - 1);
 
         // Simpan dan download
         $fileName = 'data_tempat_pkl_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
@@ -303,7 +314,6 @@ class TempatPklController extends Controller
 
         return response()->json(['message' => 'Data tempat PKL berhasil disimpan']);
     }
-
 
     public function editPembimbing(Request $request, $id)
     {

@@ -155,44 +155,37 @@
             });
 
             $(document).on('click', '.btn-edit', function() {
-                let id = $(this).data('id');
-                // console.log(id);
+                const id = $(this).data('id');
 
                 $.ajax({
-                    url: `/tempat-pkl/${id}/edit`,
+                    url: `/monitoring/${id}/edit`,
                     type: 'GET',
                     success: function(data) {
-                        console.log(data);
-
                         $('#id').val(data.id);
                         $('#siswa_id').val(data.siswa_id).trigger('change');
                         $('#perusahaan_id').val(data.perusahaan_id).trigger('change');
-                        $('#pembimbing_id').val(data.pembimbing_id).trigger('change');
-                        // $('#modalFormLabel').html('Edit Data Tempat PKL');
+                        $('#pembimbing_id').val(data.pembimbing_id || '').trigger('change');
+                        $('#modalForm').modal('show');
                     },
+                    error: function(xhr) {
+                        console.log(xhr.responseText);
+                    }
                 });
-
-                $('#modalForm').modal('show');
             });
 
             $(document).on('click', '.btn-simpan', function() {
-               
-                
-                
+                const id = $('#id').val();
 
                 $.ajax({
-                    url: `/tempat-pkl/${$('#id').val()}/editPembimbing`,
+                    url: `/monitoring/${id}`,
                     type: 'PUT',
                     data: {
-                        token: $('meta[name="csrf-token"]').attr('content'),
+                        _token: $('meta[name="csrf-token"]').attr('content'),
                         siswa_id: $('#siswa_id').val(),
                         perusahaan_id: $('#perusahaan_id').val(),
                         pembimbing_id: $('#pembimbing_id').val(),
                     },
-                    success: function(data) {
-                        console.log(data);
-                        
-
+                    success: function() {
                         $('#modalForm').modal('hide');
                         $('#monitoringTable').DataTable().ajax.reload();
                     },
@@ -200,7 +193,28 @@
                         console.log(xhr.responseText);
                     }
                 });
+            });
 
+            $(document).on('click', '.btn-hapus', function() {
+                const id = $(this).data('id');
+
+                if (!confirm('Yakin ingin menghapus data monitoring ini?')) {
+                    return;
+                }
+
+                $.ajax({
+                    url: `/monitoring/${id}`,
+                    type: 'DELETE',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function() {
+                        $('#monitoringTable').DataTable().ajax.reload();
+                    },
+                    error: function(xhr) {
+                        console.log(xhr.responseText);
+                    }
+                });
             });
 
         });

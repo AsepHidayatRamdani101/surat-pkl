@@ -1,3 +1,50 @@
+@php
+    $tanggalSuratDisplay = $tanggal_surat ?? '';
+    $tanggalBerangkatDisplay = $tanggal_berangkat ?? '';
+
+    try {
+        if (!empty($tanggalSuratDisplay)) {
+            $tanggalSuratDisplay = \Carbon\Carbon::parse($tanggalSuratDisplay)->translatedFormat('d F Y');
+        }
+    } catch (\Throwable $e) {
+        $tanggalSuratDisplay = $tanggal_surat ?? '';
+    }
+
+    try {
+        if (!empty($tanggalBerangkatDisplay)) {
+            $tanggalBerangkatDisplay = \Carbon\Carbon::parse($tanggalBerangkatDisplay)->translatedFormat('d F Y');
+        }
+    } catch (\Throwable $e) {
+        $tanggalBerangkatDisplay = $tanggal_berangkat ?? '';
+    }
+@endphp
+
+@php
+    $sppdLogo = null;
+    $candidateLogoPaths = [
+        public_path('LogoJabar.png'),
+        public_path('logoJabar.png'),
+        public_path('logo.png'),
+        public_path('LogoJabar.PNG'),
+    ];
+
+    foreach ($candidateLogoPaths as $candidatePath) {
+        if (!empty($candidatePath) && file_exists($candidatePath)) {
+            $extension = strtolower(pathinfo($candidatePath, PATHINFO_EXTENSION));
+            $mimeMap = [
+                'png' => 'image/png',
+                'jpg' => 'image/jpeg',
+                'jpeg' => 'image/jpeg',
+                'svg' => 'image/svg+xml',
+                'webp' => 'image/webp',
+            ];
+            $mimeType = $mimeMap[$extension] ?? 'image/png';
+            $sppdLogo = 'data:' . $mimeType . ';base64,' . base64_encode(file_get_contents($candidatePath));
+            break;
+        }
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="id">
 
@@ -38,6 +85,51 @@
             text-align: center;
             font-weight: bold;
         }
+
+        .kop-sppd-table {
+            width: 100%;
+            border: none;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .kop-logo {
+            width: 20%;
+            border: none;
+            text-align: center;
+            vertical-align: middle;
+            padding: 0 8px 6px 0;
+        }
+
+        .kop-text {
+            width: 80%;
+            border: none;
+            text-align: center;
+            vertical-align: middle;
+            padding: 4px 0;
+        }
+
+        .kop-text .instansi {
+            font-size: 11px;
+            font-weight: bold;
+            line-height: 1.25;
+        }
+
+        .kop-text .nama-sekolah {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        .kop-text .alamat {
+            font-size: 10px;
+            margin-top: 2px;
+        }
+
+        .kop-text .kontak {
+            font-size: 9px;
+            margin-top: 2px;
+        }
     </style>
 </head>
 
@@ -47,17 +139,32 @@
         <tr>
             <!-- Kolom 1 -->
             <td style="width: 50%;">
-                <table style="width: 100%; border: none;">
+                <table class="kop-sppd-table">
                     <tr>
-                        <td style="border: none;" colspan="2">
-                            @include('partials.kop_surat_default', [
-                                'kopOuterStyle' => 'margin-top: 0;',
-                                'kopHrStyle' => 'margin-top: 6px; border: 1px solid black;',
-                            ])
+                        <td class="kop-logo">
+                            @if (!empty($sppdLogo))
+                                <img src="{{ $sppdLogo }}" alt="Logo Jawa Barat"
+                                    style="width: 82px; max-width: 100%; height: auto; display: block; margin: 0 auto;">
+                            @else
+                                <div
+                                    style="width: 82px; height: 82px; margin: 0 auto; border: 1px solid #000; display: block;">
+                                    Logo</div>
+                            @endif
+                        </td>
+                        <td class="kop-text">
+                            <div class="instansi">
+                                PEMERINTAH DAERAH PROVINSI JAWA BARAT<br>
+                                DINAS PENDIDIKAN<br>
+                                CABANG DINAS PENDIDIKAN WILAYAH XI
+                            </div>
+                            <div class="nama-sekolah">SMK NEGERI 8 GARUT</div>
+                            <div class="alamat">JL. RAYA LIMBANGAN-SELAWI KM 12 GARUT</div>
+                            <div class="kontak">Website: www.smkn8-garut.sch.id, E-mail: smknegeri8grt@gmail.com</div>
                         </td>
                     </tr>
                 </table>
-                <br>
+
+                <hr style="border: 1px solid black; margin: 10px 0;">
                 <div>
                     <table style="border: none; border-collapse: collapse;width: 30%">
                         <tr>
@@ -125,7 +232,7 @@
                         <td>7.</td>
                         <td>Lamanya Perjalanan Dinas <br>a. Tanggal berangkat <br>b. Tanggal harus kembali / tiba di
                             tempat baru *)</td>
-                        <td> <br>: {{ \Carbon\Carbon::parse($tanggal_berangkat)->translatedFormat('d F Y') }} <br>:
+                        <td> <br>: {{ $tanggalBerangkatDisplay }} <br>:
                             .................................................</td>
                     </tr>
                     <tr>
@@ -139,10 +246,7 @@
                 <br>
                 @include('partials.ttd_default', [
                     'ttdTanggal' => 'Dikeluarkan di : SMK Negeri 8 Garut',
-                    'ttdLabel' =>
-                        'Tanggal : ' .
-                        \Carbon\Carbon::parse($tanggal_surat)->translatedFormat('d F Y') .
-                        ' | KUASA PENGGUNA ANGGARAN',
+                    'ttdLabel' => 'Tanggal : ' . $tanggalSuratDisplay . ' | KUASA PENGGUNA ANGGARAN',
                     'ttdNama' => $nama_kepala_sekolah,
                     'ttdNip' => $nip_kepala_sekolah,
                     'ttdImage' => $nama_file_ttd,
@@ -174,7 +278,7 @@
                         </td>
                     </tr>
                     <tr>
-                        <td style="width: 50%;height: 150px;">
+                        <td style="width: 50%;height: 130px;">
                             <table style="border: none; border-collapse: collapse;">
                                 <tr>
                                     <td style="border: none;width: 40%;">II. Tiba di</td>

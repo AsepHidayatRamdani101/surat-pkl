@@ -27,7 +27,6 @@ class MonitoringController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            // Grouping by perusahaan
             if (auth()->user()->role == 'panitia') {
                 $grouped = TempatPkl::with(['siswa', 'perusahaan', 'pembimbing'])
                     ->get();
@@ -35,29 +34,28 @@ class MonitoringController extends Controller
                 $grouped = TempatPkl::with(['siswa', 'perusahaan', 'pembimbing'])
                     ->whereHas('siswa.kelas.jurusan', function ($query) {
                         $query->where('id', auth()->user()->jurusan_id);
-                    });
+                    })
+                    ->get();
             }
 
             return DataTables::of($grouped)
                 ->addIndexColumn()
                 ->addColumn('aksi', function ($row) {
                     return '
-                        <button class="btn btn-sm btn-warning btn-edit" 
+                        <button class="btn btn-sm btn-warning btn-edit"
                         data-id="' . $row->id . '"
                         data-perusahaan="' . $row->perusahaan_id . '"
                         data-siswa="' . $row->siswa_id . '"
-                        data-tanggal-mulai="' . $row->tanggal_mulai . '"
-                        data-tanggal-selesai="' . $row->tanggal_selesai . '"
+                        data-pembimbing="' . ($row->pembimbing_id ?? '') . '"
                         >Edit
                         </button>
-                        <button class="btn btn-sm btn-success btnUpdateKesediaan" 
+                        <button class="btn btn-sm btn-success btnUpdateKesediaan"
                         data-id="' . $row->id . '"
                         >Upload
                         </button>
-                        <button class="btn btn-sm btn-danger btn-hapus" data-id="' . $row['id'] . '">
+                        <button class="btn btn-sm btn-danger btn-hapus" data-id="' . $row->id . '">
                             Hapus
                         </button>
-                        
                     ';
                 })
                 ->rawColumns(['aksi'])
@@ -67,8 +65,13 @@ class MonitoringController extends Controller
         $siswa = Siswa::orderBy('nama_siswa')->get();
         $perusahaan = Perusahaan::orderBy('nama_perusahaan')->get();
         $pembimbing = $this->availablePembimbing()->orderBy('nama_pembimbing')->get();
-        //   var_dump($siswa);
+
         return view('monitoring.index', compact('siswa', 'perusahaan', 'pembimbing'));
+    }
+
+    public function data(Request $request)
+    {
+        return $this->index($request);
     }
 
 
@@ -384,16 +387,45 @@ class MonitoringController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Monitoring $monitoring)
+    public function edit($id)
     {
-        //
+        $data = TempatPkl::with(['siswa', 'perusahaan', 'pembimbing'])->findOrFail($id);
+
+        return response()->json($data);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'siswa_id' => 'required|exists:siswa,id',
+            'perusahaan_id' => 'required|exists:perusahaan,id',
+            'pembimbing_id' => 'nullable|exists:pembimbings,id',
+        ]);
+
+        $data = TempatPkl::findOrFail($id);
+        $data->update([
+            'siswa_id' => $request->siswa_id,
+            'perusahaan_id' => $request->perusahaan_id,
+            'pembimbing_id' => $request->pembimbing_id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data monitoring berhasil diupdate.'
+        ]);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Monitoring $monitoring)
+    public function destroy($id)
     {
-        //
+        $data = TempatPkl::findOrFail($id);
+        $data->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data monitoring berhasil dihapus.'
+        ]);
     }
 }

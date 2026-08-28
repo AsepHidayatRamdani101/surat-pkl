@@ -1,3 +1,24 @@
+@php
+    $tanggalSuratDisplay = $tanggal_surat ?? '';
+    $tanggalBerangkatDisplay = $tanggal_berangkat ?? '';
+
+    try {
+        if (!empty($tanggalSuratDisplay)) {
+            $tanggalSuratDisplay = \Carbon\Carbon::parse($tanggalSuratDisplay)->translatedFormat('d F Y');
+        }
+    } catch (\Throwable $e) {
+        $tanggalSuratDisplay = $tanggal_surat ?? '';
+    }
+
+    try {
+        if (!empty($tanggalBerangkatDisplay)) {
+            $tanggalBerangkatDisplay = \Carbon\Carbon::parse($tanggalBerangkatDisplay)->translatedFormat('d F Y');
+        }
+    } catch (\Throwable $e) {
+        $tanggalBerangkatDisplay = $tanggal_berangkat ?? '';
+    }
+@endphp
+
 <!DOCTYPE html>
 <html>
 
@@ -166,195 +187,193 @@
 
 <body>
 
-    <div style="page-break-after: always;">
-        @include('partials.kop_surat_default')
 
 
-        <div style="text-align: center">
-            <div class="judul"><b>SURAT TUGAS</b></div>
-            <div class="nomor">Nomor: {{ $nomor_surat }}/PK.03.03-SMKN8GRT</div>
-        </div>
+    <div class="section">
+        <div style="page-break-after: always;">
+            @include('partials.kop_surat_default')
 
-        <div class="section">
-            <div class="table-like">
-                <div style="margin-bottom: 10px"><strong>Yang bertanda tangan di bawah ini:</strong></div>
-                <div><span class="label">Nama</span><span class="value">: {{ $nama_kepala_sekolah }}</span></div>
-                <div><span class="label">NIP</span><span class="value">: {{ $nip_kepala_sekolah }}</span></div>
-                <div><span class="label">Jabatan</span><span class="value">: Kepala SMK Negeri 8 Garut </span></div>
+
+            <div style="text-align: center">
+                <div class="judul"><b>SURAT TUGAS</b></div>
+                <div class="nomor">Nomor: {{ $nomor_surat }}</div>
             </div>
-        </div>
 
-        <div class="section">
-            <div class="table-like">
-                <div style="margin-bottom: 10px"><strong>Dengan ini memberikan tugas kepada:</strong></div>
-                <div><span class="label">Nama</span><span class="value">:
-                        {{ $data->first()->pembimbing->nama_pembimbing }} </span>
-                </div>
-                <div><span class="label">NIP</span><span class="value">:
-                        {{ $data->first()->pembimbing->nip_pembimbing }}</span>
-                </div>
-                <div><span class="label">Jabatan</span><span class="value">:
-                        {{ $data->first()->pembimbing->jabatan_pembimbing }}</span>
+            <div class="section">
+                <div class="table-like">
+                    <div style="margin-bottom: 10px"><strong>Yang bertanda tangan di bawah ini:</strong></div>
+                    <div><span class="label">Nama</span><span class="value">: {{ $nama_kepala_sekolah }}</span></div>
+                    <div><span class="label">NIP</span><span class="value">: {{ $nip_kepala_sekolah }}</span></div>
+                    <div><span class="label">Jabatan</span><span class="value">: Kepala SMK Negeri 8 Garut </span>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="section">
-            <div class="table-like">
-                <div>
-                    Untuk melaksanakan tugas sebagai pendamping dan pengantar siswa PRAKERIN ke
-                    {{ $data->first()->perusahaan->nama_perusahaan }}
-                    <strong></strong>
-                    yang beralamat di {{ $data->first()->perusahaan->alamat }}
-                    <strong></strong>,
-                    pada:
+            <div class="section">
+                <div class="table-like">
+                    <div style="margin-bottom: 10px"><strong>Dengan ini memberikan tugas kepada:</strong></div>
+                    <div><span class="label">Nama</span><span class="value">:
+                            {{ $data->first()->pembimbing->nama_pembimbing }} </span>
+                    </div>
+                    <div><span class="label">NIP</span><span class="value">:
+                            {{ $data->first()->pembimbing->nip_pembimbing }}</span>
+                    </div>
+                    <div><span class="label">Jabatan</span><span class="value">:
+                            {{ $data->first()->pembimbing->jabatan_pembimbing }}</span>
+                    </div>
                 </div>
-                <br>
-                <div><span class="label">Hari/Tanggal</span><span class="value">:
-                        {{ \Carbon\Carbon::parse($tanggal_berangkat)->translatedFormat('d F Y') }}
-                    </span>
+            </div>
+
+            <div class="section">
+                <div class="table-like">
+                    <div>
+                        Untuk melaksanakan tugas sebagai pendamping dan pengantar siswa PRAKERIN ke
+                        {{ $data->first()->perusahaan->nama_perusahaan }}
+                        <strong></strong>
+                        yang beralamat di {{ $data->first()->perusahaan->alamat }}
+                        <strong></strong>,
+                        pada:
+                    </div>
+                    <br>
+                    <div><span class="label">Hari/Tanggal</span><span class="value">:
+                            {{ $tanggalBerangkatDisplay }}
+                        </span>
+                    </div>
+                    <div><span class="label">Waktu</span><span class="value">: 07.00 s.d. selesai</span></div>
+                    <div><span class="label">Kegiatan</span><span class="value">: Penjemputan PKL</span></div>
                 </div>
-                <div><span class="label">Waktu</span><span class="value">: 07.00 s.d. selesai</span></div>
-                <div><span class="label">Kegiatan</span><span class="value">: Penjemputan PKL</span></div>
+                <div class="table-like">
+                    @include('partials.ttd_default', [
+                        'ttdTanggal' => 'Garut, ' . $tanggalSuratDisplay,
+                        'ttdLabel' => 'Kepala Sekolah',
+                        'ttdNama' => $nama_kepala_sekolah,
+                        'ttdNip' => $nip_kepala_sekolah,
+                        'ttdImage' => $nama_file_ttd,
+                        'ttdContainerStyle' => 'margin-left: 300px; margin-top: 6px;',
+                        'ttdAlign' => 'left',
+                    ])
+
+
+                </div>
             </div>
         </div>
-
-        <div class="section">
-            <div class="table-like">
-                        @include('partials.ttd_default', [
-                            'ttdTanggal' => 'Garut, ' . \\Carbon\\Carbon::parse($tanggal_surat)->translatedFormat('d F Y'),
-                            'ttdLabel' => 'Kepala Sekolah',
-                            'ttdNama' => $nama_kepala_sekolah,
-                            'ttdNip' => $nip_kepala_sekolah,
-                            'ttdImage' => $nama_file_ttd,
-                            'ttdContainerStyle' => 'margin-left: 300px; margin-top: 6px;',
-                            'ttdAlign' => 'left'
-                        ])
-        <div style="margin-left: 300px">
-            Garut, {{ \Carbon\Carbon::parse($tanggal_surat)->translatedFormat('d F Y') }}<br>
-            Kepala Sekolah,<br>
-            <img src="file:///{{ str_replace('\\', '/', public_path($nama_file_ttd)) }}" class="ttd-left"
-                alt="ttd_kepsek" width="180px" style="margin-top: -10px;margin-bottom: -20px"><br>
-            <strong><u>{{ $nama_kepala_sekolah }}</u></strong><br>
-            NIP. {{ $nip_kepala_sekolah }}
-        </div>
-
     </div>
-    <div style="page-break-after: always;">
+
+
+    <div class="section">
+
+        <div style="page-break-after: always;">
+            {{-- Bagian Notulen Monitoring --}}
+            <div class="section">
+                <div style="margin-bottom: 8px;"><strong>Notulen Monitoring</strong></div>
 
 
 
-        {{-- Bagian Notulen Monitoring --}}
-                @include('partials.ttd_default', [
-                    'ttdTanggal' => 'Garut, ' . \\Carbon\\Carbon::parse($tanggal_berangkat)->translatedFormat('d F Y'),
-                    'ttdLabel' => 'Pembimbing',
-                    'ttdNama' => $data->first()->pembimbing->nama_pembimbing,
-                    'ttdNip' => $data->first()->pembimbing->nip_pembimbing,
-                    'ttdImage' => null,
-                    'ttdContainerStyle' => 'margin-left: 300px; margin-top: 10px;',
-                    'ttdAlign' => 'left'
-                ])
-                <td style="border: none" width="150px"><span class="label">Hari/Tanggal</span></td>
-                <td style="border: none">: {{ \Carbon\Carbon::parse($tanggal_berangkat)->translatedFormat('d F Y') }}
-                </td>
-            </tr>
-            <tr>
-                <td style="border: none" width="200px">Waktu Monitoring</td>
-                <td style="border: none">: 07.00 s.d. selesai</td>
-            </tr>
-            <tr>
-                <td style="border: none" width="150px   ">Tempat / Instansi PKL</td>
-                <td style="border: none">: {{ $data->first()->perusahaan->nama_perusahaan }}</td>
-            </tr>
-            <tr>
-                <td style="border: none" width="150px">Alamat Tempat PKL</td>
-                <td style="border: none">:
-                    {{ $data->first()->perusahaan->alamat }}
-                </td>
-            </tr>
-
-
-
-        </table>
-
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th style="text-align: center">No</th>
-                    <th style="text-align: center">Nama</th>
-                    <th style="text-align: center">Kelas</th>
-                    <th style="text-align: center">Jurusan</th>
-                    <th style="text-align: center">Keterangan</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($data as $key => $item)
+                <table class="table-bordered" style="margin-top: 20px;">
                     <tr>
-                        <td style="text-align: center">{{ $key + 1 }}</td>
-                        <td>{{ $item->siswa->nama_siswa }}</td>
-                        <td style="text-align: center">{{ $item->siswa->kelas->nama_kelas }}</td>
-                        <td>{{ $item->siswa->kelas->jurusan->nama_jurusan }}</td>
-                        <td>Ada/Tidak Ada</td>
+                        <td style="border: none" width="150px"><span class="label">Hari/Tanggal</span></td>
+                        <td style="border: none">:
+                            {{ $tanggalBerangkatDisplay }}</td>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-    <div style="page-break-after: always;">
+                    <tr>
+                        <td style="border: none" width="200px">Waktu Monitoring</td>
+                        <td style="border: none">: 07.00 s.d. selesai</td>
+                    </tr>
+                    <tr>
+                        <td style="border: none" width="150px">Tempat / Instansi PKL</td>
+                        <td style="border: none">: {{ $data->first()->perusahaan->nama_perusahaan }}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: none" width="150px">Alamat Tempat PKL</td>
+                        <td style="border: none">: {{ $data->first()->perusahaan->alamat }}</td>
+                    </tr>
+                </table>
+
+                <table class="table-bordered" style="margin-top: 20px;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: center">No</th>
+                            <th style="text-align: center">Nama</th>
+                            <th style="text-align: center">Kelas</th>
+                            <th style="text-align: center">Jurusan</th>
+                            <th style="text-align: center">Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($data as $key => $item)
+                            <tr>
+                                <td style="text-align: center">{{ $key + 1 }}</td>
+                                <td>{{ $item->siswa->nama_siswa }}</td>
+                                <td style="text-align: center">{{ $item->siswa->kelas->nama_kelas }}</td>
+                                <td>{{ $item->siswa->kelas->jurusan->nama_jurusan }}</td>
+                                <td>Ada/Tidak Ada</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
 
 
-        <div class="section"><strong>Uraian Hasil Monitoring</strong></div>
-        <p><em>Kehadiran</em></p>
-        <p>......................................................................................................................................................
-        </p>
+        </div>
+
+        <div>
 
 
-        <p><em>Sikap & Etika Kerja</em></p>
-        <p>......................................................................................................................................................
-        </p>
-        <p>......................................................................................................................................................
-        </p>
-
-        <p><em>Kinerja/Tugas yang Dilakukan</em></p>
-        <p>......................................................................................................................................................
-        </p>
-        <p>......................................................................................................................................................
-        </p>
-
-        <p><em>MoU dan Kerjasama</em></p>
-        <p>......................................................................................................................................................
-        </p>
-
-        <p><em>Hambatan/Kendala</em></p>
-        <p>......................................................................................................................................................
-        </p>
-        <p>......................................................................................................................................................
-        </p>
-
-        <p><em>Respon/Pendapat dari Pembimbing Industri</em></p>
-        <p>......................................................................................................................................................
-        </p>
-        <p>......................................................................................................................................................
-        </p>
-
-        <p><em>Tindak Lanjut yang Disarankan</em></p>
-        <p>......................................................................................................................................................
-        </p>
-        <p>......................................................................................................................................................
-        </p>
+            <div class="section"><strong>Uraian Hasil Monitoring</strong></div>
+            <p><em>Kehadiran</em></p>
+            <p>......................................................................................................................................................
+            </p>
 
 
-        <div style="margin-left: 300px">
-            Garut, {{ \Carbon\Carbon::parse($tanggal_berangkat)->translatedFormat('d F Y') }}<br>
-            Pembimbing,<br>
+            <p><em>Sikap & Etika Kerja</em></p>
+            <p>......................................................................................................................................................
+            </p>
+            <p>......................................................................................................................................................
+            </p>
+
+            <p><em>Kinerja/Tugas yang Dilakukan</em></p>
+            <p>......................................................................................................................................................
+            </p>
+            <p>......................................................................................................................................................
+            </p>
+
+            <p><em>MoU dan Kerjasama</em></p>
+            <p>......................................................................................................................................................
+            </p>
+
+            <p><em>Hambatan/Kendala</em></p>
+            <p>......................................................................................................................................................
+            </p>
+            <p>......................................................................................................................................................
+            </p>
+
+            <p><em>Respon/Pendapat dari Pembimbing Industri</em></p>
+            <p>......................................................................................................................................................
+            </p>
+            <p>......................................................................................................................................................
+            </p>
+
+            <p><em>Tindak Lanjut yang Disarankan</em></p>
+            <p>......................................................................................................................................................
+            </p>
+            <p>......................................................................................................................................................
+            </p>
 
 
-            <div style="margin-top: 60px">
-                <strong><u>{{ $data->first()->pembimbing->nama_pembimbing }}</u></strong><br>
-                NIP. {{ $data->first()->pembimbing->nip_pembimbing }}
+            <div style="margin-left: 300px">
+                Garut, {{ $tanggalBerangkatDisplay }}<br>
+                Pembimbing,<br>
+
+
+                <div style="margin-top: 60px">
+                    <strong><u>{{ $data->first()->pembimbing->nama_pembimbing }}</u></strong><br>
+                    NIP. {{ $data->first()->pembimbing->nip_pembimbing }}
+                </div>
             </div>
         </div>
     </div>
+
+
 
 
 

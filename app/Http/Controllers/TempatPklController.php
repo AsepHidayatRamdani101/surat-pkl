@@ -307,13 +307,23 @@ class TempatPklController extends Controller
 
     public function editPembimbing(Request $request, $id)
     {
-        $data = TempatPkl::findOrFail($id);
-        return response()->json([
-            'siswa_id' => $request->siswa_id
+        $request->validate([
+            'pembimbing_id' => 'required|exists:pembimbings,id',
         ]);
 
+        $updated = TempatPkl::where('perusahaan_id', $id)
+            ->update([
+                'pembimbing_id' => $request->pembimbing_id,
+            ]);
 
-        // return response()->json($data);
+        if (! $updated) {
+            return response()->json(['message' => 'Data pembimbing tidak ditemukan.'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pembimbing berhasil diperbarui.'
+        ]);
     }
 
     public function edit($id)

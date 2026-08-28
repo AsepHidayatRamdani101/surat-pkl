@@ -247,13 +247,13 @@
 
             //btn-simpan
             $(document).on('click', '.btn-simpan', function() {
-                alert($('#pembimbing_id').val());
+                const perusahaanId = $('#id').val();
+
                 $.ajax({
-                    url: `/tempat-pkl/${$('#id').val()}/editPembimbing`,
+                    url: `/tempat-pkl/${perusahaanId}/editPembimbing`,
                     type: 'PUT',
                     data: {
                         _token: '{{ csrf_token() }}',
-                        perusahaan_id: $('#perusahaan_id').val(),
                         pembimbing_id: $('#pembimbing_id').val()
                     },
                     success: function(data) {
@@ -263,9 +263,10 @@
                     },
                     error: function(xhr) {
                         console.log(xhr.responseText);
+                        let message = xhr.responseJSON?.message || 'Gagal mengubah pembimbing.';
+                        alert(message);
                     }
                 });
-
             });
 
             // Lakukan sesuatu dengan perusahaanId, misalnya membuka modal

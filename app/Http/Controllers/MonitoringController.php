@@ -108,7 +108,7 @@ class MonitoringController extends Controller
 
         $siswa = Siswa::all();
         $perusahaan = Perusahaan::all();
-        $pembimbing = $this->availablePembimbing()->get();
+        $pembimbing = $this->availablePembimbing()->orderBy('nama_pembimbing')->get();
         //   var_dump($siswa);
         return view('monitoring.index_cetak', compact('siswa', 'perusahaan', 'pembimbing'));
     }

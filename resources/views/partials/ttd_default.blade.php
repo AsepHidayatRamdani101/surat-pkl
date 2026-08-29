@@ -52,7 +52,7 @@
     <div>{{ $ttdTanggal }}</div>
     <div>{{ $ttdLabel }},</div>
     @if (!empty($ttdRole))
-        <div style="font-weight: bold;">{{ $ttdRole }}</div>
+        <div>{{ $ttdRole }}</div>
     @endif
     <div style="height: 130px; margin: -30px 0px -26px -30px ; position: relative; z-index: 2;">
         @if (!empty($ttdImage))

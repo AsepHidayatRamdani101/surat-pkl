@@ -168,6 +168,89 @@
             }
         }
 
+        // Siswa dengan persentase kehadiran < 50%
+        $siswaBawahTigaPuluPersen = [];
+        $siswaBelumKerjakan = [];
+
+        if (!empty($selectedJurusanId) || !empty($selectedKelasId)) {
+            $query = \App\Models\Siswa::query()
+                ->leftJoin('absensi_pembekalans as ap', 'ap.siswa_id', '=', 'siswa.id')
+                ->leftJoin('jawaban_tugas_siswas as jts', 'jts.siswa_id', '=', 'siswa.id')
+                ->leftJoin('kelas', 'kelas.id', '=', 'siswa.kelas_id');
+
+            if (!empty($selectedJurusanId)) {
+                $query->where('kelas.jurusan_id', $selectedJurusanId);
+            }
+            if (!empty($selectedKelasId)) {
+                $query->where('siswa.kelas_id', $selectedKelasId);
+            }
+
+            $siswaBawahTigaPuluPersen = $query
+                ->clone()
+                ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
+                ->selectRaw('COUNT(DISTINCT CONCAT(ap.tanggal_absensi, "-", ap.sesi_absensi)) as total_hari')
+                ->selectRaw(
+                    "COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi) ELSE NULL END) as total_hadir",
+                )
+                ->groupBy('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
+                ->havingRaw('total_hari > 0 AND ROUND((total_hadir / total_hari) * 100, 2) < 50')
+                ->orderBy('siswa.nama_siswa')
+                ->get()
+                ->map(function ($siswa) {
+                    $kehadiran =
+                        $siswa->total_hari > 0 ? round(($siswa->total_hadir / $siswa->total_hari) * 100, 2) : 0;
+                    $siswa->persentase_kehadiran = $kehadiran;
+                    return $siswa;
+                });
+
+            $siswaBelumKerjakan = $query
+                ->clone()
+                ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
+                ->selectRaw('COUNT(DISTINCT jts.tugas_pembekalan_id) as total_tugas_submitted')
+                ->where(function ($q) {
+                    $q->whereNull('jts.submitted_at')->orWhereRaw('jts.submitted_at = ""');
+                })
+                ->orWhereDoesntHave('jawabanSiswa')
+                ->groupBy('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
+                ->orderBy('siswa.nama_siswa')
+                ->get();
+        } else {
+            $query = \App\Models\Siswa::query()
+                ->leftJoin('absensi_pembekalans as ap', 'ap.siswa_id', '=', 'siswa.id')
+                ->leftJoin('jawaban_tugas_siswas as jts', 'jts.siswa_id', '=', 'siswa.id')
+                ->leftJoin('kelas', 'kelas.id', '=', 'siswa.kelas_id');
+
+            $siswaBawahTigaPuluPersen = $query
+                ->clone()
+                ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
+                ->selectRaw('COUNT(DISTINCT CONCAT(ap.tanggal_absensi, "-", ap.sesi_absensi)) as total_hari')
+                ->selectRaw(
+                    "COUNT(DISTINCT CASE WHEN ap.status = 'hadir' THEN CONCAT(ap.tanggal_absensi, '-', ap.sesi_absensi) ELSE NULL END) as total_hadir",
+                )
+                ->groupBy('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
+                ->havingRaw('total_hari > 0 AND ROUND((total_hadir / total_hari) * 100, 2) < 50')
+                ->orderBy('siswa.nama_siswa')
+                ->get()
+                ->map(function ($siswa) {
+                    $kehadiran =
+                        $siswa->total_hari > 0 ? round(($siswa->total_hadir / $siswa->total_hari) * 100, 2) : 0;
+                    $siswa->persentase_kehadiran = $kehadiran;
+                    return $siswa;
+                });
+
+            $siswaBelumKerjakan = \App\Models\Siswa::query()
+                ->leftJoin('jawaban_tugas_siswas as jts', function ($join) {
+                    $join->on('jts.siswa_id', '=', 'siswa.id')->whereNotNull('jts.submitted_at');
+                })
+                ->leftJoin('kelas', 'kelas.id', '=', 'siswa.kelas_id')
+                ->select('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
+                ->selectRaw('COUNT(DISTINCT jts.id) as tugas_selesai')
+                ->whereNull('jts.id')
+                ->groupBy('siswa.id', 'siswa.nama_siswa', 'siswa.nis', 'kelas.nama_kelas')
+                ->orderBy('siswa.nama_siswa')
+                ->get();
+        }
+
         // Disuplai dari DashboardController agar view lebih ringan.
         $topGuru = $topGuru ?? collect();
         $guruWeights = $guruWeights ?? ['absensi' => 25, 'sikap' => 25, 'kelengkapan' => 25, 'nilai' => 25];
@@ -265,6 +348,39 @@
                 </div>
             </div>
         </div>
+
+        <div class="row pt-4">
+            <div class="col-lg-6 col-12">
+                <div class="small-box shadow-sm cursor-pointer"
+                    style="background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%); color: white; cursor: pointer;"
+                    data-toggle="modal" data-target="#modalSiswaBawahAbsensi">
+                    <div class="inner">
+                        <h3 style="color: white;">{{ $siswaBawahTigaPuluPersen->count() }}</h3>
+                        <p style="color: rgba(255,255,255,0.9);">Siswa Kehadiran < 50%</p>
+                                <small style="color: rgba(255,255,255,0.8);">Klik untuk melihat detail siswa</small>
+                    </div>
+                    <div class="icon" style="color: rgba(255,255,255,0.3);">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 col-12">
+                <div class="small-box shadow-sm cursor-pointer"
+                    style="background: linear-gradient(135deg, #ffa94d 0%, #fd7e14 100%); color: white; cursor: pointer;"
+                    data-toggle="modal" data-target="#modalSiswaBelumKerjakan">
+                    <div class="inner">
+                        <h3 style="color: white;">{{ $siswaBelumKerjakan->count() }}</h3>
+                        <p style="color: rgba(255,255,255,0.9);">Siswa Belum Kerjakan Tugas</p>
+                        <small style="color: rgba(255,255,255,0.8);">Klik untuk melihat detail siswa</small>
+                    </div>
+                    <div class="icon" style="color: rgba(255,255,255,0.3);">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row pt-4">
             <div class="col-md-12">
                 <div class="card">
@@ -277,13 +393,109 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Siswa Bawah Kehadiran -->
+        <div class="modal fade" id="modalSiswaBawahAbsensi" tabindex="-1" role="dialog"
+            aria-labelledby="modalSiswaBawahAbsensiLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalSiswaBawahAbsensiLabel">Siswa Kehadiran < 50%</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                    </div>
+                    <div class="modal-body">
+                        @if ($siswaBawahTigaPuluPersen->isEmpty())
+                            <div class="alert alert-info">Tidak ada siswa dengan kehadiran kurang dari 50%.</div>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped table-sm">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>No</th>
+                                            <th>Nama Siswa</th>
+                                            <th>NIS</th>
+                                            <th>Kelas</th>
+                                            <th style="width: 80px;">Total Hari</th>
+                                            <th style="width: 80px;">Hadir</th>
+                                            <th style="width: 100px;">Persentase</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($siswaBawahTigaPuluPersen as $index => $siswa)
+                                            <tr>
+                                                <td>{{ $index + 1 }}</td>
+                                                <td><strong>{{ $siswa->nama_siswa }}</strong></td>
+                                                <td>{{ $siswa->nis }}</td>
+                                                <td>{{ $siswa->nama_kelas ?? '-' }}</td>
+                                                <td style="text-align: center;">{{ $siswa->total_hari }}</td>
+                                                <td style="text-align: center;">{{ $siswa->total_hadir }}</td>
+                                                <td style="text-align: center;">
+                                                    <span
+                                                        class="badge badge-danger">{{ $siswa->persentase_kehadiran }}%</span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Siswa Belum Kerjakan Tugas -->
+        <div class="modal fade" id="modalSiswaBelumKerjakan" tabindex="-1" role="dialog"
+            aria-labelledby="modalSiswaBelumKerjakanLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalSiswaBelumKerjakanLabel">Siswa Belum Kerjakan Tugas</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        @if ($siswaBelumKerjakan->isEmpty())
+                            <div class="alert alert-info">Semua siswa sudah mengerjakan tugas.</div>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped table-sm">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>No</th>
+                                            <th>Nama Siswa</th>
+                                            <th>NIS</th>
+                                            <th>Kelas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($siswaBelumKerjakan as $index => $siswa)
+                                            <tr>
+                                                <td>{{ $index + 1 }}</td>
+                                                <td><strong>{{ $siswa->nama_siswa }}</strong></td>
+                                                <td>{{ $siswa->nis }}</td>
+                                                <td>{{ $siswa->nama_kelas ?? '-' }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
     @elseif (auth()->user()->role == 'panitia')
         <div class="card shadow-sm border-0 mt-3 mb-3">
             <div class="card-body py-3">
                 <div class="d-flex flex-wrap align-items-center justify-content-between">
                     <div class="mb-2 mb-md-0">
                         <h5 class="mb-1">Dashboard Panitia PKL</h5>
-                        <small class="text-muted">Pantau progres administrasi PKL, pembekalan, dan performa siswa dalam satu
+                        <small class="text-muted">Pantau progres administrasi PKL, pembekalan, dan performa siswa dalam
+                            satu
                             tampilan.</small>
                     </div>
                     <div>
@@ -316,7 +528,8 @@
                         <p class="mb-3">Total Perusahaan</p>
                     </div>
                     <div class="icon"><i class="fas fa-building"></i></div>
-                    <a href="/perusahaan" class="small-box-footer">Lihat Data <i class="fas fa-arrow-circle-right"></i></a>
+                    <a href="/perusahaan" class="small-box-footer">Lihat Data <i
+                            class="fas fa-arrow-circle-right"></i></a>
                 </div>
             </div>
 

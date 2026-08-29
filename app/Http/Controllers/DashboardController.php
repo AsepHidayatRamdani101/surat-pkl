@@ -47,6 +47,7 @@ class DashboardController extends Controller
             $kelompok = collect();
             $bimbinganPembimbing = collect();
             $tugasSiswa = collect();
+            $dataSiswaDetail = [];
             $summaryPembimbing = [
                 'total_sesi' => 0,
                 'tugas_terkumpul' => 0,
@@ -120,6 +121,45 @@ class DashboardController extends Controller
                         ->filter(fn($nilai) => $nilai !== null)
                         ->avg();
 
+                    // Data per siswa dengan kehadiran dan tugas
+                    $dataSiswaDetail = [];
+                    $siswaBimbingan = Siswa::with('kelas')
+                        ->whereIn('id', $siswaBimbinganIds)
+                        ->orderBy('nama_siswa')
+                        ->get();
+
+                    foreach ($siswaBimbingan as $siswa) {
+                        $absensiSiswa = $absensiPembekalanPembimbing
+                            ->where('siswa_id', $siswa->id)
+                            ->groupBy(fn($e) => (string) $e->tanggal_absensi);
+
+                        $totalHariSiswa = $absensiSiswa->count();
+                        $hadirSiswa = $absensiSiswa->filter(function ($entries) {
+                            $statusDatang = optional($entries->firstWhere('sesi_absensi', 'datang'))->status;
+                            $statusPulang = optional($entries->firstWhere('sesi_absensi', 'pulang'))->status;
+                            return $statusDatang === 'hadir' && $statusPulang === 'hadir';
+                        })->count();
+
+                        $persentaseKehadiran = $totalHariSiswa > 0 ? round(($hadirSiswa / $totalHariSiswa) * 100, 2) : 0;
+
+                        $tugasSiswaDetail = $jawabanTugasPembimbing
+                            ->where('siswa_id', $siswa->id);
+
+                        $totalTugasSiswa = $tugasSiswaDetail->count();
+                        $tugasSelesaiSiswa = $tugasSiswaDetail->filter(fn($t) => !empty($t->submitted_at))->count();
+                        $persentaseTugas = $totalTugasSiswa > 0 ? round(($tugasSelesaiSiswa / $totalTugasSiswa) * 100, 2) : 0;
+
+                        $dataSiswaDetail[] = [
+                            'siswa' => $siswa,
+                            'total_hari' => $totalHariSiswa,
+                            'hadir' => $hadirSiswa,
+                            'persentase_kehadiran' => $persentaseKehadiran,
+                            'total_tugas' => $totalTugasSiswa,
+                            'tugas_selesai' => $tugasSelesaiSiswa,
+                            'persentase_tugas' => $persentaseTugas,
+                        ];
+                    }
+
                     $kelengkapanTerbaru = $cekKelengkapanPembimbing
                         ->groupBy('siswa_id')
                         ->map(function ($records) {
@@ -157,7 +197,8 @@ class DashboardController extends Controller
                 'bimbinganPembimbing',
                 'tugasSiswa',
                 'summaryPembimbing',
-                'kelengkapanTerbaru'
+                'kelengkapanTerbaru',
+                'dataSiswaDetail'
             ));
         }
 
@@ -267,13 +308,16 @@ class DashboardController extends Controller
         $summary = [
             'total_sesi' => 0,
             'hadir' => 0,
+            'sakit' => 0,
             'izin' => 0,
             'alpa' => 0,
+            'terlambat' => 0,
             'total_tugas' => 0,
             'tugas_selesai' => 0,
             'avg_nilai' => null,
             'latest_sikap' => null,
             'progres' => 0,
+            'attendance_percentage' => 0,
         ];
         $chartLabels = [];
         $chartProgres = [];
@@ -351,24 +395,33 @@ class DashboardController extends Controller
                 ->sortKeys();
 
             $totalSesi = $dailyAbsensi->count();
-            $hadir = $dailyAbsensi->filter(function ($entries) {
+
+            // Kategorisasi hari berdasarkan status
+            $hadir = 0;
+            $izin = 0;
+            $alpa = 0;
+            $sakit = 0;
+            $terlambat = 0;
+
+            foreach ($dailyAbsensi as $entries) {
+                $statuses = $entries->pluck('status')->filter()->all();
                 $statusDatang = optional($entries->firstWhere('sesi_absensi', 'datang'))->status;
                 $statusPulang = optional($entries->firstWhere('sesi_absensi', 'pulang'))->status;
 
-                return $statusDatang === 'hadir' && $statusPulang === 'hadir';
-            })->count();
+                // Prioritas kategorisasi dari tertinggi ke terendah
+                if ($statusDatang === 'hadir' && $statusPulang === 'hadir') {
+                    $hadir++;
+                } elseif (in_array('alpa', $statuses, true)) {
+                    $alpa++;
+                } elseif (in_array('sakit', $statuses, true)) {
+                    $sakit++;
+                } elseif (in_array('izin', $statuses, true)) {
+                    $izin++;
+                } elseif (in_array('terlambat', $statuses, true)) {
+                    $terlambat++;
+                }
+            }
 
-            $izin = $dailyAbsensi->filter(function ($entries) {
-                $statuses = $entries->pluck('status')->filter()->all();
-
-                return in_array('izin', $statuses, true);
-            })->count();
-
-            $alpa = $dailyAbsensi->filter(function ($entries) {
-                $statuses = $entries->pluck('status')->filter()->all();
-
-                return in_array('alpa', $statuses, true);
-            })->count();
             $totalTugas = $tugasPembekalan->count();
             $tugasSelesai = $tugasPembekalan->filter(function ($item) {
                 $jawaban = $item->jawabanSiswa->first();
@@ -381,17 +434,21 @@ class DashboardController extends Controller
                 ->avg();
             $latestSikap = $nilaiSikapPembekalan->first()?->nilai_sikap;
             $progres = $totalSesi > 0 ? (int) round(($hadir / $totalSesi) * 100) : 0;
+            $attendancePercentage = $totalSesi > 0 ? (int) round(($hadir / $totalSesi) * 100) : 0;
 
             $summary = [
                 'total_sesi' => $totalSesi,
                 'hadir' => $hadir,
+                'sakit' => $sakit,
                 'izin' => $izin,
                 'alpa' => $alpa,
+                'terlambat' => $terlambat,
                 'total_tugas' => $totalTugas,
                 'tugas_selesai' => $tugasSelesai,
                 'avg_nilai' => $avgNilai !== null ? round((float) $avgNilai, 2) : null,
                 'latest_sikap' => $latestSikap,
                 'progres' => $progres,
+                'attendance_percentage' => $attendancePercentage,
             ];
 
             $timeline = $dailyAbsensi;

@@ -131,7 +131,8 @@
                         <div class="small-box bg-success shadow-sm dashboard-metric-box dashboard-summary-box">
                             <div class="inner">
                                 <h3>{{ $summary['hadir'] }}</h3>
-                                <p>Hadir Lengkap (Datang+Pulang)</p>
+                                <p>Hadir</p>
+                                <small style="color: #666;">dari {{ $summary['total_sesi'] }} hari</small>
                             </div>
                             <div class="icon">
                                 <i class="fas fa-user-check"></i>
@@ -140,13 +141,27 @@
                     </div>
 
                     <div class="col-md-3 col-6">
-                        <div class="small-box bg-warning shadow-sm dashboard-metric-box dashboard-summary-box">
+                        <div class="small-box bg-info shadow-sm dashboard-metric-box dashboard-summary-box">
                             <div class="inner">
-                                <h3>{{ $summary['avg_nilai'] !== null ? $summary['avg_nilai'] : '-' }}</h3>
-                                <p>Rata-rata Nilai Tugas</p>
+                                <h3>{{ $summary['sakit'] }}</h3>
+                                <p>Sakit</p>
+                                <small style="color: #666;">dari {{ $summary['total_sesi'] }} hari</small>
                             </div>
                             <div class="icon">
-                                <i class="fas fa-star"></i>
+                                <i class="fas fa-heartbeat"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 col-6">
+                        <div class="small-box bg-warning shadow-sm dashboard-metric-box dashboard-summary-box">
+                            <div class="inner">
+                                <h3>{{ $summary['izin'] }}</h3>
+                                <p>Izin</p>
+                                <small style="color: #666;">dari {{ $summary['total_sesi'] }} hari</small>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-file-alt"></i>
                             </div>
                         </div>
                     </div>
@@ -154,11 +169,65 @@
                     <div class="col-md-3 col-6">
                         <div class="small-box bg-danger shadow-sm dashboard-metric-box dashboard-summary-box">
                             <div class="inner">
-                                <h3>{{ $summary['progres'] }}%</h3>
-                                <p>Kemajuan Pembekalan</p>
+                                <h3>{{ $summary['alpa'] }}</h3>
+                                <p>Alpa</p>
+                                <small style="color: #666;">dari {{ $summary['total_sesi'] }} hari</small>
                             </div>
                             <div class="icon">
-                                <i class="fas fa-chart-line"></i>
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 col-6">
+                        <div class="small-box shadow-sm dashboard-metric-box dashboard-summary-box"
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            <div class="inner">
+                                <h3 style="color: white;">{{ $summary['attendance_percentage'] }}%</h3>
+                                <p style="color: rgba(255,255,255,0.8);">Persentase Kehadiran</p>
+                            </div>
+                            <div class="icon" style="color: rgba(255,255,255,0.3);">
+                                <i class="fas fa-chart-pie"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 col-6">
+                        <div class="small-box shadow-sm dashboard-metric-box dashboard-summary-box"
+                            style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                            <div class="inner">
+                                <h3 style="color: white;">
+                                    {{ $summary['avg_nilai'] !== null ? $summary['avg_nilai'] : '-' }}</h3>
+                                <p style="color: rgba(255,255,255,0.8);">Rata-rata Nilai Tugas</p>
+                            </div>
+                            <div class="icon" style="color: rgba(255,255,255,0.3);">
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 col-6">
+                        <div class="small-box bg-success shadow-sm dashboard-metric-box dashboard-summary-box">
+                            <div class="inner">
+                                <h3>{{ $summary['tugas_selesai'] }}</h3>
+                                <p>Tugas Selesai</p>
+                                <small style="color: #666;">dari {{ $summary['total_tugas'] }} tugas</small>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 col-6">
+                        <div class="small-box bg-warning shadow-sm dashboard-metric-box dashboard-summary-box">
+                            <div class="inner">
+                                <h3>{{ $summary['total_tugas'] - $summary['tugas_selesai'] }}</h3>
+                                <p>Tugas Belum Selesai</p>
+                                <small style="color: #666;">dari {{ $summary['total_tugas'] }} tugas</small>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-hourglass-half"></i>
                             </div>
                         </div>
                     </div>
@@ -378,14 +447,94 @@
                         <small class="text-muted">Riwayat kehadiran selama sesi pembekalan PKL yang telah diikuti.</small>
                     </div>
                     <div class="card-body table-responsive">
+                        <!-- Summary Stats -->
+                        <div class="row mb-4">
+                            <div class="col-md-2 col-6 mb-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <div style="font-size: 1.8rem; font-weight: bold; color: #10b981;">
+                                        {{ $summary['hadir'] }}
+                                    </div>
+                                    <small class="text-muted">Hadir</small>
+                                    <div style="font-size: 0.75rem; color: #999;">dari {{ $summary['total_sesi'] }} hari
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-6 mb-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <div style="font-size: 1.8rem; font-weight: bold; color: #3b82f6;">
+                                        {{ $summary['sakit'] }}
+                                    </div>
+                                    <small class="text-muted">Sakit</small>
+                                    <div style="font-size: 0.75rem; color: #999;">dari {{ $summary['total_sesi'] }} hari
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-6 mb-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <div style="font-size: 1.8rem; font-weight: bold; color: #f59e0b;">
+                                        {{ $summary['izin'] }}
+                                    </div>
+                                    <small class="text-muted">Izin</small>
+                                    <div style="font-size: 0.75rem; color: #999;">dari {{ $summary['total_sesi'] }} hari
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-6 mb-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <div style="font-size: 1.8rem; font-weight: bold; color: #ef4444;">
+                                        {{ $summary['alpa'] }}
+                                    </div>
+                                    <small class="text-muted">Alpa</small>
+                                    <div style="font-size: 0.75rem; color: #999;">dari {{ $summary['total_sesi'] }} hari
+                                    </div>
+                                </div>
+                            </div>
+                            @if ($summary['terlambat'] > 0)
+                                <div class="col-md-2 col-6 mb-3">
+                                    <div class="text-center p-2 bg-light rounded" style="background: #fff3cd;">
+                                        <div style="font-size: 1.8rem; font-weight: bold; color: #ff6b6b;">
+                                            {{ $summary['terlambat'] }}
+                                        </div>
+                                        <small class="text-muted">Terlambat</small>
+                                        <div style="font-size: 0.75rem; color: #999;">dari {{ $summary['total_sesi'] }}
+                                            hari</div>
+                                    </div>
+                                </div>
+                            @endif
+                            <div class="col-md-2 col-6 mb-3">
+                                <div class="text-center p-2 bg-light rounded"
+                                    style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);">
+                                    <div
+                                        style="font-size: 1.8rem; font-weight: bold; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                                        {{ $summary['total_sesi'] }}
+                                    </div>
+                                    <small class="text-muted">Total Hari</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-6 mb-3">
+                                <div class="text-center p-2 bg-light rounded"
+                                    style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);">
+                                    <div
+                                        style="font-size: 1.8rem; font-weight: bold; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                                        {{ $summary['attendance_percentage'] }}%
+                                    </div>
+                                    <small class="text-muted">Kehadiran</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <h6 class="mb-3">Detail Riwayat Absensi</h6>
                         <table id="absensiTable" class="table table-bordered table-striped table-sm">
                             <thead>
                                 <tr>
                                     <th>No</th>
                                     <th>Tanggal</th>
+                                    <th>Sesi</th>
                                     <th>Pembimbing</th>
+                                    <th>Status</th>
                                     <th>Keterangan</th>
-                                    <th>Absensi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -394,8 +543,12 @@
                                         <td>{{ $index + 1 }}</td>
                                         <td>{{ $item->tanggal_absensi ? \Carbon\Carbon::parse($item->tanggal_absensi)->format('d-m-Y') : '-' }}
                                         </td>
+                                        <td>
+                                            <span class="badge badge-light border" style="text-transform: capitalize;">
+                                                {{ $item->sesi_absensi ?? '-' }}
+                                            </span>
+                                        </td>
                                         <td>{{ $item->pembimbing->nama_pembimbing ?? '-' }}</td>
-                                        <td>{{ $item->keterangan ?? '-' }}</td>
                                         <td>
                                             @php
                                                 $statusBadge =
@@ -411,6 +564,7 @@
                                                 {{ ucfirst($item->status ?? '-') }}
                                             </span>
                                         </td>
+                                        <td>{{ $item->keterangan ?? '-' }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -773,7 +927,8 @@
                                     </div>
                                     <div class="elearning-card-body">
                                         <h5 class="elearning-card-title">
-                                            <span class="badge badge-{{ $badgeColor }} mr-1">{{ $labelSikap }}</span>
+                                            <span
+                                                class="badge badge-{{ $badgeColor }} mr-1">{{ $labelSikap }}</span>
                                         </h5>
                                         <p class="elearning-card-desc mb-1" style="font-size:0.82rem; color:#64748b;">
                                             <i class="fas fa-chalkboard-teacher mr-1"></i>

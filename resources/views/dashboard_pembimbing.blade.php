@@ -277,6 +277,86 @@
                 </div>
             </div>
 
+            <div class="card shadow-sm border-0 mb-3" id="data-siswa-pembimbing">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-table mr-1 text-success"></i>Data Kehadiran dan Tugas Siswa</h5>
+                    <small class="text-muted">Pantau kehadiran siswa dan progres penyelesaian tugas secara
+                        real-time.</small>
+                </div>
+                <div class="card-body table-responsive">
+                    @if (empty($dataSiswaDetail))
+                        <div class="alert alert-light border mb-0">Belum ada data siswa bimbingan.</div>
+                    @else
+                        <table class="table table-bordered table-striped table-sm">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Nama Siswa</th>
+                                    <th>Kelas</th>
+                                    <th colspan="3" class="text-center">Kehadiran</th>
+                                    <th colspan="3" class="text-center">Tugas</th>
+                                </tr>
+                                <tr class="bg-light">
+                                    <th colspan="3"></th>
+                                    <th style="width: 50px;">Hari</th>
+                                    <th style="width: 50px;">Hadir</th>
+                                    <th style="width: 70px;">%</th>
+                                    <th style="width: 50px;">Total</th>
+                                    <th style="width: 50px;">Selesai</th>
+                                    <th style="width: 70px;">%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($dataSiswaDetail as $index => $data)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>
+                                            <strong>{{ $data['siswa']->nama_siswa }}</strong>
+                                            <br><small class="text-muted">NIS: {{ $data['siswa']->nis }}</small>
+                                        </td>
+                                        <td>{{ $data['siswa']->kelas?->nama_kelas ?? '-' }}</td>
+                                        <td style="text-align: center;">{{ $data['total_hari'] }}</td>
+                                        <td style="text-align: center;">
+                                            <span class="badge badge-success">{{ $data['hadir'] }}</span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            @php
+                                                $kehadiranClass = 'badge-success';
+                                                if ($data['persentase_kehadiran'] < 75) {
+                                                    $kehadiranClass = 'badge-warning';
+                                                }
+                                                if ($data['persentase_kehadiran'] < 50) {
+                                                    $kehadiranClass = 'badge-danger';
+                                                }
+                                            @endphp
+                                            <span
+                                                class="badge {{ $kehadiranClass }}">{{ $data['persentase_kehadiran'] }}%</span>
+                                        </td>
+                                        <td style="text-align: center;">{{ $data['total_tugas'] }}</td>
+                                        <td style="text-align: center;">
+                                            <span class="badge badge-primary">{{ $data['tugas_selesai'] }}</span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            @php
+                                                $tugasClass = 'badge-success';
+                                                if ($data['persentase_tugas'] < 75) {
+                                                    $tugasClass = 'badge-warning';
+                                                }
+                                                if ($data['persentase_tugas'] < 50) {
+                                                    $tugasClass = 'badge-danger';
+                                                }
+                                            @endphp
+                                            <span
+                                                class="badge {{ $tugasClass }}">{{ $data['persentase_tugas'] }}%</span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+                </div>
+            </div>
+
             <div class="card shadow-sm border-0 mb-3" id="kelengkapan-pembimbing">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-user-tag mr-1 text-secondary"></i>Ringkasan Kelengkapan Siswa</h5>
@@ -338,6 +418,7 @@
         #kelompok-pembimbing,
         #tugas-siswa-pembimbing,
         #evaluasi-siswa-pembimbing,
+        #data-siswa-pembimbing,
         #kelengkapan-pembimbing {
             scroll-margin-top: 90px;
         }

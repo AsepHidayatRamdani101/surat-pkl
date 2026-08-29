@@ -10,6 +10,9 @@ use App\Models\Siswa;
 use App\Models\TempatPkl;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -267,6 +270,8 @@ class MonitoringController extends Controller
             'Tanggal Selesai',
             'Pembimbing Monitoring',
             'Pembimbing Sekolah',
+            'Keterangan Wilayah',
+            'Jumlah Perusahaan per Pembimbing',
         ];
 
         $col = 'A';
@@ -277,13 +282,16 @@ class MonitoringController extends Controller
 
         $row = 2;
 
-        // Kelompokkan data berdasarkan perusahaan
-        $grouped = $data->groupBy('perusahaan_id');
+        // Kelompokkan data berdasarkan pembimbing sekolah
+        $grouped = $data->groupBy('pembimbing_id');
 
-        foreach ($grouped as $perusahaanId => $items) {
+        foreach ($grouped as $pembimbingId => $items) {
 
             $firstRow = $row;
             $lastRow = $row + count($items) - 1;
+
+            // Hitung jumlah perusahaan unik untuk pembimbing ini
+            $companyCount = $items->pluck('perusahaan_id')->unique()->count();
 
             foreach ($items as $item) {
                 // Data siswa
@@ -298,35 +306,37 @@ class MonitoringController extends Controller
                 $sheet->setCellValue('C' . $row, $item->siswa->kelas->nama_kelas ?? '-');
                 $sheet->setCellValue('D' . $row, $item->siswa->kelas->jurusan->nama_jurusan ?? '-');
 
-                // Kolom group perusahaan → isi nanti setelah merge
+                // Isi kolom perusahaan per baris (tidak di-merge karena bisa berbeda per siswa)
+                $sheet->setCellValue('E' . $row, $item->perusahaan->nama_perusahaan ?? '-');
+                $sheet->setCellValue('F' . $row, $item->perusahaan->alamat ?? '-');
+                $sheet->setCellValue('G' . $row, $item->perusahaan->nama_pemilik_perusahaan ?? '-');
+                $sheet->setCellValueExplicit('H' . $row, $item->perusahaan->telepon_pemilik_perusahaan ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+
+                // Tanggal mulai & selesai tetap per siswa
+                $sheet->setCellValue('I' . $row, $item->tanggal_mulai ?? '-');
+                $sheet->setCellValue('J' . $row, $item->tanggal_selesai ?? '-');
+                // Keterangan wilayah berdasarkan rekap wilayah untuk perusahaan ini
+                $sheet->setCellValue('M' . $row, $this->computeWilayahForPerusahaan($item->perusahaan));
+
                 $row++;
             }
 
-            // Merge kolom perusahaan untuk setiap kelompok perusahaan
-            foreach (['E', 'F', 'G', 'H'] as $column) {
-                $sheet->mergeCells($column . $firstRow . ':' . $column . $lastRow);
+            // Merge pembimbing-related columns (K, L, N) untuk setiap kelompok pembimbing
+            foreach (['K', 'L', 'N'] as $column) {
+                if ($firstRow < $lastRow) {
+                    $sheet->mergeCells($column . $firstRow . ':' . $column . $lastRow);
+                }
             }
 
             $firstItem = $items->first();
 
-            // Isi merged cell (tampil sekali saja)
-            $sheet->setCellValue('E' . $firstRow, $firstItem->perusahaan->nama_perusahaan ?? '-');
-            $sheet->setCellValue('F' . $firstRow, $firstItem->perusahaan->alamat ?? '-');
-            $sheet->setCellValue('G' . $firstRow, $firstItem->perusahaan->nama_pemilik_perusahaan ?? '-');
-            $sheet->setCellValueExplicit('H' . $firstRow, $firstItem->perusahaan->telepon_pemilik_perusahaan ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-
-            // Isi tanggal mulai & selesai tetap per siswa
-            $tempRow = $firstRow;
-            foreach ($items as $item) {
-                $sheet->setCellValue('I' . $tempRow, $item->tanggal_mulai ?? '-');
-                $sheet->setCellValue('J' . $tempRow, $item->tanggal_selesai ?? '-');
-                $sheet->setCellValue('K' . $tempRow, $item->nama_pembimbing ?? '-');
-                $sheet->setCellValue('L' . $tempRow, $item->pembimbing->nama_pembimbing ?? '-');
-                $tempRow++;
-            }
+            // Isi merged cell pembimbing (tampil sekali saja)
+            $sheet->setCellValue('K' . $firstRow, $firstItem->nama_pembimbing ?? '-');
+            $sheet->setCellValue('L' . $firstRow, $firstItem->pembimbing->nama_pembimbing ?? '-');
+            $sheet->setCellValue('N' . $firstRow, $companyCount);
         }
 
-        $this->applyExcelTableFormatting($sheet, 'L', $row - 1);
+        $this->applyExcelTableFormatting($sheet, 'N', $row - 1);
 
         // Save file
         $fileName = 'monitoring_pkl_merge_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
@@ -336,6 +346,102 @@ class MonitoringController extends Controller
         $writer->save($filePath);
 
         return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Stream the Excel export directly to the user (no disk save).
+     */
+    public function downloadExport()
+    {
+        $data = TempatPkl::with(['siswa.kelas.jurusan', 'perusahaan', 'pembimbing'])
+            ->orderBy('perusahaan_id')
+            ->get();
+
+        if ($data->isEmpty()) {
+            return response()->json(['message' => 'Tidak ada data untuk diekspor'], 404);
+        }
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Header
+        $headers = [
+            'Nama Siswa',
+            'NISN',
+            'Kelas',
+            'Jurusan',
+            'Perusahaan',
+            'Alamat',
+            'Nama Pemilik (PIC)',
+            'No. Telpon Pemilik (No. Telp PIC)',
+            'Tanggal Mulai',
+            'Tanggal Selesai',
+            'Pembimbing Monitoring',
+            'Pembimbing Sekolah',
+            'Keterangan Wilayah',
+            'Jumlah Perusahaan per Pembimbing',
+        ];
+
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '1', $header);
+            $col++;
+        }
+
+        $row = 2;
+
+        // Kelompokkan data berdasarkan pembimbing sekolah
+        $grouped = $data->groupBy('pembimbing_id');
+
+        foreach ($grouped as $pembimbingId => $items) {
+            $firstRow = $row;
+            $lastRow = $row + count($items) - 1;
+
+            // Hitung jumlah perusahaan unik untuk pembimbing ini
+            $companyCount = $items->pluck('perusahaan_id')->unique()->count();
+
+            foreach ($items as $item) {
+                $sheet->setCellValue('A' . $row, $item->siswa->nama_siswa ?? '-');
+                $sheet->setCellValueExplicit('B' . $row, $item->siswa->nis ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $sheet->setCellValue('C' . $row, $item->siswa->kelas->nama_kelas ?? '-');
+                $sheet->setCellValue('D' . $row, $item->siswa->kelas->jurusan->nama_jurusan ?? '-');
+
+                $sheet->setCellValue('E' . $row, $item->perusahaan->nama_perusahaan ?? '-');
+                $sheet->setCellValue('F' . $row, $item->perusahaan->alamat ?? '-');
+                $sheet->setCellValue('G' . $row, $item->perusahaan->nama_pemilik_perusahaan ?? '-');
+                $sheet->setCellValueExplicit('H' . $row, $item->perusahaan->telepon_pemilik_perusahaan ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+
+                $sheet->setCellValue('I' . $row, $item->tanggal_mulai ?? '-');
+                $sheet->setCellValue('J' . $row, $item->tanggal_selesai ?? '-');
+                // Keterangan wilayah per perusahaan
+                $sheet->setCellValue('M' . $row, $this->computeWilayahForPerusahaan($item->perusahaan));
+
+                $row++;
+            }
+
+            // Merge pembimbing-related columns (K, L, N) untuk setiap kelompok pembimbing
+            foreach (['K', 'L', 'N'] as $column) {
+                if ($firstRow < $lastRow) {
+                    $sheet->mergeCells($column . $firstRow . ':' . $column . $lastRow);
+                }
+            }
+
+            $firstItem = $items->first();
+            $sheet->setCellValue('K' . $firstRow, $firstItem->nama_pembimbing ?? '-');
+            $sheet->setCellValue('L' . $firstRow, $firstItem->pembimbing->nama_pembimbing ?? '-');
+            $sheet->setCellValue('N' . $firstRow, $companyCount);
+        }
+
+        $this->applyExcelTableFormatting($sheet, 'N', $row - 1);
+
+        $fileName = 'monitoring_pkl_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ]);
     }
 
 
@@ -431,5 +537,78 @@ class MonitoringController extends Controller
             'success' => true,
             'message' => 'Data monitoring berhasil dihapus.'
         ]);
+    }
+
+    /**
+     * Compute wilayah label for a perusahaan based on rekap logic.
+     */
+    private function computeWilayahForPerusahaan($perusahaan): string
+    {
+        $kecamatanName = $this->resolveKecamatanName($perusahaan->kecamatan_id);
+
+        $normalized = $kecamatanName ? Str::upper(trim($kecamatanName)) : null;
+        $isSelaawiGroup = $normalized && in_array($normalized, ['SELAAWI', 'BALUBUR LIMBANGAN', 'BLUBUR LIMBANGAN', 'CIBUGEL', 'CIBIUK'], true);
+
+        if ($isSelaawiGroup) {
+            return 'Wilayah Selaawi';
+        }
+
+        $kabupatenKotaName = $this->resolveKabupatenKotaName($perusahaan->provinsi_id, $perusahaan->kabupaten_kota_id) ?? 'Kabupaten/Kota Tidak Diketahui';
+
+        return 'Kabupaten/Kota ' . $kabupatenKotaName;
+    }
+
+    private function cachedWilayahJson(string $cacheKey, string $url): array
+    {
+        return Cache::remember($cacheKey, now()->addDay(), function () use ($url) {
+            $response = Http::timeout(15)->retry(2, 150)->get($url);
+
+            if (! $response->successful()) {
+                return [];
+            }
+
+            return $response->json() ?? [];
+        });
+    }
+
+    private function resolveKecamatanName($kecamatanId): ?string
+    {
+        if (empty($kecamatanId)) {
+            return null;
+        }
+
+        $regencyId = substr((string) $kecamatanId, 0, 4);
+        $districts = $this->cachedWilayahJson(
+            "wilayah:districts:{$regencyId}",
+            "https://www.emsifa.com/api-wilayah-indonesia/api/districts/{$regencyId}.json"
+        );
+
+        foreach ($districts as $district) {
+            if ((string) ($district['id'] ?? '') === (string) $kecamatanId) {
+                return $district['name'] ?? null;
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveKabupatenKotaName($provinceId, $kabupatenKotaId): ?string
+    {
+        if (empty($provinceId) || empty($kabupatenKotaId)) {
+            return null;
+        }
+
+        $regencies = $this->cachedWilayahJson(
+            "wilayah:regencies:{$provinceId}",
+            "https://www.emsifa.com/api-wilayah-indonesia/api/regencies/{$provinceId}.json"
+        );
+
+        foreach ($regencies as $regency) {
+            if ((string) ($regency['id'] ?? '') === (string) $kabupatenKotaId) {
+                return $regency['name'] ?? null;
+            }
+        }
+
+        return null;
     }
 }

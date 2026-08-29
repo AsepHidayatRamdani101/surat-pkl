@@ -279,6 +279,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/monitoring/data', [MonitoringController::class, 'data'])->name('monitoring.data');
     Route::get('/monitoring/lihatdata/{id}', [MonitoringController::class, 'lihatdata'])->name('monitoring.lihatdata');
     Route::get('/monitoring/export-excel', [MonitoringController::class, 'exportExcel'])->name('monitoring.exportExcel');
+    Route::get('/monitoring/download-excel', [MonitoringController::class, 'downloadExport'])->name('monitoring.downloadExcel');
 
     Route::get('/monitoring/set-tanggal', [MonitoringController::class, 'setTanggal'])->name('monitoring.set-tanggal');
     Route::post('/monitoring', [MonitoringController::class, 'store'])->name('monitoring.store');

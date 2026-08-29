@@ -246,7 +246,10 @@
                 <br>
                 @include('partials.ttd_default', [
                     'ttdTanggal' => 'Dikeluarkan di : SMK Negeri 8 Garut',
-                    'ttdLabel' => 'Tanggal : ' . $tanggalSuratDisplay . ' | KUASA PENGGUNA ANGGARAN',
+                    'ttdLabel' => 'Pada Tanggal : ' . $tanggalSuratDisplay,
+                    //buat dibawah tanggal tulisan kuasa pengguna anggaran
+                    'ttdRole' => 'KUASA PENGGUNA ANGGARAN',
+                
                     'ttdNama' => $nama_kepala_sekolah,
                     'ttdNip' => $nip_kepala_sekolah,
                     'ttdImage' => $nama_file_ttd,

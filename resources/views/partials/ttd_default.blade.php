@@ -6,6 +6,7 @@
     $ttdImage = $ttdImage ?? null;
     $ttdAlign = $ttdAlign ?? 'right';
     $ttdContainerStyle = $ttdContainerStyle ?? 'margin-top: 10px;';
+    $ttdRole = $ttdRole ?? null;
 
     if (!empty($ttdImage) && !str_starts_with((string) $ttdImage, 'data:image')) {
         $resolvedTtdPath = null;
@@ -50,6 +51,9 @@
 <div style="{{ $ttdContainerStyle }} text-align: {{ $ttdAlign }};">
     <div>{{ $ttdTanggal }}</div>
     <div>{{ $ttdLabel }},</div>
+    @if (!empty($ttdRole))
+        <div style="font-weight: bold;">{{ $ttdRole }}</div>
+    @endif
     <div style="height: 130px; margin: -30px 0px -26px -30px ; position: relative; z-index: 2;">
         @if (!empty($ttdImage))
             <img src="{{ $ttdImage }}" alt="ttd" style="max-height: 130px; max-width: 320px;">

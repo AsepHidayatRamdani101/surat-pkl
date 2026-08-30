@@ -132,7 +132,7 @@ class PembimbingController extends Controller
                 ';
             })
             ->addIndexColumn()
-                ->rawColumns(['status_akun', 'aksi', 'kelas_nama'])
+            ->rawColumns(['status_akun', 'aksi', 'kelas_nama'])
             ->make(true);
     }
 
@@ -145,7 +145,7 @@ class PembimbingController extends Controller
             'nama_pembimbing' => 'required',
             'nip_pembimbing' => 'required',
             'jenis_kelamin' => 'required',
-            'jabatan_pembimbing' => 'required',
+            'jabatan_pembimbing' => 'required|in:Guru,WAKASEK Kurikulum,WAKASEK HUMAS HUBIN,WAKASEK Sarana Prasarana,WAKASEK Kesiswaan,WAKASEK Bina Program,Kepala Program TKR,Kepala Program TKJ,Kepala Program DKV,Kepala Program MPLB',
             'no_hp_pembimbing' => 'required',
             'jumlah_jam' => 'required|integer|min:0',
             'jumlah_siswa' => 'required|integer|min:0',
@@ -366,7 +366,7 @@ class PembimbingController extends Controller
             'nama_pembimbing' => 'required',
             'nip_pembimbing' => 'required',
             'jenis_kelamin' => 'required',
-            'jabatan_pembimbing' => 'required',
+            'jabatan_pembimbing' => 'required|in:Guru,WAKASEK Kurikulum,WAKASEK HUMAS HUBIN,WAKASEK Sarana Prasarana,WAKASEK Kesiswaan,WAKASEK Bina Program,Kepala Program TKR,Kepala Program TKJ,Kepala Program DKV,Kepala Program MPLB',
             'no_hp_pembimbing' => 'required',
             'jumlah_jam' => 'required|integer|min:0',
             'jumlah_siswa' => 'required|integer|min:0',

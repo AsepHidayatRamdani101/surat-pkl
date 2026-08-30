@@ -89,10 +89,16 @@
                                         <label for="jabatan_pembimbing">Jabatan</label>
                                         <select name="jabatan_pembimbing" id="jabatan_pembimbing" class="form-control"
                                             required>
-                                            <option value="">Pilih Jabatan</option>
-                                            <option value="Guru">Guru</option>
-                                            <option value="Wakil Kepala Sekolah">Wakil Kepala Sekolah</option>
-                                            <option value="Kepala Program">Kepala Program</option>
+                                            <option value="Guru" selected>Guru</option>
+                                            <option value="WAKASEK Kurikulum">WAKASEK Kurikulum</option>
+                                            <option value="WAKASEK HUMAS HUBIN">WAKASEK HUMAS HUBIN</option>
+                                            <option value="WAKASEK Sarana Prasarana">WAKASEK Sarana Prasarana</option>
+                                            <option value="WAKASEK Kesiswaan">WAKASEK Kesiswaan</option>
+                                            <option value="WAKASEK Bina Program">WAKASEK Bina Program</option>
+                                            <option value="Kepala Program TKR">Kepala Program TKR</option>
+                                            <option value="Kepala Program TKJ">Kepala Program TKJ</option>
+                                            <option value="Kepala Program DKV">Kepala Program DKV</option>
+                                            <option value="Kepala Program MPLB">Kepala Program MPLB</option>
                                         </select>
                                     </div>
                                 </div>
@@ -533,6 +539,7 @@
                 $('#modalForm').modal('show');
                 $('#modalFormLabel').html('Tambah Data Pembimbing');
                 $('#formPembimbing').trigger('reset');
+                $('#jabatan_pembimbing').val('Guru');
                 selectedKelasIds = [];
                 renderKelasPicker();
                 toggleJurusanField();

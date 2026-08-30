@@ -240,7 +240,13 @@
                         </span>
                     </div>
                     <div><span class="label">Waktu</span><span class="value">: 07.00 s.d. selesai</span></div>
-                    <div><span class="label">Kegiatan</span><span class="value">: Penjemputan PKL</span></div>
+                    <div><span class="label">Kegiatan</span><span class="value">: Monitoring PKL</span></div>
+                </div>
+                <br>
+                <div class="table-like">
+                    <div> Demikian Surat Tugas ini dibuat untuk dilaksanakan dengan penuh tanggung jawab dan digunakan
+                        sebagaimana mestinya.
+                    </div>
                 </div>
                 <div class="table-like">
                     @include('partials.ttd_default', [

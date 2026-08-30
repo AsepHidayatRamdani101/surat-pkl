@@ -299,20 +299,20 @@
                         <td style="border: none">: {{ $data->first()->perusahaan->alamat }}</td>
                     </tr>
                     <tr>
-                        <td style="border: none" width="150px">Nama Pemilik</td>
+                        <td style="border: none" width="150px">Nama Pimpinan/ Pertama dihubungi</td>
                         <td style="border: none">: {{ $data->first()->perusahaan->nama_pemilik_perusahaan }}</td>
                     </tr>
                     <tr>
-                        <td style="border: none" width="150px">Nomor Telepon Pemilik</td>
+                        <td style="border: none" width="150px">Nomor Telepon Pemilik/ Pertama dihubungi</td>
                         <td style="border: none">: {{ $data->first()->perusahaan->telepon_pemilik_perusahaan }}</td>
                     </tr>
                     <tr>
                         <td style="border: none" width="150px">Nama Pembimbing Perusahaan</td>
-                        <td style="border: none">: {{ $data->first()->pembimbing->nama_pembimbing }}</td>
+                        <td style="border: none">: </td>
                     </tr>
                     <tr>
-                        <td style="border: none" width="150px">Nomor Telepon Pembimbing</td>
-                        <td style="border: none">: {{ $data->first()->pembimbing->no_hp_pembimbing }}</td>
+                        <td style="border: none" width="150px">Nomor Telepon Pembimbing Perusahaan</td>
+                        <td style="border: none">: </td>
                     </tr>
                 </table>
 

@@ -216,7 +216,7 @@
                     <tr>
                         <td>4.</td>
                         <td>Maksud Perjalanan</td>
-                        <td>: Penjemputan PKL</td>
+                        <td>: Monitoring PKL</td>
                     </tr>
                     <tr>
                         <td>5.</td>

@@ -1,20 +1,25 @@
 @php
     $tanggalSuratDisplay = $tanggal_surat ?? '';
     $tanggalBerangkatDisplay = $tanggal_berangkat ?? '';
+    $hariBerangkatDisplay = '';
 
     try {
         if (!empty($tanggalSuratDisplay)) {
-            $tanggalSuratDisplay = \Carbon\Carbon::parse($tanggalSuratDisplay)->translatedFormat('d F Y');
+            $tanggalSuratDisplay = \Carbon\Carbon::parse($tanggalSuratDisplay)->locale('id')->translatedFormat('d F Y');
         }
     } catch (\Throwable $e) {
         $tanggalSuratDisplay = $tanggal_surat ?? '';
     }
 
     try {
-        if (!empty($tanggalBerangkatDisplay)) {
-            $tanggalBerangkatDisplay = \Carbon\Carbon::parse($tanggalBerangkatDisplay)->translatedFormat('d F Y');
+        if (!empty($tanggal_berangkat)) {
+            $tanggal = \Carbon\Carbon::parse($tanggal_berangkat)->locale('id');
+
+            $hariBerangkatDisplay = $tanggal->translatedFormat('l');
+            $tanggalBerangkatDisplay = $tanggal->translatedFormat('d F Y');
         }
     } catch (\Throwable $e) {
+        $hariBerangkatDisplay = '';
         $tanggalBerangkatDisplay = $tanggal_berangkat ?? '';
     }
 @endphp
@@ -236,7 +241,7 @@
                     </div>
                     <br>
                     <div><span class="label">Hari/Tanggal</span><span class="value">:
-                            {{ $tanggalBerangkatDisplay }}
+                            {{ $hariBerangkatDisplay . ', ' . $tanggalBerangkatDisplay }}
                         </span>
                     </div>
                     <div><span class="label">Waktu</span><span class="value">: 07.00 s.d. selesai</span></div>
@@ -279,7 +284,7 @@
                     <tr>
                         <td style="border: none" width="150px"><span class="label">Hari/Tanggal</span></td>
                         <td style="border: none">:
-                            {{ $tanggalBerangkatDisplay }}</td>
+                            {{ $hariBerangkatDisplay . ', ' . $tanggalBerangkatDisplay }}</td>
                     </tr>
                     <tr>
                         <td style="border: none" width="200px">Waktu Monitoring</td>
@@ -367,7 +372,7 @@
 
 
             <div style="margin-left: 300px">
-                Garut, {{ $tanggalBerangkatDisplay }}<br>
+                Garut, {{ $hariBerangkatDisplay . ',' . $tanggalBerangkatDisplay }}<br>
                 Pembimbing,<br>
 
 

@@ -307,7 +307,7 @@
                         <td style="border: none">: {{ $data->first()->perusahaan->telepon_pemilik_perusahaan }}</td>
                     </tr>
                     <tr>
-                        <td style="border: none" width="150px">Nama Pembimbing</td>
+                        <td style="border: none" width="150px">Nama Pembimbing Perusahaan</td>
                         <td style="border: none">: {{ $data->first()->pembimbing->nama_pembimbing }}</td>
                     </tr>
                     <tr>

@@ -276,7 +276,7 @@
         <div style="page-break-after: always;">
             {{-- Bagian Notulen Monitoring --}}
             <div class="section">
-                <div style="margin-bottom: 8px;"><strong>Notulen Monitoring</strong></div>
+                <div style="margin-bottom: 8px;"><strong>Data Monitoring</strong></div>
 
 
 
@@ -297,6 +297,22 @@
                     <tr>
                         <td style="border: none" width="150px">Alamat Tempat PKL</td>
                         <td style="border: none">: {{ $data->first()->perusahaan->alamat }}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: none" width="150px">Nama Pemilik</td>
+                        <td style="border: none">: {{ $data->first()->perusahaan->nama_pemilik_perusahaan }}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: none" width="150px">Nomor Telepon Pemilik</td>
+                        <td style="border: none">: {{ $data->first()->perusahaan->telepon_pemilik_perusahaan }}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: none" width="150px">Nama Pembimbing</td>
+                        <td style="border: none">: {{ $data->first()->pembimbing->nama_pembimbing }}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: none" width="150px">Nomor Telepon Pembimbing</td>
+                        <td style="border: none">: {{ $data->first()->pembimbing->no_hp_pembimbing }}</td>
                     </tr>
                 </table>
 

@@ -232,7 +232,7 @@
             <div class="section">
                 <div class="table-like">
                     <div>
-                        Untuk melaksanakan tugas sebagai pendamping dan pengantar siswa PRAKERIN ke
+                        Untuk melaksanakan tugas sebagai pendamping dan memonitoring siswa PKL ke
                         {{ $data->first()->perusahaan->nama_perusahaan }}
                         <strong></strong>
                         yang beralamat di {{ $data->first()->perusahaan->alamat }}

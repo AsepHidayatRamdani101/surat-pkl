@@ -247,14 +247,11 @@
                                         ? 'secondary'
                                         : 'info');
                             $suratIzinTanggal = $suratIzin->tanggal_surat ?? ($suratIzin->created_at ?? null);
-                            $pembimbingSekolahNama = $pembimbing->nama_pembimbing ?? '-';
-                            $pembimbingSekolahJabatan = $pembimbing->jabatan_pembimbing ?? null;
-                            $pembimbingPerusahaanNama =
-                                $pembimbingPerusahaan->nama_pembimbing ?? ($tempatPkl->nama_pembimbing ?? '-');
-                            $pembimbingPerusahaanJabatan =
-                                $pembimbingPerusahaan->jabatan ?? ($tempatPkl->jabatan_pembimbing ?? null);
-                            $pembimbingPerusahaanNoHp =
-                                $pembimbingPerusahaan->nohp ?? ($tempatPkl->no_hp_pembimbing ?? null);
+                            $pembimbingSekolahNama = $pembimbingSekolah->nama_pembimbing ?? '-';
+                            $pembimbingSekolahJabatan = $pembimbingSekolah->jabatan_pembimbing ?? null;
+                            $pembimbingMonitoringNama = $pembimbingMonitoring->nama_pembimbing ?? '-';
+                            $pembimbingMonitoringJabatan = $pembimbingMonitoring->jabatan_pembimbing ?? null;
+                            $pembimbingMonitoringNoHp = $pembimbingMonitoring->no_hp_pembimbing ?? null;
                             $alamatDomisili =
                                 $suratIzin->alamat_ortu ?? ($siswa->alamat_ortu ?? ($siswa->alamat_siswa ?? '-'));
                             $suratIzinBadge = $hasSuratIzin ? 'success' : 'secondary';
@@ -397,17 +394,17 @@
                                         </span>
                                     </div>
                                     <div class="info-summary-item info-summary-item-block">
-                                        <span class="info-summary-label">Pembimbing Perusahaan</span>
+                                        <span class="info-summary-label">Pembimbing Monitoring</span>
                                         <span class="info-summary-value info-summary-value-multiline">
-                                            {{ $pembimbingPerusahaanNama }}
-                                            @if ($pembimbingPerusahaanJabatan)
-                                                <span class="info-summary-meta">{{ $pembimbingPerusahaanJabatan }}</span>
+                                            {{ $pembimbingMonitoringNama }}
+                                            @if ($pembimbingMonitoringJabatan)
+                                                <span class="info-summary-meta">{{ $pembimbingMonitoringJabatan }}</span>
                                             @endif
                                         </span>
                                     </div>
                                     <div class="info-summary-item">
-                                        <span class="info-summary-label">No HP Pembimbing</span>
-                                        <span class="info-summary-value">{{ $pembimbingPerusahaanNoHp ?? '-' }}</span>
+                                        <span class="info-summary-label">No HP Pembimbing Monitoring</span>
+                                        <span class="info-summary-value">{{ $pembimbingMonitoringNoHp ?? '-' }}</span>
                                     </div>
                                     <div class="info-summary-item">
                                         <span class="info-summary-label">Sikap Terakhir</span>

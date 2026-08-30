@@ -300,7 +300,8 @@ class DashboardController extends Controller
         $hasTempatPkl = false;
         $suratIzin = null;
         $tempatPkl = null;
-        $pembimbing = null;
+        $pembimbingSekolah = null;
+        $pembimbingMonitoring = null;
         $pembimbingPerusahaan = null;
         $absensiPembekalan = collect();
         $bimbingan = collect();
@@ -346,24 +347,22 @@ class DashboardController extends Controller
                 ->first();
             $hasTempatPkl = $tempatPkl !== null;
             if ($tempatPkl) {
-                $pembimbing = $tempatPkl->pembimbing;
+                $pembimbingMonitoring = $tempatPkl->pembimbing;
                 $pembimbingPerusahaan = $tempatPkl->pembimbingPerusahaan;
             }
 
-            if (!$pembimbing) {
-                $kelompokBimbingan = KelompokBimbingan::with(['pembimbing', 'pembimbings'])
-                    ->whereHas('siswa', fn($query) => $query->where('siswa.id', $siswa->id))
-                    ->latest('id')
-                    ->first();
+            $kelompokBimbingan = KelompokBimbingan::with(['pembimbing', 'pembimbings'])
+                ->whereHas('siswa', fn($query) => $query->where('siswa.id', $siswa->id))
+                ->latest('id')
+                ->first();
 
-                if ($kelompokBimbingan) {
-                    $pembimbing = $kelompokBimbingan->pembimbing
-                        ?? $kelompokBimbingan->pembimbings->sortBy('nama_pembimbing')->first();
-                }
+            if ($kelompokBimbingan) {
+                $pembimbingSekolah = $kelompokBimbingan->pembimbing
+                    ?? $kelompokBimbingan->pembimbings->sortBy('nama_pembimbing')->first();
             }
 
-            if (!$pembimbing) {
-                $pembimbing = $siswa->pembimbingBimbingan()
+            if (!$pembimbingSekolah) {
+                $pembimbingSekolah = $siswa->pembimbingBimbingan()
                     ->orderBy('nama_pembimbing')
                     ->first();
             }
@@ -479,7 +478,8 @@ class DashboardController extends Controller
             'hasTempatPkl',
             'suratIzin',
             'tempatPkl',
-            'pembimbing',
+            'pembimbingSekolah',
+            'pembimbingMonitoring',
             'pembimbingPerusahaan',
             'absensiPembekalan',
             'bimbingan',

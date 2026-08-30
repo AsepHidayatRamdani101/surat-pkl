@@ -281,7 +281,7 @@
                         </td>
                     </tr>
                     <tr>
-                        <td style="width: 50%;height: 130px;">
+                        <td style="width: 50%;height: 125px;">
                             <table style="border: none; border-collapse: collapse;">
                                 <tr>
                                     <td style="border: none;width: 40%;">II. Tiba di</td>
@@ -322,7 +322,7 @@
                         </td>
                     </tr>
                     <tr>
-                        <td style="width: 50%;height: 150px;">
+                        <td style="width: 50%;height: 125px;">
                             <table style="border: none; border-collapse: collapse;">
                                 <tr>
                                     <td style="border: none;width: 40%;">II. Tiba di</td>

@@ -391,7 +391,7 @@
 
 
             <div style="margin-left: 300px">
-                Garut, {{ $hariBerangkatDisplay . ',' . $tanggalBerangkatDisplay }}<br>
+                Garut, {{ $tanggalBerangkatDisplay }}<br>
                 Pembimbing,<br>
 
 

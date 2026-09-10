@@ -7,6 +7,9 @@
         <div class="card">
             <div class="card-header">
                 <h4>Data Monitorting PKL</h4>
+                @if (auth()->user()->role === 'pembimbing')
+                    <a href="{{ route('monitoring.exportExcel') }}" class="btn btn-success">Export Excel</a>
+                @endif
             </div>
             <div class="card-body">
                 <table id="monitoringTable" class="table table-bordered">
@@ -14,7 +17,9 @@
                         <tr>
                             <th>No</th>
                             <th>Nama Siswa</th>
-                            <th>Nama Perusahaan</th>
+                            <th>Kelas</th>
+                            <th>Tempat PKL</th>
+                            <th>No. Telepon Siswa</th>
                             <th>Nama Pembimbing</th>
                             <th>Aksi</th>
                         </tr>
@@ -138,8 +143,16 @@
                         name: 'siswa.nama_siswa'
                     },
                     {
-                        data: 'perusahaan.nama_perusahaan', // ✅ sesuai key backend
+                        data: 'siswa.kelas.nama_kelas',
+                        name: 'siswa.kelas.nama_kelas'
+                    },
+                    {
+                        data: 'perusahaan.nama_perusahaan',
                         name: 'perusahaan.nama_perusahaan'
+                    },
+                    {
+                        data: 'siswa.no_hp_siswa',
+                        name: 'siswa.no_hp_siswa'
                     },
                     {
                         data: 'pembimbing.nama_pembimbing', // ✅ sesuai key backend

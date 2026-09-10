@@ -405,6 +405,17 @@ return [
             'icon' => 'fas fa-tools',
             'can'  => 'panitia',
         ],
+        [
+            'text' => 'PKL',
+            'icon' => 'fas fa-briefcase',
+            'can'  => 'panitia',
+            'submenu' => [
+                ['text' => 'Setting Absen PKL', 'url' => 'pkl/setting-absensi', 'icon' => 'fas fa-calendar-alt'],
+                ['text' => 'Data Absensi oleh Pembimbing', 'url' => 'pkl/absensi-pembimbing', 'icon' => 'fas fa-user-check'],
+                ['text' => 'Data Resume PKL per Bulan', 'url' => 'pkl/resume', 'icon' => 'fas fa-file-alt'],
+                ['text' => 'Data Upload Absensi Jurnal PKL', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
+            ],
+        ],
         // Menu untuk Kepala Program
         [
             'text' => 'Dashboard',
@@ -576,12 +587,31 @@ return [
                 ],
             ],
         ],
+        [
+            'text' => 'PKL',
+            'icon' => 'fas fa-briefcase',
+            'can'  => 'siswa',
+            'submenu' => [
+                ['text' => 'Upload Absensi Jurnal PKL', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
+                ['text' => 'Input Resume PKL Bulanan', 'url' => 'pkl/input-resume', 'icon' => 'fas fa-file-alt'],
+            ],
+        ],
 
         [
             'text' => 'Dashboard Pembimbing',
             'url'  => 'dashboard',
             'icon' => 'fas fa-home',
             'can'  => 'pembimbing',
+        ],
+        [
+            'text' => 'PKL',
+            'icon' => 'fas fa-briefcase',
+            'can'  => 'pembimbing',
+            'submenu' => [
+                ['text' => 'Data Resume PKL per Bulan', 'url' => 'pkl/resume', 'icon' => 'fas fa-file-alt'],
+                ['text' => 'Data Upload Absensi Jurnal PKL', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
+                ['text' => 'Input Absensi PKL', 'url' => 'pkl/input-absensi', 'icon' => 'fas fa-user-check'],
+            ],
         ],
 
         [
@@ -651,11 +681,6 @@ return [
                     'text' => 'Data Monitoring',
                     'url'  => 'monitoring',
                     'icon' => 'fas fa-tasks',
-                ],
-                [
-                    'text' => 'Cetak Monitoring',
-                    'url'  => 'monitoring/cetak',
-                    'icon' => 'fas fa-print',
                 ],
             ],
         ],

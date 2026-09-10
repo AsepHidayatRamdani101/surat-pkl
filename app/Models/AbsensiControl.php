@@ -19,5 +19,6 @@ class AbsensiControl extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'periode_dimulai_pada' => 'date',
     ];
 }

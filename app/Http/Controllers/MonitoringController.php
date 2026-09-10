@@ -30,8 +30,14 @@ class MonitoringController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
+            $pembimbingAuthId = $this->getAuthorizedPembimbingId();
+
             if (auth()->user()->role == 'panitia') {
                 $grouped = TempatPkl::with(['siswa', 'perusahaan', 'pembimbing'])
+                    ->get();
+            } elseif (!empty($pembimbingAuthId)) {
+                $grouped = TempatPkl::with(['siswa.kelas', 'perusahaan', 'pembimbing'])
+                    ->where('pembimbing_id', $pembimbingAuthId)
                     ->get();
             } else {
                 $grouped = TempatPkl::with(['siswa', 'perusahaan', 'pembimbing'])
@@ -84,16 +90,22 @@ class MonitoringController extends Controller
     public function index_cetak(Request $request)
     {
         if ($request->ajax()) {
-            // Grouping by perusahaan
-            $grouped = TempatPkl::with(['siswa.kelas', 'perusahaan'])
-                ->get()
-                ->groupBy('perusahaan_id', 'pembimbing_id')
+            $pembimbingAuthId = $this->getAuthorizedPembimbingId();
+            $query = TempatPkl::with(['siswa.kelas', 'perusahaan', 'pembimbing']);
+
+            if (!empty($pembimbingAuthId)) {
+                $query->where('pembimbing_id', $pembimbingAuthId);
+            }
+
+            $grouped = $query->get()
+                ->groupBy(fn ($item) => $item->perusahaan_id . ':' . ($item->pembimbing_id ?? 'tanpa-pembimbing'))
                 ->map(function ($group) {
                     return [
                         'id' => $group->first()->perusahaan_id,
                         'perusahaan' => $group->first()->perusahaan->nama_perusahaan,
                         'siswa' => $group->pluck('siswa.nama_siswa')->implode(', '),
-                        'pembimbing' => $group->first()->pembimbing->nama_pembimbing ?? '-'
+                        'pembimbing' => $group->first()->pembimbing->nama_pembimbing ?? '-',
+                        'pembimbing_id' => $group->first()->pembimbing_id,
                     ];
                 })->values();
 
@@ -102,8 +114,8 @@ class MonitoringController extends Controller
                 ->addColumn('aksi', function ($row) {
                     return '
                         <button type="button" class="btn btn-sm btn-warning btn-edit-pembimbing" data-id="' . $row['id'] . '" data-pembimbing="' . $row['pembimbing'] . '">Edit Pembimbing</button>
-                        <a href="' . route('monitoring.cetak-monitoring', $row['id']) . '" target="_blank" class="btn btn-sm btn-success btn-cetak" data-id="' . $row['id'] . '">Cetak</a>
-                        <a href="' . route('monitoring.cetak-sppd', $row['id']) . '" target="_blank" class="btn btn-sm btn-info btn-cetak" data-id="' . $row['id'] . '">Cetak SPPD</a>';
+                        <a href="' . route('monitoring.cetak-monitoring', ['id' => $row['id'], 'pembimbing_id' => $row['pembimbing_id']]) . '" target="_blank" class="btn btn-sm btn-success btn-cetak" data-id="' . $row['id'] . '">Cetak</a>
+                        <a href="' . route('monitoring.cetak-sppd', ['id' => $row['id'], 'pembimbing_id' => $row['pembimbing_id']]) . '" target="_blank" class="btn btn-sm btn-info btn-cetak" data-id="' . $row['id'] . '">Cetak SPPD</a>';
                 })
                 ->rawColumns(['aksi'])
                 ->make(true);
@@ -137,6 +149,23 @@ class MonitoringController extends Controller
             $builder->where('jenis_guru', 'adaptif_normatif')
                 ->orWhere('jurusan_id', auth()->user()->jurusan_id);
         });
+    }
+
+    private function getAuthorizedPembimbingId(): ?int
+    {
+        $authUser = auth()->user();
+
+        if (!$authUser || $authUser->role !== 'pembimbing') {
+            return null;
+        }
+
+        $pembimbingId = Pembimbing::query()
+            ->where('nip_pembimbing', (string) $authUser->username)
+            ->value('id');
+
+        abort_if(empty($pembimbingId), 403, 'Data pembimbing untuk akun ini tidak ditemukan.');
+
+        return (int) $pembimbingId;
     }
 
 
@@ -215,7 +244,7 @@ class MonitoringController extends Controller
     }
 
 
-    public function cetakMonitoring($id)
+    public function cetakMonitoring(Request $request, $id)
     {
         Carbon::setLocale('id');
 
@@ -225,9 +254,8 @@ class MonitoringController extends Controller
         $tanggalBerangkat = session('tanggal_berangkat')
             ?: Carbon::now()->translatedFormat('d F Y');
 
-        $data = TempatPkl::with(['siswa.kelas.jurusan', 'perusahaan', 'pembimbing'])
-            ->where('perusahaan_id', $id)
-            ->get();
+        $data = $this->monitoringPrintQuery($request, $id)->get();
+        abort_if($data->isEmpty(), 404, 'Data monitoring tidak ditemukan.');
 
 
         $pdf = pdf::loadView('monitoring.cetak_st', compact('data') + [
@@ -245,9 +273,20 @@ class MonitoringController extends Controller
 
     public function exportExcel()
     {
-        $data = TempatPkl::with(['siswa.kelas.jurusan', 'perusahaan', 'pembimbing'])
-            ->orderBy('perusahaan_id')
-            ->get();
+        $query = TempatPkl::with([
+            'siswa.kelas.jurusan',
+            'siswa.kelompokBimbingan.pembimbing',
+            'siswa.kelompokBimbingan.pembimbings',
+            'perusahaan',
+            'pembimbing',
+        ])
+            ->orderBy('perusahaan_id');
+
+        if ($pembimbingAuthId = $this->getAuthorizedPembimbingId()) {
+            $query->where('pembimbing_id', $pembimbingAuthId);
+        }
+
+        $data = $query->get();
 
         if ($data->isEmpty()) {
             return response()->json(['message' => 'Tidak ada data untuk diekspor'], 404);
@@ -282,7 +321,7 @@ class MonitoringController extends Controller
 
         $row = 2;
 
-        // Kelompokkan data berdasarkan pembimbing sekolah
+        // Kelompokkan data berdasarkan pembimbing monitoring.
         $grouped = $data->groupBy('pembimbing_id');
 
         foreach ($grouped as $pembimbingId => $items) {
@@ -321,8 +360,8 @@ class MonitoringController extends Controller
                 $row++;
             }
 
-            // Merge pembimbing-related columns (K, L, N) untuk setiap kelompok pembimbing
-            foreach (['K', 'L', 'N'] as $column) {
+            // Merge monitoring and company-count columns for each monitoring supervisor.
+            foreach (['K', 'N'] as $column) {
                 if ($firstRow < $lastRow) {
                     $sheet->mergeCells($column . $firstRow . ':' . $column . $lastRow);
                 }
@@ -330,9 +369,10 @@ class MonitoringController extends Controller
 
             $firstItem = $items->first();
 
-            // Isi merged cell pembimbing (tampil sekali saja)
-            $sheet->setCellValue('K' . $firstRow, $firstItem->nama_pembimbing ?? '-');
-            $sheet->setCellValue('L' . $firstRow, $firstItem->pembimbing->nama_pembimbing ?? '-');
+            $sheet->setCellValue('K' . $firstRow, $firstItem->pembimbing->nama_pembimbing ?? '-');
+            foreach ($items as $itemIndex => $item) {
+                $sheet->setCellValue('L' . ($firstRow + $itemIndex), $this->pembimbingSekolahName($item->siswa));
+            }
             $sheet->setCellValue('N' . $firstRow, $companyCount);
         }
 
@@ -353,9 +393,20 @@ class MonitoringController extends Controller
      */
     public function downloadExport()
     {
-        $data = TempatPkl::with(['siswa.kelas.jurusan', 'perusahaan', 'pembimbing'])
-            ->orderBy('perusahaan_id')
-            ->get();
+        $query = TempatPkl::with([
+            'siswa.kelas.jurusan',
+            'siswa.kelompokBimbingan.pembimbing',
+            'siswa.kelompokBimbingan.pembimbings',
+            'perusahaan',
+            'pembimbing',
+        ])
+            ->orderBy('perusahaan_id');
+
+        if ($pembimbingAuthId = $this->getAuthorizedPembimbingId()) {
+            $query->where('pembimbing_id', $pembimbingAuthId);
+        }
+
+        $data = $query->get();
 
         if ($data->isEmpty()) {
             return response()->json(['message' => 'Tidak ada data untuk diekspor'], 404);
@@ -390,7 +441,7 @@ class MonitoringController extends Controller
 
         $row = 2;
 
-        // Kelompokkan data berdasarkan pembimbing sekolah
+        // Kelompokkan data berdasarkan pembimbing monitoring.
         $grouped = $data->groupBy('pembimbing_id');
 
         foreach ($grouped as $pembimbingId => $items) {
@@ -419,16 +470,18 @@ class MonitoringController extends Controller
                 $row++;
             }
 
-            // Merge pembimbing-related columns (K, L, N) untuk setiap kelompok pembimbing
-            foreach (['K', 'L', 'N'] as $column) {
+            // Merge monitoring and company-count columns for each monitoring supervisor.
+            foreach (['K', 'N'] as $column) {
                 if ($firstRow < $lastRow) {
                     $sheet->mergeCells($column . $firstRow . ':' . $column . $lastRow);
                 }
             }
 
             $firstItem = $items->first();
-            $sheet->setCellValue('K' . $firstRow, $firstItem->nama_pembimbing ?? '-');
-            $sheet->setCellValue('L' . $firstRow, $firstItem->pembimbing->nama_pembimbing ?? '-');
+            $sheet->setCellValue('K' . $firstRow, $firstItem->pembimbing->nama_pembimbing ?? '-');
+            foreach ($items as $itemIndex => $item) {
+                $sheet->setCellValue('L' . ($firstRow + $itemIndex), $this->pembimbingSekolahName($item->siswa));
+            }
             $sheet->setCellValue('N' . $firstRow, $companyCount);
         }
 
@@ -456,7 +509,7 @@ class MonitoringController extends Controller
     //     return $pdf->stream('surat-perjalanan-dinas.pdf'); // atau ->download('namafile.pdf');
     // }
 
-    public function cetakSppd($id)
+    public function cetakSppd(Request $request, $id)
     {
         Carbon::setLocale('id');
 
@@ -467,10 +520,8 @@ class MonitoringController extends Controller
             ?: Carbon::now()->translatedFormat('d F Y');
 
 
-        // Ambil SEMUA siswa terkait perusahaan (id=perusahaan_id)
-        $data = TempatPkl::with(['siswa.kelas.jurusan', 'perusahaan', 'pembimbing'])
-            ->where('perusahaan_id', $id)
-            ->get();
+        $data = $this->monitoringPrintQuery($request, $id)->get();
+        abort_if($data->isEmpty(), 404, 'Data monitoring tidak ditemukan.');
 
         // tanggal berlaku untuk semua
         $pdf = PDF::loadView('monitoring.cetak_sppd', [
@@ -484,6 +535,36 @@ class MonitoringController extends Controller
         ]);
         $pdf->setOption(['enable_remote' => true, 'isHTML5ParserEnabled' => true]);
         return $pdf->stream('sppd.pdf');
+    }
+
+    private function pembimbingSekolahName(?Siswa $siswa): string
+    {
+        if (!$siswa) {
+            return '-';
+        }
+
+        $kelompok = $siswa->kelompokBimbingan->sortByDesc('id')->first();
+        $pembimbing = $kelompok?->pembimbing
+            ?? $kelompok?->pembimbings->sortBy('nama_pembimbing')->first();
+
+        return $pembimbing?->nama_pembimbing ?? '-';
+    }
+
+    private function monitoringPrintQuery(Request $request, $perusahaanId)
+    {
+        $query = TempatPkl::with(['siswa.kelas.jurusan', 'perusahaan', 'pembimbing'])
+            ->where('perusahaan_id', $perusahaanId);
+
+        $pembimbingAuthId = $this->getAuthorizedPembimbingId();
+        if (!empty($pembimbingAuthId)) {
+            return $query->where('pembimbing_id', $pembimbingAuthId);
+        }
+
+        if ($request->filled('pembimbing_id')) {
+            $query->where('pembimbing_id', $request->integer('pembimbing_id'));
+        }
+
+        return $query;
     }
 
 

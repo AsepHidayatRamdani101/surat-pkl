@@ -15,6 +15,7 @@ use App\Http\Controllers\MateriController;
 use App\Http\Controllers\TugasPembekalanController;
 use App\Http\Controllers\AbsensiPembekalanController;
 use App\Http\Controllers\PembinaanPembekalanController;
+use App\Http\Controllers\PklController;
 use App\Http\Controllers\JawabanTugasSiswaController;
 use App\Http\Controllers\NilaiTugasPembekalanController;
 use App\Http\Controllers\NilaiSikapPembekalanController;
@@ -63,6 +64,12 @@ Route::get('/dashboard/panitia/top-guru/export-pdf', [DashboardController::class
 Route::middleware('auth')->group(function () {
     Route::view('/evaluasi/jurnal', 'evaluasi.penilaian_jurnal')->name('evaluasi.jurnal');
     Route::view('/evaluasi/laporan-ppt', 'evaluasi.penilaian_laporan_ppt')->name('evaluasi.laporan-ppt');
+
+    Route::get('/pkl/{module}', [PklController::class, 'index'])->name('pkl.index');
+    Route::get('/pkl/{module}/data', [PklController::class, 'data'])->name('pkl.data');
+    Route::post('/pkl/{module}', [PklController::class, 'store'])->name('pkl.store');
+    Route::put('/pkl/{module}/{id}', [PklController::class, 'update'])->name('pkl.update');
+    Route::delete('/pkl/{module}/{id}', [PklController::class, 'destroy'])->name('pkl.destroy');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

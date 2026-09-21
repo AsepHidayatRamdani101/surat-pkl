@@ -6,6 +6,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\AbsensiPembekalan;
 use App\Models\Bimbingan;
 use App\Models\Kelas;
+use App\Models\NilaiTugasPembekalan;
 use App\Models\Pembimbing;
 use App\Models\Sekolah;
 use App\Models\Siswa;
@@ -517,6 +518,153 @@ class PembekalanController extends Controller
         }
 
         return $pdf->download($filename);
+    }
+
+    public function laporanPembekalanPklPembimbing(Request $request)
+    {
+        $pembimbing = $this->currentPembimbing();
+        $filters = $this->laporanPembekalanPklFilters($request);
+        $absensi = $this->laporanPembekalanPklAbsensiQuery($pembimbing, $filters)->get();
+        $nilaiTugas = $this->laporanPembekalanPklNilaiTugasQuery($pembimbing, $filters)->get();
+
+        $summary = [
+            'total_absensi' => $absensi->count(),
+            'hadir' => $absensi->where('status', 'hadir')->count(),
+            'izin' => $absensi->where('status', 'izin')->count(),
+            'sakit' => $absensi->where('status', 'sakit')->count(),
+            'alpa' => $absensi->where('status', 'alpa')->count(),
+            'total_nilai' => $nilaiTugas->count(),
+            'rata_nilai' => $nilaiTugas->count() ? round((float) $nilaiTugas->avg('nilai'), 2) : 0,
+        ];
+
+        return view('pembekalan.laporan_pkl_pembimbing', compact('pembimbing', 'filters', 'absensi', 'nilaiTugas', 'summary'));
+    }
+
+    public function exportLaporanPembekalanPklAbsensi(Request $request)
+    {
+        $pembimbing = $this->currentPembimbing();
+        $filters = $this->laporanPembekalanPklFilters($request);
+        $data = $this->laporanPembekalanPklAbsensiQuery($pembimbing, $filters)->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Absensi Pembekalan');
+        $sheet->setCellValue('A1', 'Laporan Absensi Pembekalan PKL');
+        $sheet->setCellValue('A2', 'Pembimbing');
+        $sheet->setCellValue('B2', $pembimbing->nama_pembimbing);
+
+        $headers = ['No', 'Tanggal', 'Siswa', 'Kelas', 'Sesi', 'Status', 'Atribut Lengkap', 'Keterangan'];
+        foreach ($headers as $index => $header) {
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($index + 1) . '4', $header);
+        }
+
+        $row = 5;
+        foreach ($data as $index => $item) {
+            $sheet->setCellValue('A' . $row, $index + 1);
+            $sheet->setCellValue('B' . $row, $item->tanggal_absensi ? date('d-m-Y', strtotime($item->tanggal_absensi)) : '-');
+            $sheet->setCellValue('C' . $row, $item->siswa->nama_siswa ?? '-');
+            $sheet->setCellValue('D' . $row, $item->siswa->kelas->nama_kelas ?? '-');
+            $sheet->setCellValue('E' . $row, ucfirst($item->sesi_absensi ?? '-'));
+            $sheet->setCellValue('F' . $row, strtoupper($item->status ?? '-'));
+            $sheet->setCellValue('G' . $row, $item->atribut_lengkap ? 'Ya' : 'Tidak');
+            $sheet->setCellValue('H' . $row, $item->keterangan ?? '-');
+            $row++;
+        }
+
+        foreach (range('A', 'H') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $filename = 'laporan-absensi-pembekalan-pkl-' . now()->format('Ymd_His') . '.xlsx';
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    public function exportLaporanPembekalanPklNilaiTugas(Request $request)
+    {
+        $pembimbing = $this->currentPembimbing();
+        $filters = $this->laporanPembekalanPklFilters($request);
+        $data = $this->laporanPembekalanPklNilaiTugasQuery($pembimbing, $filters)->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Nilai Tugas');
+        $sheet->setCellValue('A1', 'Laporan Nilai Tugas Pembekalan PKL');
+        $sheet->setCellValue('A2', 'Pembimbing');
+        $sheet->setCellValue('B2', $pembimbing->nama_pembimbing);
+
+        $headers = ['No', 'Tanggal Dinilai', 'Siswa', 'Kelas', 'Tugas', 'Tanggal Submit', 'Nilai', 'Catatan'];
+        foreach ($headers as $index => $header) {
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($index + 1) . '4', $header);
+        }
+
+        $row = 5;
+        foreach ($data as $index => $item) {
+            $jawaban = $item->jawabanTugasSiswa;
+            $sheet->setCellValue('A' . $row, $index + 1);
+            $sheet->setCellValue('B' . $row, $item->dinilai_at ? date('d-m-Y H:i', strtotime($item->dinilai_at)) : '-');
+            $sheet->setCellValue('C' . $row, $jawaban->siswa->nama_siswa ?? '-');
+            $sheet->setCellValue('D' . $row, $jawaban->siswa->kelas->nama_kelas ?? '-');
+            $sheet->setCellValue('E' . $row, $jawaban->tugasPembekalan->judul_tugas ?? '-');
+            $sheet->setCellValue('F' . $row, $jawaban?->submitted_at ? date('d-m-Y H:i', strtotime($jawaban->submitted_at)) : '-');
+            $sheet->setCellValue('G' . $row, $item->nilai);
+            $sheet->setCellValue('H' . $row, $item->catatan ?? '-');
+            $row++;
+        }
+
+        foreach (range('A', 'H') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $filename = 'laporan-nilai-tugas-pembekalan-pkl-' . now()->format('Ymd_His') . '.xlsx';
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    private function currentPembimbing(): Pembimbing
+    {
+        $pembimbing = Pembimbing::where('nip_pembimbing', (string) auth()->user()->username)->first();
+        abort_if(!$pembimbing, 403, 'Data pembimbing untuk akun ini tidak ditemukan.');
+
+        return $pembimbing;
+    }
+
+    private function laporanPembekalanPklFilters(Request $request): array
+    {
+        return $request->validate([
+            'tanggal_awal' => ['nullable', 'date'],
+            'tanggal_akhir' => ['nullable', 'date', 'after_or_equal:tanggal_awal'],
+        ]);
+    }
+
+    private function laporanPembekalanPklAbsensiQuery(Pembimbing $pembimbing, array $filters)
+    {
+        return AbsensiPembekalan::with(['siswa.kelas'])
+            ->where('pembimbing_id', $pembimbing->id)
+            ->when(!empty($filters['tanggal_awal']), fn($query) => $query->whereDate('tanggal_absensi', '>=', $filters['tanggal_awal']))
+            ->when(!empty($filters['tanggal_akhir']), fn($query) => $query->whereDate('tanggal_absensi', '<=', $filters['tanggal_akhir']))
+            ->orderByDesc('tanggal_absensi')
+            ->orderByDesc('id');
+    }
+
+    private function laporanPembekalanPklNilaiTugasQuery(Pembimbing $pembimbing, array $filters)
+    {
+        return NilaiTugasPembekalan::with(['jawabanTugasSiswa.siswa.kelas', 'jawabanTugasSiswa.tugasPembekalan'])
+            ->where('pembimbing_id', $pembimbing->id)
+            ->when(!empty($filters['tanggal_awal']), fn($query) => $query->whereDate('dinilai_at', '>=', $filters['tanggal_awal']))
+            ->when(!empty($filters['tanggal_akhir']), fn($query) => $query->whereDate('dinilai_at', '<=', $filters['tanggal_akhir']))
+            ->orderByDesc('dinilai_at')
+            ->orderByDesc('id');
     }
 
     private function toBase64Image(string $path): ?string

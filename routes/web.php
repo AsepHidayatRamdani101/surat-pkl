@@ -266,6 +266,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pembekalan/laporan', [PembekalanController::class, 'laporan'])->name('pembekalan.laporan');
     Route::get('/pembekalan/laporan/export-excel', [PembekalanController::class, 'exportExcel'])->name('pembekalan.laporan.export-excel');
     Route::get('/pembekalan/laporan/export-pdf', [PembekalanController::class, 'exportPdf'])->name('pembekalan.laporan.export-pdf');
+    Route::get('/pembekalan/laporan-pembekalan-pkl', [PembekalanController::class, 'laporanPembekalanPklPembimbing'])->middleware('can:pembimbing')->name('pembekalan.laporan-pembekalan-pkl');
+    Route::get('/pembekalan/laporan-pembekalan-pkl/export-absensi', [PembekalanController::class, 'exportLaporanPembekalanPklAbsensi'])->middleware('can:pembimbing')->name('pembekalan.laporan-pembekalan-pkl.export-absensi');
+    Route::get('/pembekalan/laporan-pembekalan-pkl/export-nilai-tugas', [PembekalanController::class, 'exportLaporanPembekalanPklNilaiTugas'])->middleware('can:pembimbing')->name('pembekalan.laporan-pembekalan-pkl.export-nilai-tugas');
 
     // Laporan Absensi
     Route::get('/pembekalan/laporan-absensi', [AbsensiPembekalanController::class, 'laporan'])->name('pembekalan.laporan-absensi');

@@ -666,6 +666,11 @@ return [
                     'url'  => 'pembekalan/pembinaan',
                     'icon' => 'fas fa-user-shield',
                 ],
+                [
+                    'text' => 'Laporan Pembekalan PKL',
+                    'url'  => 'pembekalan/laporan-pembekalan-pkl',
+                    'icon' => 'fas fa-file-export',
+                ],
             ],
         ],
 

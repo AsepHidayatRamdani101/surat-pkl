@@ -14,6 +14,8 @@ class AbsensiControl extends Model
     protected $fillable = [
         'id',
         'is_active',
+        'periode_dimulai_pada',
+        'interval_hari',
         'updated_by',
     ];
 

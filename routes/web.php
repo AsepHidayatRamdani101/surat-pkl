@@ -65,6 +65,10 @@ Route::middleware('auth')->group(function () {
     Route::view('/evaluasi/jurnal', 'evaluasi.penilaian_jurnal')->name('evaluasi.jurnal');
     Route::view('/evaluasi/laporan-ppt', 'evaluasi.penilaian_laporan_ppt')->name('evaluasi.laporan-ppt');
 
+    Route::get('/pkl/jurnal-rekap', [PklController::class, 'jurnalRekap'])->name('pkl.jurnal-rekap');
+    Route::post('/pkl/jurnal-rekap', [PklController::class, 'simpanJurnalRekap'])->name('pkl.jurnal-rekap.store');
+    Route::post('/pkl/jurnal-rekap/bulk', [PklController::class, 'simpanJurnalRekapBulk'])->name('pkl.jurnal-rekap.bulk');
+
     Route::get('/pkl/{module}', [PklController::class, 'index'])->name('pkl.index');
     Route::get('/pkl/{module}/data', [PklController::class, 'data'])->name('pkl.data');
     Route::post('/pkl/{module}', [PklController::class, 'store'])->name('pkl.store');

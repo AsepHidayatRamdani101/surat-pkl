@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('absensi_controls', function (Blueprint $table) {
             $table->date('periode_dimulai_pada')->nullable()->after('is_active');
-            $table->unsignedSmallInteger('interval_hari')->default(14)->after('periode_dimulai_pada');
+            $table->unsignedSmallInteger('interval_hari')->default(30)->after('periode_dimulai_pada');
         });
 
         Schema::create('absensi_pkls', function (Blueprint $table) {

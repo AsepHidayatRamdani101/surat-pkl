@@ -410,8 +410,6 @@ return [
             'icon' => 'fas fa-briefcase',
             'can'  => 'panitia',
             'submenu' => [
-                ['text' => 'Setting Absen PKL', 'url' => 'pkl/setting-absensi', 'icon' => 'fas fa-calendar-alt'],
-                ['text' => 'Data Absensi oleh Pembimbing', 'url' => 'pkl/absensi-pembimbing', 'icon' => 'fas fa-user-check'],
                 ['text' => 'Data Resume PKL per Bulan', 'url' => 'pkl/resume', 'icon' => 'fas fa-file-alt'],
                 ['text' => 'Data Upload Absensi Jurnal PKL', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
             ],
@@ -610,7 +608,6 @@ return [
             'submenu' => [
                 ['text' => 'Data Resume PKL per Bulan', 'url' => 'pkl/resume', 'icon' => 'fas fa-file-alt'],
                 ['text' => 'Data Upload Absensi Jurnal PKL', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
-                ['text' => 'Input Absensi PKL', 'url' => 'pkl/input-absensi', 'icon' => 'fas fa-user-check'],
             ],
         ],
 

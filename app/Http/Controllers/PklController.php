@@ -78,7 +78,8 @@ class PklController extends Controller
         }
 
         $record = $this->newRecord($definition['type'], $request);
-        return response()->json($record, 201);
+        $status = $definition['type'] === 'resume' && !$record->wasRecentlyCreated ? 200 : 201;
+        return response()->json($record, $status);
     }
 
     public function update(Request $request, string $module, int $id)
@@ -87,6 +88,9 @@ class PklController extends Controller
         abort_if($definition['type'] === 'setting', 405);
         $record = $this->findRecord($definition['type'], $id);
         $record->update($this->validatedRecord($definition['type'], $request, $record));
+        if ($definition['type'] === 'resume') {
+            $this->appendResumeFiles($record, $request->file('files', []) ?? []);
+        }
 
         return response()->json($record->fresh());
     }
@@ -96,8 +100,11 @@ class PklController extends Controller
         $definition = $this->definition($module);
         abort_if($definition['type'] === 'setting', 405);
         $record = $this->findRecord($definition['type'], $id);
-        if (!empty($record->file_path)) {
-            Storage::disk('public')->delete($record->file_path);
+        $filePaths = $definition['type'] === 'resume'
+            ? $record->attachments
+            : array_filter([$record->file_path]);
+        if ($filePaths) {
+            Storage::disk('public')->delete($filePaths);
         }
         $record->delete();
 
@@ -186,7 +193,7 @@ class PklController extends Controller
                 'bulan' => $bulan->format('Y-m'),
                 'judul' => $resume->judul ?? null,
                 'isi_resume' => $resume->isi_resume ?? null,
-                'file_path' => $resume->file_path ?? null,
+                'file_paths' => $resume->attachments ?? [],
                 'status' => $resume->status ?? null,
             ];
         });
@@ -285,6 +292,23 @@ class PklController extends Controller
     private function newRecord(string $type, Request $request)
     {
         $data = $this->validatedRecord($type, $request);
+
+        if ($type === 'resume') {
+            $data['bulan'] = Carbon::createFromFormat('Y-m', $data['bulan'])
+                ->startOfMonth()
+                ->toDateString();
+            $existing = ResumePklBulanan::where('siswa_id', $data['siswa_id'])
+                ->whereDate('bulan', $data['bulan'])
+                ->first();
+            $record = ResumePklBulanan::updateOrCreate(
+                ['siswa_id' => $data['siswa_id'], 'bulan' => $data['bulan']],
+                $data
+            );
+            $this->appendResumeFiles($record, $request->file('files', []) ?? []);
+
+            return $record;
+        }
+
         return $this->modelClass($type)::create($data);
     }
 
@@ -305,7 +329,8 @@ class PklController extends Controller
                 'bulan' => ['required', 'date_format:Y-m'],
                 'judul' => ['required', 'string', 'max:150'],
                 'isi_resume' => ['required', 'string', 'max:10000'],
-                'file' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
+                'files' => ['nullable', 'array', 'max:10'],
+                'files.*' => ['file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:5120'],
                 'status' => ['nullable', Rule::in(['dikirim', 'ditinjau', 'disetujui', 'perlu_revisi'])],
             ],
             default => [
@@ -317,7 +342,7 @@ class PklController extends Controller
             ],
         };
         $data = $request->validate($rules);
-        unset($data['file']);
+        unset($data['file'], $data['files']);
         $data['siswa_id'] = $siswaId;
 
         if ($type === 'absensi') {
@@ -328,7 +353,7 @@ class PklController extends Controller
             $data['status'] = $request->input('status');
         }
 
-        if ($request->hasFile('file')) {
+        if ($type !== 'resume' && $request->hasFile('file')) {
             if ($record?->file_path) {
                 Storage::disk('public')->delete($record->file_path);
             }
@@ -336,6 +361,35 @@ class PklController extends Controller
         }
 
         return $data;
+    }
+
+    private function appendResumeFiles(ResumePklBulanan $record, array $files): void
+    {
+        if (!$files) {
+            return;
+        }
+
+        $newPaths = [];
+        try {
+            foreach ($files as $file) {
+                $path = $file->store('pkl', 'public');
+                if (!$path) {
+                    throw new \RuntimeException('Lampiran resume gagal disimpan.');
+                }
+                $newPaths[] = $path;
+            }
+
+            $record->file_paths = array_values(array_unique(array_merge(
+                $record->file_paths ?? [],
+                $newPaths
+            )));
+            $record->save();
+        } catch (\Throwable $exception) {
+            if ($newPaths) {
+                Storage::disk('public')->delete($newPaths);
+            }
+            throw $exception;
+        }
     }
 
     private function requestedSiswaId(Request $request): int

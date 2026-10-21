@@ -145,6 +145,7 @@
                                         <th>Bulan</th>
                                         <th>Judul</th>
                                         <th>Resume</th>
+                                        <th>Berkas</th>
                                     <th>Status</th>@else<th>Tanggal</th>
                                         <th>Judul</th>
                                         <th>Keterangan</th>
@@ -221,8 +222,11 @@
                             <div class="form-group"><label>Isi Resume</label>
                                 <textarea name="isi_resume" id="isi_resume" class="form-control" rows="5" required></textarea>
                             </div>
-                            <div class="form-group"><label>Lampiran</label><input type="file" name="file"
-                                    class="form-control-file" accept=".pdf,.doc,.docx"></div>
+                            <div class="form-group"><label>Lampiran (maksimal 10 file per unggahan, 5 MB per file)</label>
+                                <input type="file" name="files[]" class="form-control-file" multiple
+                                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                <small class="form-text text-muted">Saat mengedit, file baru ditambahkan ke lampiran yang sudah ada.</small>
+                            </div>
                         @else
                             <div class="form-row">
                                 <div class="form-group col-md-6"><label>Tanggal</label><input type="date"
@@ -247,10 +251,12 @@
 @endif
 
 @section('js')
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(function() {
             const module = @json($module),
                 type = @json($type),
+                isResumeInput = module === 'input-resume',
                 endpoint = `/pkl/${module}`,
                 csrf = $('meta[name="csrf-token"]').attr('content'),
                 dateValue = value => value ? value.substring(0, 10) : '';
@@ -305,8 +311,12 @@
                     }
                     $('#resumeEmptyState').addClass('d-none');
                     const html = rows.map((row, index) => {
-                        const lampiran = row.file_path ?
-                            `<a href="/storage/${row.file_path}" target="_blank">Lihat</a>` : '-';
+                        const filePaths = row.file_paths?.length ? row.file_paths :
+                            (row.file_path ? [row.file_path] : []);
+                        const lampiran = filePaths.length ? filePaths.map((path, fileIndex) => {
+                            const url = path.split('/').map(encodeURIComponent).join('/');
+                            return `<a href="/storage/${url}" target="_blank" rel="noopener">File ${fileIndex + 1}</a>`;
+                        }).join('<br>') : '-';
                         return `<tr data-siswa-id="${row.siswa_id}">
                                 <td>${index + 1}</td>
                                 <td>${escapeHtml(row.nama_siswa)}</td>
@@ -531,6 +541,16 @@
                         }, {
                             data: 'isi_resume'
                         }, {
+                            data: null,
+                            render: record => {
+                                const filePaths = record.file_paths?.length ? record.file_paths :
+                                    (record.file_path ? [record.file_path] : []);
+                                return filePaths.length ? filePaths.map((path, index) => {
+                                    const url = path.split('/').map(encodeURIComponent).join('/');
+                                    return `<a href="/storage/${url}" target="_blank" rel="noopener">File ${index + 1}</a>`;
+                                }).join('<br>') : '-';
+                            }
+                        }, {
                             data: 'status'
                         },
                     @else
@@ -576,11 +596,27 @@
                 $('#pembimbing_id').val(record.pembimbing_id);
                 $('#recordModal').modal('show');
             });
-            $('#recordForm').on('submit', function(event) {
+            $('#recordForm').on('submit', async function(event) {
                 event.preventDefault();
                 const recordId = $('#recordId').val(),
-                    formData = new FormData(this);
+                    formData = new FormData(this),
+                    $submitButton = $(this).find('[type="submit"]');
+
+                if (isResumeInput) {
+                    const confirmation = await Swal.fire({
+                        title: recordId ? 'Perbarui resume?' : 'Simpan resume?',
+                        text: 'Pastikan data resume bulanan sudah benar.',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: recordId ? 'Ya, perbarui' : 'Ya, simpan',
+                        cancelButtonText: 'Batal'
+                    });
+
+                    if (!confirmation.isConfirmed) return;
+                }
+
                 if (recordId) formData.append('_method', 'PUT');
+                $submitButton.prop('disabled', true);
                 $.ajax({
                     url: recordId ? `${endpoint}/${recordId}` : endpoint,
                     method: 'POST',
@@ -593,15 +629,34 @@
                 }).done(() => {
                     $('#recordModal').modal('hide');
                     table.ajax.reload(null, false);
-                }).fail(xhr => Swal.fire('Gagal', xhr.responseJSON?.message ||
-                    'Data tidak dapat disimpan.', 'error'));
+                    if (isResumeInput) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: recordId ? 'Resume diperbarui' : 'Resume tersimpan',
+                            text: 'Data resume bulanan berhasil disimpan.',
+                            timer: 1800,
+                            showConfirmButton: false
+                        });
+                    }
+                }).fail(xhr => {
+                    const errors = xhr.responseJSON?.errors;
+                    Swal.fire({
+                        icon: 'error',
+                        title: isResumeInput ? 'Gagal menyimpan resume' : 'Gagal',
+                        text: errors ? Object.values(errors).flat().join('\n') :
+                            xhr.responseJSON?.message || 'Data tidak dapat disimpan.'
+                    });
+                }).always(() => $submitButton.prop('disabled', false));
             });
             $('#pklTable').on('click', '.delete-record', function() {
                 const recordId = table.row($(this).closest('tr')).data().id;
                 Swal.fire({
-                    title: 'Hapus data?',
+                    title: isResumeInput ? 'Hapus resume bulanan?' : 'Hapus data?',
+                    text: isResumeInput ? 'Resume untuk bulan ini akan dihapus.' : '',
                     icon: 'warning',
-                    showCancelButton: true
+                    showCancelButton: true,
+                    confirmButtonText: isResumeInput ? 'Ya, hapus' : 'Ya',
+                    cancelButtonText: 'Batal'
                 }).then(result => {
                     if (result.isConfirmed) $.ajax({
                         url: `${endpoint}/${recordId}`,
@@ -609,7 +664,22 @@
                         headers: {
                             'X-CSRF-TOKEN': csrf
                         }
-                    }).done(() => table.ajax.reload(null, false));
+                    }).done(() => {
+                        table.ajax.reload(null, false);
+                        if (isResumeInput) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Resume dihapus',
+                                text: 'Data resume bulanan berhasil dihapus.',
+                                timer: 1800,
+                                showConfirmButton: false
+                            });
+                        }
+                    }).fail(xhr => Swal.fire({
+                        icon: 'error',
+                        title: isResumeInput ? 'Gagal menghapus resume' : 'Gagal',
+                        text: xhr.responseJSON?.message || 'Data tidak dapat dihapus.'
+                    }));
                 });
             });
         });

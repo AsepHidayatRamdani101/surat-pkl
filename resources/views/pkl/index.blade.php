@@ -4,6 +4,7 @@
 
 @section('title', $title)
 
+
 @section('content_header')
     <h1>
         {{ $title }}</h1>
@@ -176,7 +177,8 @@
 
 @if ($type !== 'setting' && !($type === 'resume' && !$isSiswa) && !($type === 'jurnal' && !$isSiswa))
     <div class="modal fade" id="recordModal">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-lg ">
+
             <form id="recordForm" enctype="multipart/form-data">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -197,6 +199,7 @@
                         @endif
                         @if ($type === 'absensi')
                             @if ($isPanitia)
+
                                 <div class="form-group"><label>Pembimbing</label><select name="pembimbing_id"
                                         id="pembimbing_id" class="form-control" required>
                                         <option value="">Pilih pembimbing</option>
@@ -244,16 +247,27 @@
                             </div>
                         @else
                             <div class="form-row">
-                                <div class="form-group col-md-6"><label>Tanggal</label><input type="date"
-                                        name="tanggal" id="tanggal" class="form-control" required></div>
-                                <div class="form-group col-md-6"><label>Judul Jurnal</label><input type="text"
-                                        name="judul" id="judul" class="form-control" required></div>
+                                <div class="form-group col-md-6">
+                                    <label for="tanggal">Tanggal</label>
+                                    <input type="date" name="tanggal" id="tanggal" class="form-control"
+                                        required>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="judul">Judul Jurnal</label>
+                                    <input type="text" name="judul" id="judul" class="form-control"
+                                        required>
+                                </div>
                             </div>
-                            <div class="form-group"><label>Keterangan</label>
-                                <textarea name="keterangan" id="keterangan" class="form-control"></textarea>
+                            <div class="form-group">
+                                <label for="keterangan">Keterangan</label>
+                                <textarea name="keterangan" id="keterangan" class="form-control" rows="5"></textarea>
                             </div>
-                            <div class="form-group"><label>Berkas Jurnal</label><input type="file" name="file"
-                                    class="form-control-file" accept=".pdf,.jpg,.jpeg,.png"></div>
+                            <div class="form-group">
+                                <label for="jurnalFile">Berkas Jurnal</label>
+                                <input type="file" id="jurnalFile" name="file" class="form-control-file"
+                                    accept=".pdf,.jpg,.jpeg,.png">
+                                <small class="form-text text-muted">Format PDF atau gambar, maksimal 5 MB.</small>
+                            </div>
                         @endif
                     </div>
                     <div class="modal-footer"><button type="button" class="btn btn-secondary"
@@ -516,6 +530,7 @@
                 loadRekap(null);
                 return;
             @endif
+            $('#recordModal').appendTo('body');
             const escapeTableText = value => $('<div>').text(value ?? '').html()
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
@@ -589,7 +604,8 @@
                                 const filePaths = record.file_paths?.length ? record.file_paths :
                                     (record.file_path ? [record.file_path] : []);
                                 return filePaths.length ? filePaths.map((path, index) => {
-                                    const url = path.split('/').map(encodeURIComponent).join('/');
+                                    const url = path.split('/').map(encodeURIComponent)
+                                        .join('/');
                                     return `<a href="/storage/${url}" target="_blank" rel="noopener">File ${index + 1}</a>`;
                                 }).join('<br>') : '-';
                             }
@@ -691,8 +707,8 @@
                     Swal.fire({
                         icon: 'error',
                         title: isResumeInput ? 'Gagal menyimpan resume' : 'Gagal',
-                        text: errors ? Object.values(errors).flat().join('\n') :
-                            xhr.responseJSON?.message || 'Data tidak dapat disimpan.'
+                        text: errors ? Object.values(errors).flat().join('\n') : xhr
+                            .responseJSON?.message || 'Data tidak dapat disimpan.'
                     });
                 }).always(() => $submitButton.prop('disabled', false));
             });

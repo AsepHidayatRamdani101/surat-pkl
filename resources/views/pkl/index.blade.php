@@ -124,36 +124,47 @@
                         Simpan</button>
                 </div>
             @else
-                <div class="d-flex justify-content-between mb-3">
-                    <h5>{{ $title }}</h5><button class="btn btn-primary btn-sm" id="addRecord"><i
-                            class="fas fa-plus mr-1"></i> Tambah Data</button>
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-3">
+                    <div class="mb-2 mb-sm-0">
+                        <h5 class="mb-1">{{ $title }}</h5>
+                        @if ($type === 'resume' && $isSiswa)
+                            <small class="text-muted">Kelola resume bulanan dan lampiran PKL Anda.</small>
+                        @elseif ($type === 'jurnal' && $isSiswa)
+                            <small class="text-muted">Kelola jurnal kegiatan dan berkas absensi PKL Anda.</small>
+                        @endif
+                    </div>
+                    <button class="btn btn-primary btn-sm align-self-sm-start" id="addRecord">
+                        <i class="fas fa-plus mr-1"></i> Tambah Data
+                    </button>
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-bordered" id="pklTable">
+                    <table class="table table-bordered table-striped table-hover table-sm mb-0" id="pklTable">
                         <thead>
                             <tr>
                                 <th>No</th>
                                 @if (!$isSiswa)
                                     <th>Siswa</th>
                                     <th>Kelas</th>
-                                    @endif @if ($type === 'absensi')
-                                        <th>Pembimbing</th>
-                                        <th>Periode</th>
-                                        <th>Status</th>
-                                        <th>Keterangan</th>
-                                    @elseif ($type === 'resume')
-                                        <th>Bulan</th>
-                                        <th>Judul</th>
-                                        <th>Resume</th>
-                                        <th>Berkas</th>
-                                    <th>Status</th>@else<th>Tanggal</th>
-                                        <th>Judul</th>
-                                        <th>Keterangan</th>
-                                        <th>Berkas</th>
-                                        <th>Status</th>
-                                    @endif
-                                    <th>
-                                        Aksi</th>
+                                @endif
+                                @if ($type === 'absensi')
+                                    <th>Pembimbing</th>
+                                    <th>Periode</th>
+                                    <th>Status</th>
+                                    <th>Keterangan</th>
+                                @elseif ($type === 'resume')
+                                    <th>Bulan</th>
+                                    <th>Judul</th>
+                                    <th>Resume</th>
+                                    <th>Berkas</th>
+                                    <th>Status</th>
+                                @else
+                                    <th>Tanggal</th>
+                                    <th>Judul</th>
+                                    <th>Keterangan</th>
+                                    <th>Berkas</th>
+                                    <th>Status</th>
+                                @endif
+                                <th>Aksi</th>
                             </tr>
                         </thead>
                     </table>
@@ -165,7 +176,7 @@
 
 @if ($type !== 'setting' && !($type === 'resume' && !$isSiswa) && !($type === 'jurnal' && !$isSiswa))
     <div class="modal fade" id="recordModal">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <form id="recordForm" enctype="multipart/form-data">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -222,10 +233,14 @@
                             <div class="form-group"><label>Isi Resume</label>
                                 <textarea name="isi_resume" id="isi_resume" class="form-control" rows="5" required></textarea>
                             </div>
-                            <div class="form-group"><label>Lampiran (maksimal 10 file per unggahan, 5 MB per file)</label>
-                                <input type="file" name="files[]" class="form-control-file" multiple
-                                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-                                <small class="form-text text-muted">Saat mengedit, file baru ditambahkan ke lampiran yang sudah ada.</small>
+                            <div class="form-group">
+                                <label for="resumeFiles">Lampiran</label>
+                                <input type="file" id="resumeFiles" name="files[]" class="form-control-file"
+                                    multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                <small class="form-text text-muted">
+                                    Pilih beberapa file sekaligus (maksimal 10 file per unggahan, 5 MB per file).
+                                    Saat mengedit, file baru ditambahkan ke lampiran yang sudah ada.
+                                </small>
                             </div>
                         @else
                             <div class="form-row">
@@ -501,10 +516,34 @@
                 loadRekap(null);
                 return;
             @endif
+            const escapeTableText = value => $('<div>').text(value ?? '').html()
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
             const table = $('#pklTable').DataTable({
+                processing: true,
+                autoWidth: false,
+                language: {
+                    processing: '<span class="spinner-border spinner-border-sm mr-2" role="status"></span>Memuat data...',
+                    emptyTable: 'Belum ada data untuk ditampilkan.',
+                    zeroRecords: 'Data yang dicari tidak ditemukan.',
+                    info: 'Menampilkan _START_–_END_ dari _TOTAL_ data',
+                    infoEmpty: 'Belum ada data',
+                    infoFiltered: '(difilter dari _MAX_ total data)',
+                    lengthMenu: 'Tampilkan _MENU_ data',
+                    search: 'Cari:',
+                    paginate: {
+                        previous: 'Sebelumnya',
+                        next: 'Berikutnya'
+                    }
+                },
                 ajax: {
                     url: `${endpoint}/data`,
-                    dataSrc: ''
+                    dataSrc: '',
+                    error: () => Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal memuat data',
+                        text: 'Data tidak dapat dimuat. Silakan muat ulang halaman.'
+                    })
                 },
                 columns: [{
                         data: null,
@@ -539,7 +578,11 @@
                         }, {
                             data: 'judul'
                         }, {
-                            data: 'isi_resume'
+                            data: 'isi_resume',
+                            render: value => {
+                                const text = escapeTableText(value || '-');
+                                return `<span class="d-inline-block text-truncate" style="max-width: 320px;" title="${text}">${text}</span>`;
+                            }
                         }, {
                             data: null,
                             render: record => {
@@ -561,11 +604,16 @@
                             data: 'judul'
                         }, {
                             data: 'keterangan',
-                            defaultContent: '-'
+                            defaultContent: '-',
+                            render: value => {
+                                const text = escapeTableText(value || '-');
+                                return `<span class="d-inline-block text-truncate" style="max-width: 280px;" title="${text}">${text}</span>`;
+                            }
                         }, {
                             data: 'file_path',
                             render: value => value ?
-                                `<a href="/storage/${value}" target="_blank">Lihat</a>` : '-'
+                                `<a class="btn btn-outline-primary btn-xs" href="/storage/${value.split('/').map(encodeURIComponent).join('/')}" target="_blank" rel="noopener"><i class="fas fa-paperclip mr-1"></i>Lihat</a>` :
+                                '-'
                         }, {
                             data: 'status'
                         },

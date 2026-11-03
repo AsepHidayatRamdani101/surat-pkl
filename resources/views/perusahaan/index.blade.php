@@ -19,6 +19,9 @@
                             <button class="btn btn-danger btn-sm mr-2" id="btnHapusMultiple" style="display: none;">
                                 <i class="fas fa-trash mr-1"></i> Hapus Pilihan
                             </button>
+                            <a href="{{ route('perusahaan.export-excel') }}" class="btn btn-success btn-sm mr-2">
+                                <i class="fas fa-file-excel mr-1"></i> Export Excel
+                            </a>
                             <button class="btn btn-primary btn-sm" id="btnTambah">
                                 <i class="fas fa-plus mr-1"></i> Tambah Data
                             </button>

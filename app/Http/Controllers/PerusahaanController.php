@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FormatsExcelSheets;
 use App\Models\Perusahaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Yajra\DataTables\Facades\DataTables;
 
 class PerusahaanController extends Controller
 {
+    use FormatsExcelSheets;
+
     
     public function index()
     {
@@ -61,6 +66,93 @@ class PerusahaanController extends Controller
             ->addIndexColumn()
             ->rawColumns(['checkbox', 'aksi', 'alamat', 'maps'])
             ->make(true);
+    }
+
+    public function exportExcel()
+    {
+        $perusahaanList = Perusahaan::orderBy('nama_perusahaan')->get();
+
+        if ($perusahaanList->isEmpty()) {
+            return response()->json(['message' => 'Tidak ada data untuk diekspor'], 404);
+        }
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Data Perusahaan');
+
+        $headers = [
+            'No',
+            'Nama Perusahaan',
+            'Nama Pemilik (PIC)',
+            'No. Telp Pemilik',
+            'Alamat',
+            'Desa',
+            'Kecamatan',
+            'Kabupaten/Kota',
+            'Provinsi',
+            'Link Maps',
+        ];
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '1', $header);
+            $col++;
+        }
+
+        $row = 2;
+        foreach ($perusahaanList as $index => $perusahaan) {
+            $provinsi = $this->findWilayahName(
+                'wilayah:provinces',
+                'https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json',
+                $perusahaan->provinsi_id
+            );
+            $kabupaten = $this->findWilayahName(
+                "wilayah:regencies:{$perusahaan->provinsi_id}",
+                "https://www.emsifa.com/api-wilayah-indonesia/api/regencies/{$perusahaan->provinsi_id}.json",
+                $perusahaan->kabupaten_kota_id
+            );
+            $kecamatan = $this->findWilayahName(
+                "wilayah:districts:{$perusahaan->kabupaten_kota_id}",
+                "https://www.emsifa.com/api-wilayah-indonesia/api/districts/{$perusahaan->kabupaten_kota_id}.json",
+                $perusahaan->kecamatan_id
+            );
+            $desa = $this->findWilayahName(
+                "wilayah:villages:{$perusahaan->kecamatan_id}",
+                "https://www.emsifa.com/api-wilayah-indonesia/api/villages/{$perusahaan->kecamatan_id}.json",
+                $perusahaan->desa_id
+            );
+
+            $mapsUrl = null;
+            if ($perusahaan->latitude !== null && $perusahaan->longitude !== null) {
+                $mapsUrl = 'https://www.google.com/maps?q=' . $perusahaan->latitude . ',' . $perusahaan->longitude;
+            } elseif ($perusahaan->maps_url) {
+                $mapsUrl = $perusahaan->maps_url;
+            }
+
+            $sheet->setCellValue('A' . $row, $index + 1);
+            $sheet->setCellValue('B' . $row, $perusahaan->nama_perusahaan ?? '-');
+            $sheet->setCellValue('C' . $row, $perusahaan->nama_pemilik_perusahaan ?? '-');
+            $sheet->setCellValueExplicit('D' . $row, $perusahaan->telepon_pemilik_perusahaan ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue('E' . $row, $perusahaan->alamat ?? '-');
+            $sheet->setCellValue('F' . $row, $desa ?? '-');
+            $sheet->setCellValue('G' . $row, $kecamatan ?? '-');
+            $sheet->setCellValue('H' . $row, $kabupaten ?? '-');
+            $sheet->setCellValue('I' . $row, $provinsi ?? '-');
+            $sheet->setCellValue('J' . $row, $mapsUrl ?? '-');
+            if ($mapsUrl) {
+                $sheet->getCell('J' . $row)->getHyperlink()->setUrl($mapsUrl);
+            }
+            $row++;
+        }
+
+        $this->applyExcelTableFormatting($sheet, 'J', $row - 1);
+
+        $fileName = 'data_perusahaan_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+        $filePath = storage_path('app/public/' . $fileName);
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($filePath);
+
+        return response()->download($filePath)->deleteFileAfterSend(true);
     }
 
     public function store(Request $request)

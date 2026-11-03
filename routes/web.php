@@ -219,6 +219,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/perusahaan', [PerusahaanController::class, 'index'])->name('perusahaan.index');
     Route::get('/perusahaan/data', [PerusahaanController::class, 'data'])->name('perusahaan.data');
     Route::get('/perusahaan/rekap-wilayah', [PerusahaanController::class, 'rekapWilayah'])->name('perusahaan.rekap-wilayah');
+    Route::get('/perusahaan/export-excel', [PerusahaanController::class, 'exportExcel'])->name('perusahaan.export-excel');
     Route::get('/perusahaan/{id}/wilayah', [PerusahaanController::class, 'wilayahPerusahaan'])->name('perusahaan.wilayah');
     Route::get('/wilayah/provinsi', [PerusahaanController::class, 'provinsi'])->name('wilayah.provinsi');
     Route::get('/wilayah/kabupaten/{provinceId}', [PerusahaanController::class, 'kabupatenKota'])->name('wilayah.kabupaten');

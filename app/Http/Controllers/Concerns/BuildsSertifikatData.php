@@ -97,11 +97,17 @@ trait BuildsSertifikatData
         // Prioritas: input siswa, lalu data sistem (menu Perusahaan & Pembimbing Perusahaan).
         $namaPemilik = $tempatPkl->nama_pemilik_instansi
             ?: ($perusahaan->nama_pemilik_perusahaan ?: null);
+        $nipPemilik = $tempatPkl->nip_pemilik_instansi ?: null;
         $namaPembimbing = $tempatPkl->pemilik_sama_pembimbing
             ? $namaPemilik
             : ($tempatPkl->nama_pembimbing_instansi
                 ?: ($tempatPkl->pembimbingPerusahaan?->nama_pembimbing
                     ?: ($tempatPkl->nama_pembimbing ?: null)));
+        $nipPembimbing = $tempatPkl->pemilik_sama_pembimbing
+            ? $nipPemilik
+            : ($tempatPkl->nip_pembimbing_instansi
+                ?: ($tempatPkl->pembimbingPerusahaan?->NIP
+                    ?: ($tempatPkl->nip_pembimbing ?: null)));
 
         $tanggalMulai = $tempatPkl->tanggal_mulai ? Carbon::parse($tempatPkl->tanggal_mulai) : null;
         $tanggalSelesai = $tempatPkl->tanggal_selesai ? Carbon::parse($tempatPkl->tanggal_selesai) : null;
@@ -121,7 +127,9 @@ trait BuildsSertifikatData
             'tempatPkl' => $tempatPkl,
             'perusahaan' => $perusahaan,
             'namaPemilik' => $namaPemilik,
+            'nipPemilik' => $nipPemilik,
             'namaPembimbing' => $namaPembimbing,
+            'nipPembimbing' => $nipPembimbing,
             'pemilikSamaPembimbing' => (bool) $tempatPkl->pemilik_sama_pembimbing,
             'tanggalMulai' => $tanggalMulai,
             'tanggalSelesai' => $tanggalSelesai,

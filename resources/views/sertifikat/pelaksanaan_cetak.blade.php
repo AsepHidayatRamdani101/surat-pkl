@@ -334,7 +334,12 @@
                         <div>{{ $pemilikSamaPembimbing ? 'Pemilik/Pembimbing' : 'Pembimbing' }} {{ $perusahaan->nama_perusahaan }},</div>
                         <div class="ttd-space"></div>
                         <p class="nama-ttd">{{ $namaPembimbing ?? '____________________' }}</p>
-                        <p class="jabatan">Pembimbing Perusahaan/Instansi</p>
+                        <p class="jabatan">
+                            @if ($nipPembimbing)
+                                NIP. {{ $nipPembimbing }}<br>
+                            @endif
+                            Pembimbing Perusahaan/Instansi
+                        </p>
                     </div>
 
                     <div class="cap-area">
@@ -345,6 +350,9 @@
                             <div style="margin-top: 8px; font-size: 12px; color: #4b5563;">
                                 Mengetahui,<br>Pemilik Perusahaan/Instansi<br><br><br>
                                 <strong style="color:#1f2937; text-decoration: underline;">{{ $namaPemilik ?? '____________________' }}</strong>
+                                @if ($nipPemilik)
+                                    <br>NIP. {{ $nipPemilik }}
+                                @endif
                             </div>
                         @endunless
                     </div>

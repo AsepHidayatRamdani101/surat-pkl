@@ -32,17 +32,24 @@ class SertifikatController extends Controller
         $pemilikSistem = $tempatPkl->perusahaan?->nama_pemilik_perusahaan;
         $pembimbingSistem = $tempatPkl->pembimbingPerusahaan?->nama_pembimbing
             ?: $tempatPkl->nama_pembimbing;
+        $nipPembimbingSistem = $tempatPkl->pembimbingPerusahaan?->NIP
+            ?: $tempatPkl->nip_pembimbing;
 
         $namaPemilik = $tempatPkl->nama_pemilik_instansi ?: $pemilikSistem;
         $namaPembimbing = $tempatPkl->nama_pembimbing_instansi ?: $pembimbingSistem;
+        $nipPemilik = $tempatPkl->nip_pemilik_instansi;
+        $nipPembimbing = $tempatPkl->nip_pembimbing_instansi ?: $nipPembimbingSistem;
 
         return view('sertifikat.form_siswa', compact(
             'siswa',
             'tempatPkl',
             'pemilikSistem',
             'pembimbingSistem',
+            'nipPembimbingSistem',
             'namaPemilik',
-            'namaPembimbing'
+            'namaPembimbing',
+            'nipPemilik',
+            'nipPembimbing'
         ));
     }
 
@@ -52,8 +59,10 @@ class SertifikatController extends Controller
 
         $request->validate([
             'nama_pemilik_instansi' => 'required|string|max:255',
+            'nip_pemilik_instansi' => 'nullable|string|max:50',
             'pemilik_sama_pembimbing' => 'nullable|boolean',
             'nama_pembimbing_instansi' => 'required_without:pemilik_sama_pembimbing|nullable|string|max:255',
+            'nip_pembimbing_instansi' => 'nullable|string|max:50',
         ], [
             'nama_pemilik_instansi.required' => 'Nama pemilik perusahaan/instansi wajib diisi.',
             'nama_pembimbing_instansi.required_without' => 'Nama pembimbing perusahaan/instansi wajib diisi jika pemilik tidak sama dengan pembimbing.',
@@ -72,10 +81,14 @@ class SertifikatController extends Controller
 
         $tempatPkl->update([
             'nama_pemilik_instansi' => $request->nama_pemilik_instansi,
+            'nip_pemilik_instansi' => $request->nip_pemilik_instansi ?: null,
             'pemilik_sama_pembimbing' => $pemilikSama,
             'nama_pembimbing_instansi' => $pemilikSama
                 ? $request->nama_pemilik_instansi
                 : $request->nama_pembimbing_instansi,
+            'nip_pembimbing_instansi' => $pemilikSama
+                ? ($request->nip_pemilik_instansi ?: null)
+                : ($request->nip_pembimbing_instansi ?: null),
         ]);
 
         return redirect()->route('sertifikat.pelaksanaan.form')

@@ -71,6 +71,18 @@
                             </div>
 
                             <div class="form-group">
+                                <label for="nip_pemilik_instansi">NIP Pemilik Perusahaan/Instansi <span class="text-muted">(opsional)</span></label>
+                                <input type="text" name="nip_pemilik_instansi" id="nip_pemilik_instansi"
+                                    class="form-control @error('nip_pemilik_instansi') is-invalid @enderror"
+                                    value="{{ old('nip_pemilik_instansi', $nipPemilik) }}"
+                                    placeholder="Kosongkan jika tidak memiliki NIP">
+                                @error('nip_pemilik_instansi')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="form-text text-muted">Isi jika pemilik memiliki NIP, jika tidak memiliki kosongkan saja.</small>
+                            </div>
+
+                            <div class="form-group">
                                 <label class="d-block">Apakah pemilik perusahaan/instansi sama dengan pembimbing perusahaan/instansi?</label>
                                 <div class="custom-control custom-radio custom-control-inline">
                                     <input type="radio" id="samaYa" name="pemilik_sama_pembimbing" value="1"
@@ -87,20 +99,40 @@
                                 <small class="form-text text-muted">Jika sama, cukup isi 1 nama pemilik saja.</small>
                             </div>
 
-                            <div class="form-group" id="groupPembimbing">
-                                <label for="nama_pembimbing_instansi">Nama Pembimbing Perusahaan/Instansi <span class="text-danger">*</span></label>
-                                <input type="text" name="nama_pembimbing_instansi" id="nama_pembimbing_instansi"
-                                    class="form-control @error('nama_pembimbing_instansi') is-invalid @enderror"
-                                    value="{{ old('nama_pembimbing_instansi', $namaPembimbing) }}"
-                                    placeholder="Contoh: Rina Marlina, S.Kom.">
-                                @error('nama_pembimbing_instansi')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                @if ($pembimbingSistem)
-                                    <small class="form-text text-muted">
-                                        <i class="fas fa-database mr-1"></i>Data dari sistem (menu Pembimbing Perusahaan): <strong>{{ $pembimbingSistem }}</strong>
-                                    </small>
-                                @endif
+                            <div id="groupPembimbing">
+                                <div class="form-group">
+                                    <label for="nama_pembimbing_instansi">Nama Pembimbing Perusahaan/Instansi <span class="text-danger">*</span></label>
+                                    <input type="text" name="nama_pembimbing_instansi" id="nama_pembimbing_instansi"
+                                        class="form-control @error('nama_pembimbing_instansi') is-invalid @enderror"
+                                        value="{{ old('nama_pembimbing_instansi', $namaPembimbing) }}"
+                                        placeholder="Contoh: Rina Marlina, S.Kom.">
+                                    @error('nama_pembimbing_instansi')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    @if ($pembimbingSistem)
+                                        <small class="form-text text-muted">
+                                            <i class="fas fa-database mr-1"></i>Data dari sistem (menu Pembimbing Perusahaan): <strong>{{ $pembimbingSistem }}</strong>
+                                        </small>
+                                    @endif
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="nip_pembimbing_instansi">NIP Pembimbing Perusahaan/Instansi <span class="text-muted">(opsional)</span></label>
+                                    <input type="text" name="nip_pembimbing_instansi" id="nip_pembimbing_instansi"
+                                        class="form-control @error('nip_pembimbing_instansi') is-invalid @enderror"
+                                        value="{{ old('nip_pembimbing_instansi', $nipPembimbing) }}"
+                                        placeholder="Kosongkan jika tidak memiliki NIP">
+                                    @error('nip_pembimbing_instansi')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    @if ($nipPembimbingSistem)
+                                        <small class="form-text text-muted">
+                                            <i class="fas fa-database mr-1"></i>NIP dari sistem: <strong>{{ $nipPembimbingSistem }}</strong>
+                                        </small>
+                                    @else
+                                        <small class="form-text text-muted">Isi jika pembimbing memiliki NIP, jika tidak memiliki kosongkan saja.</small>
+                                    @endif
+                                </div>
                             </div>
 
                             <button type="submit" class="btn btn-primary">

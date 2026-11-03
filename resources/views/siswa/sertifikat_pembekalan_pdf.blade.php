@@ -13,263 +13,333 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: "Helvetica", "Arial", sans-serif;
+            font-family: Georgia, "Times New Roman", serif;
             color: #1f2937;
+            background: #fffdf7;
         }
 
-        .page {
-            width: 277mm;
-            height: 190mm;
-            margin: 10mm;
-            border: 1mm solid #e5e7eb;
-            padding: 10mm 12mm;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .curve-mark {
+        .frame {
             position: absolute;
-            width: 112mm;
-            height: 112mm;
-            left: -20mm;
-            bottom: -72mm;
-            border: 5mm solid #f3f4f6;
-            border-radius: 50%;
-        }
-
-        .accent-bar {
-            position: absolute;
+            top: 8mm;
+            left: 8mm;
             right: 8mm;
-            top: 10mm;
-            width: 6mm;
-            height: 46mm;
+            bottom: 8mm;
+            border: 1.2mm solid #b45309;
         }
 
-        .accent-1 {
-            height: 15.4mm;
-            background: #f4b83f;
+        .frame-inner {
+            position: absolute;
+            top: 2mm;
+            left: 2mm;
+            right: 2mm;
+            bottom: 2mm;
+            border: 0.3mm solid #0f766e;
         }
 
-        .accent-2 {
-            height: 15.3mm;
-            background: #32c48d;
+        .corner {
+            position: absolute;
+            width: 12mm;
+            height: 12mm;
         }
 
-        .accent-3 {
-            height: 15.3mm;
-            background: #e43d95;
+        .corner.tl { top: 2.5mm; left: 2.5mm; border-top: 1.4mm solid #b45309; border-left: 1.4mm solid #b45309; }
+        .corner.tr { top: 2.5mm; right: 2.5mm; border-top: 1.4mm solid #b45309; border-right: 1.4mm solid #b45309; }
+        .corner.bl { bottom: 2.5mm; left: 2.5mm; border-bottom: 1.4mm solid #b45309; border-left: 1.4mm solid #b45309; }
+        .corner.br { bottom: 2.5mm; right: 2.5mm; border-bottom: 1.4mm solid #b45309; border-right: 1.4mm solid #b45309; }
+
+        .content {
+            position: absolute;
+            top: 14mm;
+            left: 22mm;
+            right: 22mm;
+            bottom: 12mm;
         }
 
-        .layout {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-            position: relative;
-            z-index: 2;
+        .logo-kiri {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 19mm;
         }
 
-        .layout td {
-            vertical-align: top;
+        .header {
+            text-align: center;
         }
 
-        .left-col {
-            width: 69%;
-            padding-right: 8mm;
-        }
-
-        .right-col {
-            width: 31%;
-            padding-right: 9mm;
-        }
-
-        .subtitle {
-            margin: 0;
-            font-size: 10pt;
-            letter-spacing: 1.1pt;
+        .header .instansi {
+            font-size: 9pt;
+            letter-spacing: 1.5pt;
+            color: #4b5563;
             text-transform: uppercase;
+            margin: 0;
+        }
+
+        .header .sekolah {
+            font-size: 17pt;
+            font-weight: bold;
             color: #0f766e;
-            font-weight: 700;
+            letter-spacing: 1pt;
+            margin: 1mm 0 0;
+        }
+
+        .header .alamat {
+            font-size: 8pt;
+            color: #6b7280;
+            margin: 1mm 0 0;
+        }
+
+        .title-block {
+            text-align: center;
+            margin-top: 6mm;
         }
 
         .title {
-            margin: 2.5mm 0 5mm;
-            font-size: 22pt;
-            line-height: 1.12;
-            color: #0f172a;
-        }
-
-        .desc {
+            font-size: 30pt;
+            letter-spacing: 7pt;
+            color: #b45309;
             margin: 0;
-            font-size: 11.2pt;
-            line-height: 1.35;
+            font-weight: bold;
         }
 
-        .student {
-            margin: 6mm 0 1.8mm;
-            font-size: 20pt;
-            font-weight: 700;
-            color: #111827;
-        }
-
-        .meta {
-            margin: 0.8mm 0;
-            font-size: 10.8pt;
-            color: #374151;
-        }
-
-        .summary {
-            width: 100%;
-            margin-top: 6mm;
-            border-collapse: collapse;
-        }
-
-        .summary td {
-            border: 0.3mm solid #d1d5db;
-            padding: 2.2mm 3.2mm;
-            font-size: 10pt;
-            text-align: left;
-        }
-
-        .summary td:first-child {
-            width: 68%;
-            font-weight: 700;
-            background: #eff6ff;
-        }
-
-        .right-brand {
-            font-size: 24pt;
-            font-weight: 700;
-            line-height: 1;
-            color: #0f766e;
-            margin: 1mm 0 2mm;
-        }
-
-        .right-sub {
-            font-size: 13pt;
-            line-height: 1.22;
-            color: #111827;
-            margin: 0 0 12mm;
-        }
-
-        .motto {
-            font-size: 10pt;
-            line-height: 1.35;
-            margin: 0 0 3.5mm;
-            color: #1f2937;
-        }
-
-        .date-highlight {
-            font-size: 10.5pt;
-            font-weight: 700;
-            color: #0f766e;
-            margin: 0 0 7mm;
-        }
-
-        .qr-box {
-            width: 23mm;
-            height: 23mm;
-            border: 0.35mm solid #111827;
-            text-align: center;
-            line-height: 22mm;
-            font-size: 8pt;
-            margin-bottom: 2.5mm;
-        }
-
-        .tag {
+        .subtitle {
             font-size: 11pt;
-            font-weight: 700;
+            letter-spacing: 3pt;
+            color: #374151;
+            text-transform: uppercase;
+            margin: 1.5mm 0 0;
+        }
+
+        .nomor {
+            font-size: 8.5pt;
+            color: #6b7280;
+            margin: 2mm 0 0;
+        }
+
+        .body-block {
+            text-align: center;
+            margin-top: 4mm;
+        }
+
+        .diberikan {
+            font-size: 10pt;
+            font-style: italic;
+            color: #4b5563;
+            margin: 0;
+        }
+
+        .nama-siswa {
+            font-size: 24pt;
+            font-weight: bold;
             color: #111827;
+            margin: 2mm auto 0;
+            padding: 0 10mm 1.5mm;
+            border-bottom: 0.6mm solid #b45309;
+            display: inline-block;
+        }
+
+        .identitas {
+            font-size: 9.5pt;
+            color: #4b5563;
+            margin: 2.5mm 0 0;
+        }
+
+        .pernyataan {
+            font-size: 9.5pt;
+            color: #374151;
+            width: 180mm;
+            margin: 3mm auto 0;
+            line-height: 1.5;
+        }
+
+        .nilai-table {
+            margin: 5mm auto 0;
+            border-collapse: separate;
+            border-spacing: 3mm 0;
+        }
+
+        .nilai-box {
+            width: 44mm;
+            border: 0.3mm solid #d6d3d1;
+            border-top: 1mm solid #0f766e;
+            background: #ffffff;
+            padding: 3mm 2mm;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .nilai-box .label {
+            font-size: 7pt;
+            letter-spacing: 0.8pt;
+            text-transform: uppercase;
+            color: #6b7280;
+            display: block;
+        }
+
+        .nilai-box .value {
+            font-size: 15pt;
+            font-weight: bold;
+            color: #0f766e;
+            display: block;
+            margin-top: 1.5mm;
+        }
+
+        .nilai-box .value-kecil {
+            font-size: 11.5pt;
+        }
+
+        .nilai-box .detail {
+            font-size: 8pt;
+            color: #6b7280;
+            display: block;
+            margin-top: 1mm;
         }
 
         .footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+        }
+
+        .footer-table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed;
-            position: absolute;
-            left: 12mm;
-            right: 12mm;
-            bottom: 10mm;
-            z-index: 2;
         }
 
-        .footer td {
-            font-size: 9.8pt;
-            color: #111827;
+        .footer-table td {
+            vertical-align: bottom;
         }
 
-        .footer-right {
-            width: 35%;
+        .cap-area {
+            text-align: left;
+            padding-left: 10mm;
+        }
+
+        .cap-area img {
+            width: 26mm;
+        }
+
+        .ttd-block {
             text-align: center;
+            font-size: 10pt;
+            color: #1f2937;
+            width: 80mm;
         }
 
-        .signature-name {
-            margin-top: 12mm;
-            border-top: 0.3mm solid #111827;
-            padding-top: 1.6mm;
-            font-weight: 700;
+        .ttd-block .ttd-img {
+            height: 16mm;
+            margin: 1mm 0;
+        }
+
+        .ttd-block .ttd-space {
+            height: 16mm;
+        }
+
+        .ttd-block .nama-kepsek {
+            font-weight: bold;
+            text-decoration: underline;
+            margin: 0;
+        }
+
+        .ttd-block .nip {
+            font-size: 9pt;
+            color: #4b5563;
+            margin: 1mm 0 0;
         }
     </style>
 </head>
 
 <body>
-    <div class="page">
-        <div class="curve-mark"></div>
+    <div class="frame">
+        <div class="frame-inner"></div>
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+    </div>
 
-        <div class="accent-bar">
-            <div class="accent-1"></div>
-            <div class="accent-2"></div>
-            <div class="accent-3"></div>
+    <div class="content">
+        @if ($logoPath)
+            <img class="logo-kiri" src="{{ public_path($logoPath) }}" alt="">
+        @endif
+
+        <div class="header">
+            <p class="instansi">Pemerintah Daerah Provinsi Jawa Barat &mdash; Dinas Pendidikan</p>
+            <p class="sekolah">SMK NEGERI 8 GARUT</p>
+            <p class="alamat">Praktik Kerja Lapangan Tahun {{ $tanggalCetak->format('Y') }}</p>
         </div>
 
-        <table class="layout">
-            <tr>
-                <td class="left-col">
-                    <p class="subtitle">Sertifikat Resmi</p>
-                    <h1 class="title">SERTIFIKAT PEMBEKALAN PKL</h1>
-                    <p class="desc">Sertifikat ini diberikan kepada peserta didik yang telah menyelesaikan kegiatan
-                        pembekalan Praktik Kerja Lapangan.</p>
+        <div class="title-block">
+            <h1 class="title">SERTIFIKAT</h1>
+            <p class="subtitle">Pembekalan Praktik Kerja Lapangan</p>
+            <p class="nomor">Nomor: SPB/{{ $siswa->nis }}/{{ $tanggalCetak->format('Y') }}</p>
+        </div>
 
-                    <div class="student">{{ strtoupper($siswa->nama_siswa) }}</div>
-                    <p class="meta">NIS: {{ $siswa->nis }}</p>
-                    <p class="meta">Kelas: {{ $siswa->kelas->nama_kelas ?? '-' }} | Jurusan:
-                        {{ $siswa->kelas->jurusan->nama_jurusan ?? '-' }}</p>
+        <div class="body-block">
+            <p class="diberikan">diberikan kepada</p>
+            <div class="nama-siswa">{{ strtoupper($siswa->nama_siswa) }}</div>
+            <p class="identitas">
+                NIS: {{ $siswa->nis }} &nbsp;|&nbsp;
+                Kelas: {{ $siswa->kelas->nama_kelas ?? '-' }} &nbsp;|&nbsp;
+                Jurusan: {{ $siswa->kelas->jurusan->nama_jurusan ?? '-' }}
+            </p>
+            <p class="pernyataan">
+                atas partisipasi dan keberhasilannya dalam mengikuti kegiatan
+                <strong>Pembekalan Praktik Kerja Lapangan (PKL)</strong>
+                yang diselenggarakan oleh SMK Negeri 8 Garut, dengan hasil sebagai berikut:
+            </p>
 
-                    <table class="summary">
-                        <tr>
-                            <td>Total Sesi Pembekalan</td>
-                            <td>{{ $totalSesi }} sesi</td>
-                        </tr>
-                        <tr>
-                            <td>Jumlah Kehadiran</td>
-                            <td>{{ $hadir }} sesi</td>
-                        </tr>
-                        <tr>
-                            <td>Persentase Kemajuan</td>
-                            <td>{{ $progres }}%</td>
-                        </tr>
-                    </table>
-                </td>
-                <td class="right-col">
-                    <div class="right-brand">PKL</div>
-                    <div class="right-sub">Pembekalan<br>Kompetensi</div>
-                    <p class="motto">Siap belajar, siap berkarya, siap berkontribusi di dunia kerja.</p>
-                    <p class="date-highlight">{{ $tanggalCetak->translatedFormat('d F Y') }}</p>
-                    <div class="qr-box">VALID</div>
-                    <div class="tag">SMK</div>
-                </td>
-            </tr>
-        </table>
+            <table class="nilai-table">
+                <tr>
+                    <td class="nilai-box">
+                        <span class="label">Kehadiran</span>
+                        <span class="value">{{ $progres }}%</span>
+                        <span class="detail">{{ $hadir }} dari {{ $totalSesi }} sesi</span>
+                    </td>
+                    <td class="nilai-box">
+                        <span class="label">Tugas Selesai</span>
+                        <span class="value">{{ $tugasSelesai }}/{{ $totalTugas }}</span>
+                        <span class="detail">tugas pembekalan</span>
+                    </td>
+                    <td class="nilai-box">
+                        <span class="label">Rata-rata Nilai</span>
+                        <span class="value">{{ $avgNilai !== null ? $avgNilai : '-' }}</span>
+                        <span class="detail">{{ $predikatNilai ?? 'belum dinilai' }}</span>
+                    </td>
+                    <td class="nilai-box">
+                        <span class="label">Catatan Sikap</span>
+                        <span class="value value-kecil">{{ $sikap ?? '-' }}</span>
+                        <span class="detail">selama pembekalan</span>
+                    </td>
+                </tr>
+            </table>
+        </div>
 
-        <table class="footer">
-            <tr>
-                <td>Ditetapkan pada tanggal {{ $tanggalCetak->translatedFormat('d F Y') }}</td>
-                <td class="footer-right">
-                    <div>Panitia PKL</div>
-                    <div class="signature-name">( __________________ )</div>
-                </td>
-            </tr>
-        </table>
-    </div>
+        <div class="footer">
+            <table class="footer-table">
+                <tr>
+                    <td class="cap-area">
+                        @if ($capPath)
+                            <img src="{{ public_path($capPath) }}" alt="">
+                        @endif
+                    </td>
+                    <td align="right">
+                        <div class="ttd-block">
+                            <div>Garut, {{ $tanggalCetak->translatedFormat('d F Y') }}</div>
+                            <div>Kepala SMK Negeri 8 Garut,</div>
+                            @if ($ttdPath)
+                                <img class="ttd-img" src="{{ public_path($ttdPath) }}" alt="">
+                            @else
+                                <div class="ttd-space"></div>
+                            @endif
+                            <p class="nama-kepsek">{{ $kepalaSekolah }}</p>
+                            <p class="nip">NIP. {{ $nipKepalaSekolah }}</p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
     </div>
 </body>
 

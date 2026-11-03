@@ -4,31 +4,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sertifikat Pembekalan</title>
+    <title>Sertifikat Pembekalan PKL</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
-            padding: 20px;
-            font-family: "Helvetica", "Arial", sans-serif;
+            padding: 24px;
+            font-family: Georgia, "Times New Roman", serif;
             background: #e5e7eb;
-            color: #111827;
+            color: #1f2937;
         }
 
         .print-actions {
             text-align: center;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
+            font-family: "Segoe UI", Arial, sans-serif;
         }
 
         .btn {
             border: 1px solid #d1d5db;
             background: #ffffff;
             color: #111827;
-            padding: 8px 14px;
+            padding: 8px 16px;
             border-radius: 6px;
             cursor: pointer;
             text-decoration: none;
             display: inline-block;
             margin: 0 4px;
+            font-size: 14px;
         }
 
         .btn-primary {
@@ -37,212 +43,248 @@
             border-color: #0f766e;
         }
 
-        .page {
-            max-width: 1180px;
-            aspect-ratio: 1.414/1;
+        .sheet {
+            width: 1123px;
+            height: 794px;
             margin: 0 auto;
+            background: #fffdf7;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+            padding: 18px;
             position: relative;
         }
 
-        .certificate-wrapper {
+        .frame {
             width: 100%;
             height: 100%;
-            background: #ffffff;
-            border: 5px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 34px 42px;
+            border: 3px solid #b45309;
+            padding: 6px;
+            position: relative;
+        }
+
+        .frame-inner {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #0f766e;
+            padding: 30px 56px 24px;
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
-        .curve-mark {
+        .corner {
             position: absolute;
-            width: 340px;
-            height: 340px;
-            left: -70px;
-            bottom: -210px;
-            border: 18px solid #f3f4f6;
-            border-radius: 50%;
+            width: 46px;
+            height: 46px;
+            border-color: #b45309;
+            border-style: solid;
+            border-width: 0;
         }
 
-        .accent-bar {
+        .corner.tl { top: 10px; left: 10px; border-top-width: 4px; border-left-width: 4px; }
+        .corner.tr { top: 10px; right: 10px; border-top-width: 4px; border-right-width: 4px; }
+        .corner.bl { bottom: 10px; left: 10px; border-bottom-width: 4px; border-left-width: 4px; }
+        .corner.br { bottom: 10px; right: 10px; border-bottom-width: 4px; border-right-width: 4px; }
+
+        .watermark {
             position: absolute;
-            right: 24px;
-            top: 26px;
-            width: 22px;
-            height: 170px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 440px;
+            opacity: .05;
+            pointer-events: none;
         }
 
-        .accent-1 {
-            height: 57px;
-            background: #f4b83f;
-        }
-
-        .accent-2 {
-            height: 57px;
-            background: #32c48d;
-        }
-
-        .accent-3 {
-            height: 56px;
-            background: #e43d95;
-        }
-
-        .certificate-content {
+        .header {
+            text-align: center;
             position: relative;
-            z-index: 1;
-            width: 100%;
-            height: 100%;
         }
 
-        .left-col {
-            width: 67%;
-            float: left;
-            padding-right: 24px;
+        .header .logo {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 72px;
         }
 
-        .right-col {
-            width: 30%;
-            float: right;
-            padding-top: 14px;
-            padding-right: 22px;
-        }
-
-        .subtitle {
-            letter-spacing: 1.3px;
-            font-size: 14px;
-            margin: 0;
+        .header .instansi {
+            font-size: 13px;
+            letter-spacing: 2px;
+            color: #4b5563;
             text-transform: uppercase;
+            margin: 0;
+        }
+
+        .header .sekolah {
+            font-size: 24px;
+            font-weight: bold;
             color: #0f766e;
-            font-weight: 700;
+            letter-spacing: 1px;
+            margin: 2px 0 0;
+        }
+
+        .header .alamat {
+            font-size: 11px;
+            color: #6b7280;
+            margin: 2px 0 0;
+        }
+
+        .title-block {
+            text-align: center;
+            margin-top: 18px;
         }
 
         .title {
-            margin: 6px 0 14px;
-            font-size: 42px;
-            letter-spacing: 0.4px;
-            color: #0f172a;
-            line-height: 1.1;
-        }
-
-        .description {
+            font-size: 44px;
+            letter-spacing: 10px;
+            color: #b45309;
             margin: 0;
-            font-size: 21px;
-            line-height: 1.35;
+            font-weight: bold;
         }
 
-        .student-name {
-            margin: 28px 0 8px;
-            font-size: 36px;
-            font-weight: 700;
-            color: #0f172a;
-            letter-spacing: 0.3px;
-        }
-
-        .meta {
-            margin: 5px 0;
-            font-size: 18px;
+        .subtitle {
+            font-size: 15px;
+            letter-spacing: 4px;
             color: #374151;
+            text-transform: uppercase;
+            margin: 4px 0 0;
         }
 
-        .summary {
-            margin: 24px 0 0;
-            border-collapse: collapse;
-            width: 100%;
+        .nomor {
+            font-size: 12px;
+            color: #6b7280;
+            margin: 6px 0 0;
         }
 
-        .summary td {
-            border: 1px solid #d1d5db;
-            padding: 9px 12px;
-            text-align: left;
-            font-size: 16px;
-        }
-
-        .summary td:first-child {
-            width: 68%;
-            font-weight: 700;
-            background: #eff6ff;
-        }
-
-        .right-brand {
-            font-size: 52px;
-            font-weight: 700;
-            color: #0f766e;
-            line-height: 1;
-            margin-bottom: 8px;
-        }
-
-        .right-sub {
-            font-size: 32px;
-            color: #111827;
-            line-height: 1.22;
-            margin-bottom: 30px;
-        }
-
-        .motto {
-            font-size: 18px;
-            line-height: 1.4;
-            color: #1f2937;
-            margin-bottom: 14px;
-        }
-
-        .date-highlight {
-            font-size: 20px;
-            font-weight: 700;
-            color: #0f766e;
-            margin-bottom: 22px;
-        }
-
-        .qr-box {
-            width: 90px;
-            height: 90px;
-            border: 2px solid #111827;
-            font-size: 14px;
+        .body-block {
             text-align: center;
-            line-height: 86px;
-            margin-bottom: 8px;
+            margin-top: 14px;
         }
 
-        .tag {
-            font-size: 28px;
-            font-weight: 700;
+        .diberikan {
+            font-size: 14px;
+            font-style: italic;
+            color: #4b5563;
+            margin: 0;
+        }
+
+        .nama-siswa {
+            font-size: 36px;
+            font-weight: bold;
             color: #111827;
+            margin: 6px auto 0;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #b45309;
+            display: inline-block;
+            min-width: 440px;
+        }
+
+        .identitas {
+            font-size: 13px;
+            color: #4b5563;
+            margin: 8px 0 0;
+        }
+
+        .pernyataan {
+            font-size: 13px;
+            color: #374151;
+            max-width: 720px;
+            margin: 10px auto 0;
+            line-height: 1.5;
+        }
+
+        .nilai-grid {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .nilai-box {
+            width: 172px;
+            border: 1px solid #d6d3d1;
+            border-top: 3px solid #0f766e;
+            background: #ffffff;
+            padding: 10px 8px;
+            text-align: center;
+        }
+
+        .nilai-box .label {
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #6b7280;
+            display: block;
+        }
+
+        .nilai-box .value {
+            font-size: 22px;
+            font-weight: bold;
+            color: #0f766e;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .nilai-box .detail {
+            font-size: 11px;
+            color: #6b7280;
+            display: block;
+            margin-top: 2px;
         }
 
         .footer {
-            position: absolute;
-            left: 42px;
-            right: 42px;
-            bottom: 32px;
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
         }
 
-        .signature-left {
-            float: left;
-            width: 52%;
-            font-size: 15px;
-        }
-
-        .signature-right {
-            float: right;
-            width: 32%;
+        .footer .cap-area {
             text-align: center;
-            font-size: 15px;
+            font-size: 11px;
+            color: #9ca3af;
         }
 
-        .signature-line {
-            margin-top: 56px;
-            border-top: 1px solid #111827;
-            padding-top: 8px;
-            font-weight: 700;
+        .footer .cap-area img {
+            width: 90px;
+            opacity: .9;
         }
 
-        .clearfix::after {
-            content: "";
-            display: block;
-            clear: both;
+        .ttd-block {
+            text-align: center;
+            font-size: 13px;
+            color: #1f2937;
+            min-width: 280px;
+        }
+
+        .ttd-block .ttd-img {
+            height: 58px;
+            margin: 4px 0;
+        }
+
+        .ttd-block .ttd-space {
+            height: 58px;
+        }
+
+        .ttd-block .nama-kepsek {
+            font-weight: bold;
+            text-decoration: underline;
+            margin: 0;
+        }
+
+        .ttd-block .nip {
+            font-size: 12px;
+            color: #4b5563;
+            margin: 2px 0 0;
         }
 
         @media print {
+            @page {
+                size: A4 landscape;
+                margin: 0;
+            }
+
             body {
                 background: #ffffff;
                 padding: 0;
@@ -252,16 +294,11 @@
                 display: none;
             }
 
-            .page {
-                max-width: none;
+            .sheet {
                 width: 100%;
-                aspect-ratio: auto;
+                height: 100vh;
+                box-shadow: none;
                 margin: 0;
-            }
-
-            .certificate-wrapper {
-                border-radius: 0;
-                border-width: 0;
             }
         }
     </style>
@@ -270,64 +307,92 @@
 <body>
     <div class="print-actions">
         <a class="btn btn-primary" href="{{ route('dashboard.siswa.download-sertifikat') }}">Download PDF</a>
-        <button class="btn" onclick="window.print()">Print Preview</button>
+        <button class="btn" onclick="window.print()">Print</button>
         <a class="btn" href="{{ route('dashboard') }}">Kembali ke Dashboard</a>
     </div>
 
-    <div class="page">
-        <div class="certificate-wrapper">
-            <div class="curve-mark"></div>
-            <div class="accent-bar">
-                <div class="accent-1"></div>
-                <div class="accent-2"></div>
-                <div class="accent-3"></div>
-            </div>
+    <div class="sheet">
+        <div class="frame">
+            <div class="corner tl"></div>
+            <div class="corner tr"></div>
+            <div class="corner bl"></div>
+            <div class="corner br"></div>
 
-            <div class="certificate-content clearfix">
-                <div class="left-col">
-                    <p class="subtitle">Sertifikat Resmi</p>
-                    <h1 class="title">SERTIFIKAT PEMBEKALAN PKL</h1>
-                    <p class="description">Sertifikat ini diberikan kepada peserta didik yang telah menyelesaikan
-                        kegiatan pembekalan Praktik Kerja Lapangan.</p>
+            <div class="frame-inner">
+                @if ($logoPath)
+                    <img class="watermark" src="{{ asset($logoPath) }}" alt="">
+                @endif
 
-                    <div class="student-name">{{ strtoupper($siswa->nama_siswa) }}</div>
-                    <p class="meta">NIS: {{ $siswa->nis }}</p>
-                    <p class="meta">Kelas: {{ $siswa->kelas->nama_kelas ?? '-' }} | Jurusan:
-                        {{ $siswa->kelas->jurusan->nama_jurusan ?? '-' }}</p>
-
-                    <table class="summary">
-                        <tr>
-                            <td>Total Sesi Pembekalan</td>
-                            <td>{{ $totalSesi }} sesi</td>
-                        </tr>
-                        <tr>
-                            <td>Jumlah Kehadiran</td>
-                            <td>{{ $hadir }} sesi</td>
-                        </tr>
-                        <tr>
-                            <td>Persentase Kemajuan</td>
-                            <td>{{ $progres }}%</td>
-                        </tr>
-                    </table>
+                <div class="header">
+                    @if ($logoPath)
+                        <img class="logo" src="{{ asset($logoPath) }}" alt="Logo SMKN 8 Garut">
+                    @endif
+                    <p class="instansi">Pemerintah Daerah Provinsi Jawa Barat &mdash; Dinas Pendidikan</p>
+                    <p class="sekolah">SMK NEGERI 8 GARUT</p>
+                    <p class="alamat">Praktik Kerja Lapangan Tahun {{ $tanggalCetak->format('Y') }}</p>
                 </div>
 
-                <div class="right-col">
-                    <div class="right-brand">PKL</div>
-                    <div class="right-sub">Pembekalan<br>Kompetensi</div>
-                    <div class="motto">Siap belajar, siap berkarya, siap berkontribusi di dunia kerja.</div>
-                    <div class="date-highlight">{{ $tanggalCetak->translatedFormat('d F Y') }}</div>
-                    <div class="qr-box">VALID</div>
-                    <div class="tag">SMK</div>
+                <div class="title-block">
+                    <h1 class="title">SERTIFIKAT</h1>
+                    <p class="subtitle">Pembekalan Praktik Kerja Lapangan</p>
+                    <p class="nomor">Nomor: SPB/{{ $siswa->nis }}/{{ $tanggalCetak->format('Y') }}</p>
                 </div>
-            </div>
 
-            <div class="footer clearfix">
-                <div class="signature-left">
-                    <div>Ditetapkan pada tanggal {{ $tanggalCetak->translatedFormat('d F Y') }}</div>
+                <div class="body-block">
+                    <p class="diberikan">diberikan kepada</p>
+                    <div class="nama-siswa">{{ strtoupper($siswa->nama_siswa) }}</div>
+                    <p class="identitas">
+                        NIS: {{ $siswa->nis }} &nbsp;|&nbsp;
+                        Kelas: {{ $siswa->kelas->nama_kelas ?? '-' }} &nbsp;|&nbsp;
+                        Jurusan: {{ $siswa->kelas->jurusan->nama_jurusan ?? '-' }}
+                    </p>
+                    <p class="pernyataan">
+                        atas partisipasi dan keberhasilannya dalam mengikuti kegiatan
+                        <strong>Pembekalan Praktik Kerja Lapangan (PKL)</strong>
+                        yang diselenggarakan oleh SMK Negeri 8 Garut, dengan hasil sebagai berikut:
+                    </p>
+
+                    <div class="nilai-grid">
+                        <div class="nilai-box">
+                            <span class="label">Kehadiran</span>
+                            <span class="value">{{ $progres }}%</span>
+                            <span class="detail">{{ $hadir }} dari {{ $totalSesi }} sesi</span>
+                        </div>
+                        <div class="nilai-box">
+                            <span class="label">Tugas Selesai</span>
+                            <span class="value">{{ $tugasSelesai }}/{{ $totalTugas }}</span>
+                            <span class="detail">tugas pembekalan</span>
+                        </div>
+                        <div class="nilai-box">
+                            <span class="label">Rata-rata Nilai</span>
+                            <span class="value">{{ $avgNilai !== null ? $avgNilai : '-' }}</span>
+                            <span class="detail">{{ $predikatNilai ?? 'belum dinilai' }}</span>
+                        </div>
+                        <div class="nilai-box">
+                            <span class="label">Catatan Sikap</span>
+                            <span class="value" style="font-size: 17px; margin-top: 8px;">{{ $sikap ?? '-' }}</span>
+                            <span class="detail">selama pembekalan</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="signature-right">
-                    <div>Panitia PKL</div>
-                    <div class="signature-line">( __________________ )</div>
+
+                <div class="footer">
+                    <div class="cap-area">
+                        @if ($capPath)
+                            <img src="{{ asset($capPath) }}" alt="Cap SMKN 8 Garut">
+                        @endif
+                    </div>
+                    <div class="ttd-block">
+                        <div>Garut, {{ $tanggalCetak->translatedFormat('d F Y') }}</div>
+                        <div>Kepala SMK Negeri 8 Garut,</div>
+                        @if ($ttdPath)
+                            <img class="ttd-img" src="{{ asset($ttdPath) }}" alt="Tanda tangan">
+                        @else
+                            <div class="ttd-space"></div>
+                        @endif
+                        <p class="nama-kepsek">{{ $kepalaSekolah }}</p>
+                        <p class="nip">NIP. {{ $nipKepalaSekolah }}</p>
+                    </div>
                 </div>
             </div>
         </div>

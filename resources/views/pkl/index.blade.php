@@ -1,9 +1,10 @@
 @extends('adminlte::page')
 
-@section('plugins.Datatables', true)
-
 @section('title', $title)
 
+@section('css')
+    @include('partials.table_styles')
+@endsection
 
 @section('content_header')
     <h1>
@@ -11,7 +12,72 @@
 @endsection
 
 @section('content')
-    <div class="card">
+    @if (($type === 'resume' || $type === 'jurnal') && !$isSiswa)
+        @include('absensi_selfie.partials.monitoring_cards')
+    @endif
+    @php
+        $pageIcon = $type === 'setting' ? 'fa-cog' : ($type === 'resume' ? 'fa-file-alt' : ($type === 'jurnal' ? 'fa-book' : 'fa-clipboard-list'));
+    @endphp
+    <div class="card app-card">
+        <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+            <div class="d-flex align-items-center my-1">
+                <span class="card-title-icon"><i class="fas {{ $pageIcon }}"></i></span>
+                <div>
+                    @if ($type === 'resume' && !$isSiswa)
+                        <h4>Resume PKL Bulanan Siswa Bimbingan</h4>
+                        <small>Pantau resume bulanan siswa bimbingan Anda</small>
+                    @elseif ($type === 'jurnal' && !$isSiswa)
+                        <h4>Rekap Absensi Jurnal PKL Siswa</h4>
+                        <small>Rekap kehadiran jurnal PKL siswa bimbingan</small>
+                    @else
+                        <h4>{{ $title }}</h4>
+                        @if ($type === 'setting')
+                            <small>Pengaturan status dan periode absensi PKL</small>
+                        @elseif ($type === 'resume' && $isSiswa)
+                            <small>Kelola resume bulanan dan lampiran PKL Anda.</small>
+                        @elseif ($type === 'jurnal' && $isSiswa)
+                            <small>Kelola jurnal kegiatan dan berkas absensi PKL Anda.</small>
+                        @else
+                            <small>Kelola data {{ strtolower($title) }}</small>
+                        @endif
+                    @endif
+                </div>
+            </div>
+            <div class="my-1 d-flex align-items-center flex-wrap">
+                @if (($type === 'resume' || $type === 'jurnal') && !$isSiswa)
+                    @if ($isPanitia)
+                        <select class="form-control form-control-sm mr-2 my-1" id="filterPembimbing" style="width: 240px;">
+                            <option value="">Semua Pembimbing</option>
+                            @foreach ($pembimbingOptions as $pembimbing)
+                                <option value="{{ $pembimbing->id }}">{{ $pembimbing->nama_pembimbing }}</option>
+                            @endforeach
+                        </select>
+                    @endif
+                    @if ($type === 'resume')
+                        <div class="btn-group my-1">
+                            <button class="btn btn-outline-secondary btn-sm" id="prevBulan"><i
+                                    class="fas fa-chevron-left"></i>
+                                Bulan Sebelumnya</button>
+                            <span class="btn btn-sm btn-light disabled" id="bulanLabel">-</span>
+                            <button class="btn btn-outline-secondary btn-sm" id="nextBulan">Bulan Berikutnya <i
+                                    class="fas fa-chevron-right"></i></button>
+                        </div>
+                    @else
+                        <div class="btn-group my-1">
+                            <button class="btn btn-outline-secondary btn-sm" id="prevPeriode"><i
+                                    class="fas fa-chevron-left"></i> Periode Sebelumnya</button>
+                            <span class="btn btn-sm btn-light disabled" id="periodeLabel">-</span>
+                            <button class="btn btn-outline-secondary btn-sm" id="nextPeriode">Periode Berikutnya <i
+                                    class="fas fa-chevron-right"></i></button>
+                        </div>
+                    @endif
+                @elseif ($type !== 'setting')
+                    <button class="btn btn-primary" id="addRecord">
+                        <i class="fas fa-plus mr-1"></i> Tambah Data
+                    </button>
+                @endif
+            </div>
+        </div>
         <div class="card-body">
             @if ($type === 'setting')
                 <form id="settingForm" class="form-row align-items-end">
@@ -30,33 +96,12 @@
                     </div>
                 </form>
             @elseif ($type === 'resume' && !$isSiswa)
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Resume PKL Bulanan Siswa Bimbingan</h5>
-                    <div class="d-flex align-items-center">
-                        @if ($isPanitia)
-                            <select class="form-control form-control-sm mr-2" id="filterPembimbing" style="width: 240px;">
-                                <option value="">Semua Pembimbing</option>
-                                @foreach ($pembimbingOptions as $pembimbing)
-                                    <option value="{{ $pembimbing->id }}">{{ $pembimbing->nama_pembimbing }}</option>
-                                @endforeach
-                            </select>
-                        @endif
-                        <div class="btn-group">
-                            <button class="btn btn-outline-secondary btn-sm" id="prevBulan"><i
-                                    class="fas fa-chevron-left"></i>
-                                Bulan Sebelumnya</button>
-                            <span class="btn btn-sm btn-light disabled" id="bulanLabel">-</span>
-                            <button class="btn btn-outline-secondary btn-sm" id="nextBulan">Bulan Berikutnya <i
-                                    class="fas fa-chevron-right"></i></button>
-                        </div>
-                    </div>
-                </div>
                 <div id="resumeLoading" class="alert alert-secondary py-2 mb-2 d-none">
                     <span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
                     Memuat data siswa...
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-sm" id="resumeTable">
+                    <table class="table table-striped table-hover table-sm" id="resumeTable" style="width:100%">
                         <thead>
                             <tr>
                                 <th>No</th>
@@ -76,32 +121,12 @@
                         kelompok bimbingan Anda.</p>
                 </div>
             @elseif ($type === 'jurnal' && !$isSiswa)
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Rekap Absensi Jurnal PKL Siswa</h5>
-                    <div class="d-flex align-items-center">
-                        @if ($isPanitia)
-                            <select class="form-control form-control-sm mr-2" id="filterPembimbing" style="width: 240px;">
-                                <option value="">Semua Pembimbing</option>
-                                @foreach ($pembimbingOptions as $pembimbing)
-                                    <option value="{{ $pembimbing->id }}">{{ $pembimbing->nama_pembimbing }}</option>
-                                @endforeach
-                            </select>
-                        @endif
-                        <div class="btn-group">
-                            <button class="btn btn-outline-secondary btn-sm" id="prevPeriode"><i
-                                    class="fas fa-chevron-left"></i> Periode Sebelumnya</button>
-                            <span class="btn btn-sm btn-light disabled" id="periodeLabel">-</span>
-                            <button class="btn btn-outline-secondary btn-sm" id="nextPeriode">Periode Berikutnya <i
-                                    class="fas fa-chevron-right"></i></button>
-                        </div>
-                    </div>
-                </div>
                 <div id="rekapLoading" class="alert alert-secondary py-2 mb-2 d-none">
                     <span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
                     Memuat data siswa...
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-sm" id="rekapTable">
+                    <table class="table table-striped table-hover table-sm" id="rekapTable" style="width:100%">
                         <thead>
                             <tr>
                                 <th>No</th>
@@ -125,21 +150,8 @@
                         Simpan</button>
                 </div>
             @else
-                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-3">
-                    <div class="mb-2 mb-sm-0">
-                        <h5 class="mb-1">{{ $title }}</h5>
-                        @if ($type === 'resume' && $isSiswa)
-                            <small class="text-muted">Kelola resume bulanan dan lampiran PKL Anda.</small>
-                        @elseif ($type === 'jurnal' && $isSiswa)
-                            <small class="text-muted">Kelola jurnal kegiatan dan berkas absensi PKL Anda.</small>
-                        @endif
-                    </div>
-                    <button class="btn btn-primary btn-sm align-self-sm-start" id="addRecord">
-                        <i class="fas fa-plus mr-1"></i> Tambah Data
-                    </button>
-                </div>
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-hover table-sm mb-0" id="pklTable">
+                    <table class="table table-striped table-hover mb-0" id="pklTable" style="width:100%">
                         <thead>
                             <tr>
                                 <th>No</th>
@@ -165,7 +177,7 @@
                                     <th>Berkas</th>
                                     <th>Status</th>
                                 @endif
-                                <th>Aksi</th>
+                                <th class="text-center">Aksi</th>
                             </tr>
                         </thead>
                     </table>
@@ -280,7 +292,7 @@
 @endif
 
 @section('js')
-    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @include('partials.table_scripts')
     <script>
         $(function() {
             const module = @json($module),
@@ -367,6 +379,10 @@
                     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
                 }
 
+                const monitoring = initMonitoringCards({
+                    tanggal: () => currentBulan ? `${currentBulan}-01` : null
+                });
+
                 function loadResume(bulan) {
                     const pembimbingId = $('#filterPembimbing').val();
                     $('#resumeLoading').removeClass('d-none');
@@ -386,6 +402,7 @@
                             currentBulan = response.bulan;
                             $('#bulanLabel').text(formatBulan(response.bulan));
                             buildResumeRows(response.data || []);
+                            monitoring.reload();
                         }).fail(() => Swal.fire('Gagal', 'Data resume tidak dapat dimuat.', 'error'))
                         .always(() => $('#resumeLoading').addClass('d-none'));
                 }
@@ -452,6 +469,10 @@
                     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
                 }
 
+                const monitoring = initMonitoringCards({
+                    tanggal: () => currentPeriodeMulai
+                });
+
                 function loadRekap(periodeMulai) {
                     const pembimbingId = $('#filterPembimbing').val();
                     $('#rekapLoading').removeClass('d-none');
@@ -474,6 +495,7 @@
                                 `${dateValue(response.periode_mulai)} s.d. ${dateValue(response.periode_selesai)}`
                             );
                             buildRows(response.data || []);
+                            monitoring.reload();
                         }).fail(() => Swal.fire('Gagal', 'Data rekap tidak dapat dimuat.', 'error'))
                         .always(() => $('#rekapLoading').addClass('d-none'));
                 }
@@ -536,21 +558,6 @@
                 .replace(/'/g, '&#39;');
             const table = $('#pklTable').DataTable({
                 processing: true,
-                autoWidth: false,
-                language: {
-                    processing: '<span class="spinner-border spinner-border-sm mr-2" role="status"></span>Memuat data...',
-                    emptyTable: 'Belum ada data untuk ditampilkan.',
-                    zeroRecords: 'Data yang dicari tidak ditemukan.',
-                    info: 'Menampilkan _START_–_END_ dari _TOTAL_ data',
-                    infoEmpty: 'Belum ada data',
-                    infoFiltered: '(difilter dari _MAX_ total data)',
-                    lengthMenu: 'Tampilkan _MENU_ data',
-                    search: 'Cari:',
-                    paginate: {
-                        previous: 'Sebelumnya',
-                        next: 'Berikutnya'
-                    }
-                },
                 ajax: {
                     url: `${endpoint}/data`,
                     dataSrc: '',
@@ -636,8 +643,11 @@
                     @endif {
                         data: null,
                         orderable: false,
-                        render: () =>
-                            '<button class="btn btn-xs btn-warning edit-record">Edit</button> <button class="btn btn-xs btn-danger delete-record">Hapus</button>'
+                        className: 'text-center',
+                        render: () => aksiButtons([
+                            '<button class="btn btn-outline-primary btn-sm edit-record" title="Edit"><i class="fas fa-pen"></i></button>',
+                            '<button class="btn btn-outline-danger btn-sm delete-record" title="Hapus"><i class="fas fa-trash"></i></button>'
+                        ])
                     }
                 ]
             });
@@ -714,15 +724,12 @@
             });
             $('#pklTable').on('click', '.delete-record', function() {
                 const recordId = table.row($(this).closest('tr')).data().id;
-                Swal.fire({
+                konfirmasiHapus({
                     title: isResumeInput ? 'Hapus resume bulanan?' : 'Hapus data?',
                     text: isResumeInput ? 'Resume untuk bulan ini akan dihapus.' : '',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: isResumeInput ? 'Ya, hapus' : 'Ya',
-                    cancelButtonText: 'Batal'
-                }).then(result => {
-                    if (result.isConfirmed) $.ajax({
+                    confirmButtonText: isResumeInput ? 'Ya, hapus' : 'Ya'
+                }, () => {
+                    $.ajax({
                         url: `${endpoint}/${recordId}`,
                         method: 'DELETE',
                         headers: {

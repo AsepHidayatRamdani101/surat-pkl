@@ -12,7 +12,7 @@ class ResumePklBulanan extends Model
     protected $fillable = ['siswa_id', 'bulan', 'judul', 'isi_resume', 'file_path', 'file_paths', 'status'];
 
     protected $casts = [
-        'bulan' => 'date',
+        'bulan' => 'date:Y-m-d',
         'file_paths' => 'array',
     ];
 

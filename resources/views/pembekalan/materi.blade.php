@@ -12,7 +12,16 @@
 
 @section('content')
     <div class="container-fluid pt-3">
-        <div class="card shadow-sm border-0 mb-3">
+        <div class="card app-card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-filter"></i></span>
+                    <div>
+                        <h4>Filter Materi</h4>
+                        <small>Saring materi berdasarkan tanggal dan topik</small>
+                    </div>
+                </div>
+            </div>
             <div class="card-body py-3">
                 <form method="GET" action="{{ route('pembekalan.materi') }}">
                     <div class="form-row align-items-end">
@@ -41,18 +50,25 @@
             </div>
         </div>
 
-        <div class="card shadow-sm border-0 mb-3">
-            <div class="card-header bg-white d-flex align-items-center">
-                <div>
-                    <h5 class="mb-0">Daftar Materi Pembekalan</h5>
-                    <small class="text-muted">{{ $materi->count() }} data</small>
+        <div class="card app-card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-book-open"></i></span>
+                    <div>
+                        <h4>Daftar Materi Pembekalan</h4>
+                        <small>{{ $materi->count() }} data</small>
+                    </div>
                 </div>
                 @can('panitia')
-                    <button type="button" class="btn btn-sm btn-primary ml-auto" id="btnOpenMateriModal">Tambah Materi</button>
+                    <div class="my-1">
+                        <button type="button" class="btn btn-primary" id="btnOpenMateriModal">
+                            <i class="fas fa-plus mr-1"></i> Tambah Materi
+                        </button>
+                    </div>
                 @endcan
             </div>
-            <div class="card-body table-responsive">
-                <table class="table table-bordered table-striped datatable-materi">
+            <div class="card-body">
+                <table class="table table-striped table-hover datatable-materi" style="width:100%">
                     <thead>
                         <tr>
                             <th style="width: 90px;">Tanggal</th>
@@ -105,22 +121,27 @@
                                 </td>
                                 @can('panitia')
                                     <td>
-                                        <button type="button" class="btn btn-xs btn-warning mb-1 btn-edit-materi"
-                                            data-id="{{ $item->id }}" data-tanggal_materi="{{ $item->tanggal_materi }}"
-                                            data-topik="{{ e($item->topik) }}"
-                                            data-isi_materi="{{ e($item->isi_materi ?? '') }}"
-                                            data-video_url="{{ $item->video_url ?? '' }}"
-                                            data-catatan="{{ e($item->catatan ?? '') }}"
-                                            data-file_pdf_url="{{ $item->file_pdf_path ? asset('storage/' . $item->file_pdf_path) : '' }}">
-                                            Edit
-                                        </button>
+                                        <div class="btn-group btn-aksi">
+                                            <button type="button" class="btn btn-outline-primary btn-sm btn-edit-materi"
+                                                title="Edit" data-id="{{ $item->id }}"
+                                                data-tanggal_materi="{{ $item->tanggal_materi }}"
+                                                data-topik="{{ e($item->topik) }}"
+                                                data-isi_materi="{{ e($item->isi_materi ?? '') }}"
+                                                data-video_url="{{ $item->video_url ?? '' }}"
+                                                data-catatan="{{ e($item->catatan ?? '') }}"
+                                                data-file_pdf_url="{{ $item->file_pdf_path ? asset('storage/' . $item->file_pdf_path) : '' }}">
+                                                <i class="fas fa-pen"></i>
+                                            </button>
 
-                                        <form method="POST" action="{{ route('pembekalan.materi.destroy', $item->id) }}"
-                                            class="d-inline form-delete-materi">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-xs btn-danger mb-1">Hapus</button>
-                                        </form>
+                                            <form method="POST" action="{{ route('pembekalan.materi.destroy', $item->id) }}"
+                                                class="d-inline form-delete-materi">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Hapus">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 @endcan
                             </tr>
@@ -218,9 +239,8 @@
     </div>
 @endsection
 
-@section('plugins.Datatables', true)
-
 @section('css')
+    @include('partials.table_styles')
     <style>
         .materi-file-input {
             height: calc(1.8125rem + 2px);
@@ -231,7 +251,7 @@
 @endsection
 
 @section('js')
-    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @include('partials.table_scripts')
     <script>
         $(function() {
             const originalSwalFire = Swal.fire.bind(Swal);
@@ -362,18 +382,10 @@
                 e.preventDefault();
                 const form = this;
 
-                Swal.fire({
+                konfirmasiHapus({
                     title: 'Hapus materi?',
-                    text: 'Data yang dihapus tidak bisa dikembalikan.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Ya, hapus',
-                    cancelButtonText: 'Batal'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
+                    text: 'Data yang dihapus tidak bisa dikembalikan.'
+                }, () => form.submit());
             });
 
             @can('panitia')
@@ -398,7 +410,6 @@
                 responsive: true,
                 autoWidth: false,
                 language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json',
                     emptyTable: 'Belum ada data materi pembekalan.'
                 }
             });

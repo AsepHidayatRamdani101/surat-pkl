@@ -37,20 +37,19 @@ class SuratIzinOrtuController extends Controller
             ->addIndexColumn()
             ->addColumn('aksi', function ($row) {
                 return '
-                    <button class="btn btn-sm btn-warning btn-edit"
-                        data-id="' . $row->id . '"
-                        data-siswa="' . $row->siswa_id . '"
-                        data-ortu="' . $row->nama_ortu . '"
-                        data-alamat="' . $row->alamat_ortu . '"
-                        data-nohp_ortu="' . $row->siswa->no_hp_ortu . '"
-                        data-nohp_siswa="' . $row->siswa->no_hp_siswa . '">
-                        Edit
-                    </button>
-                     <a href="' . route('izin-ortu.cetak', $row->id) . '" class="btn btn-sm btn-primary" target="_blank">Cetak</a>
-                    <button class="btn btn-sm btn-danger btn-hapus" 
-                    data-id="' . $row->id . '"
-                    data-siswa="' . $row->siswa_id . '"
-                    >Hapus</button>
+                    <div class="btn-group btn-aksi">
+                        <button type="button" class="btn btn-outline-primary btn-sm btn-edit" title="Edit"
+                            data-id="' . $row->id . '"
+                            data-siswa="' . $row->siswa_id . '"
+                            data-ortu="' . $row->nama_ortu . '"
+                            data-alamat="' . $row->alamat_ortu . '"
+                            data-nohp_ortu="' . $row->siswa->no_hp_ortu . '"
+                            data-nohp_siswa="' . $row->siswa->no_hp_siswa . '"><i class="fas fa-pen"></i></button>
+                        <a href="' . route('izin-ortu.cetak', $row->id) . '" class="btn btn-outline-success btn-sm" title="Cetak" target="_blank"><i class="fas fa-print"></i></a>
+                        <button type="button" class="btn btn-outline-danger btn-sm btn-hapus" title="Hapus"
+                            data-id="' . $row->id . '"
+                            data-siswa="' . $row->siswa_id . '"><i class="fas fa-trash"></i></button>
+                    </div>
                 ';
             })
             ->rawColumns(['aksi'])

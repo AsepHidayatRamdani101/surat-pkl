@@ -412,6 +412,18 @@ return [
             'submenu' => [
                 ['text' => 'Data Resume PKL per Bulan', 'url' => 'pkl/resume', 'icon' => 'fas fa-file-alt'],
                 ['text' => 'Data Upload Absensi Jurnal PKL', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
+                ['text' => 'Data Absen Selfie Siswa', 'url' => 'absensi-selfie', 'icon' => 'fas fa-camera'],
+            ],
+        ],
+        [
+            'text' => 'Sidang PKL',
+            'icon' => 'fas fa-gavel',
+            'can'  => 'panitia',
+            'submenu' => [
+                ['text' => 'Ruangan Sidang', 'url' => 'sidang/ruangan', 'icon' => 'fas fa-door-open'],
+                ['text' => 'Kriteria & Rubrik Sidang', 'url' => 'sidang/kriteria', 'icon' => 'fas fa-list-ol'],
+                ['text' => 'Jadwal Bimbingan & Sidang', 'url' => 'sidang/jadwal', 'icon' => 'fas fa-calendar-alt'],
+                ['text' => 'Penilaian & Sertifikat', 'url' => 'sidang/penilaian', 'icon' => 'fas fa-certificate'],
             ],
         ],
         // Menu untuk Kepala Program
@@ -590,8 +602,19 @@ return [
             'icon' => 'fas fa-briefcase',
             'can'  => 'siswa',
             'submenu' => [
+                ['text' => 'Absen Datang & Pulang', 'url' => 'absensi-selfie', 'icon' => 'fas fa-camera'],
                 ['text' => 'Upload Absensi Jurnal PKL', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
                 ['text' => 'Input Resume PKL Bulanan', 'url' => 'pkl/input-resume', 'icon' => 'fas fa-file-alt'],
+            ],
+        ],
+        [
+            'text' => 'Sidang PKL',
+            'icon' => 'fas fa-gavel',
+            'can'  => 'siswa',
+            'submenu' => [
+                ['text' => 'Jadwal Bimbingan & Sidang', 'url' => 'sidang/jadwal', 'icon' => 'fas fa-calendar-alt'],
+                ['text' => 'Upload Laporan PKL', 'url' => 'sidang/laporan', 'icon' => 'fas fa-file-upload'],
+                ['text' => 'Nilai & Sertifikat Sidang', 'url' => 'sidang/nilai', 'icon' => 'fas fa-star'],
             ],
         ],
 
@@ -608,6 +631,16 @@ return [
             'submenu' => [
                 ['text' => 'Data Resume PKL per Bulan', 'url' => 'pkl/resume', 'icon' => 'fas fa-file-alt'],
                 ['text' => 'Data Upload Absensi Jurnal PKL', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
+                ['text' => 'Data Absen Selfie Siswa', 'url' => 'absensi-selfie', 'icon' => 'fas fa-camera'],
+            ],
+        ],
+        [
+            'text' => 'Sidang PKL',
+            'icon' => 'fas fa-gavel',
+            'can'  => 'pembimbing',
+            'submenu' => [
+                ['text' => 'Jadwal Bimbingan & Sidang', 'url' => 'sidang/jadwal', 'icon' => 'fas fa-calendar-alt'],
+                ['text' => 'Penilaian Sidang', 'url' => 'sidang/penilaian', 'icon' => 'fas fa-star'],
             ],
         ],
 

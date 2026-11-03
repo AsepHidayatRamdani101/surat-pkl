@@ -40,22 +40,18 @@ class TempatPklController extends Controller
                 ->addIndexColumn()
                 ->addColumn('aksi', function ($row) {
                     return '
-                        <button class="btn btn-sm btn-warning btn-edit" 
-                        data-id="' . $row->id . '"
-                        data-perusahaan="' . $row->perusahaan_id . '"
-                        data-siswa="' . $row->siswa_id . '"
-                        data-tanggal-mulai="' . $row->tanggal_mulai . '"
-                        data-tanggal-selesai="' . $row->tanggal_selesai . '"
-                        >Edit
-                        </button>
-                        <button class="btn btn-sm btn-success btnUpdateKesediaan" 
-                        data-id="' . $row->id . '"
-                        >Upload
-                        </button>
-                        <button class="btn btn-sm btn-danger btn-hapus" data-id="' . $row->id . '">
-                            Hapus
-                        </button>
-                        
+                        <div class="btn-group btn-aksi">
+                            <button type="button" class="btn btn-outline-primary btn-sm btn-edit" title="Edit"
+                                data-id="' . $row->id . '"
+                                data-perusahaan="' . $row->perusahaan_id . '"
+                                data-siswa="' . $row->siswa_id . '"
+                                data-tanggal-mulai="' . $row->tanggal_mulai . '"
+                                data-tanggal-selesai="' . $row->tanggal_selesai . '"><i class="fas fa-pen"></i></button>
+                            <button type="button" class="btn btn-outline-success btn-sm btnUpdateKesediaan" title="Upload Surat Kesediaan"
+                                data-id="' . $row->id . '"><i class="fas fa-upload"></i></button>
+                            <button type="button" class="btn btn-outline-danger btn-sm btn-hapus" title="Hapus"
+                                data-id="' . $row->id . '"><i class="fas fa-trash"></i></button>
+                        </div>
                     ';
                 })
                 ->rawColumns(['aksi'])

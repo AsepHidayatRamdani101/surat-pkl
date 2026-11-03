@@ -11,7 +11,7 @@ class UploadAbsensiJurnalPkl extends Model
 
     protected $fillable = ['siswa_id', 'tanggal', 'judul', 'keterangan', 'file_path', 'status'];
 
-    protected $casts = ['tanggal' => 'date'];
+    protected $casts = ['tanggal' => 'date:Y-m-d'];
 
     public function siswa() { return $this->belongsTo(Siswa::class); }
 }

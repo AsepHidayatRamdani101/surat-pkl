@@ -3,20 +3,29 @@
 @section('title', 'Data Perusahaan')
 
 @section('content')
-    <div class="container pt-4">
+    <div class="container-fluid pt-4">
         <div class="row">
             <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="d-inline">Data Perusahaan</h4>
-                        <div class="float-right">
-                            <button class="btn btn-sm btn-primary" id="btnTambah">Tambah Data</button>
-                            <button class="btn btn-sm btn-danger" id="btnHapusMultiple" style="display: none;">Hapus
-                                Pilihan</button>
+                <div class="card app-card">
+                    <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                        <div class="d-flex align-items-center my-1">
+                            <span class="card-title-icon"><i class="fas fa-building"></i></span>
+                            <div>
+                                <h4>Data Perusahaan</h4>
+                                <small>Kelola data perusahaan tempat PKL beserta lokasi maps</small>
+                            </div>
+                        </div>
+                        <div class="my-1 d-flex align-items-center flex-wrap">
+                            <button class="btn btn-danger btn-sm mr-2" id="btnHapusMultiple" style="display: none;">
+                                <i class="fas fa-trash mr-1"></i> Hapus Pilihan
+                            </button>
+                            <button class="btn btn-primary btn-sm" id="btnTambah">
+                                <i class="fas fa-plus mr-1"></i> Tambah Data
+                            </button>
                         </div>
                     </div>
                     <div class="card-body">
-                        <table id="perusahaanTable" class="table table-bordered table-striped">
+                        <table id="perusahaanTable" class="table table-striped table-hover" style="width: 100%;">
                             <thead>
                                 <tr>
                                     <th style="width: 30px;"><input type="checkbox" id="checkAll" class="form-check"></th>
@@ -25,7 +34,8 @@
                                     <th>Nama Pemilik</th>
                                     <th>No. Telp Pemilik</th>
                                     <th>Alamat</th>
-                                    <th>Aksi</th>
+                                    <th>Maps</th>
+                                    <th class="text-center">Aksi</th>
                                 </tr>
                             </thead>
                         </table>
@@ -96,10 +106,45 @@
                                     </div>
                                 </div>
                             </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="maps_url">Link Google Maps</label>
+                                        <input type="text" name="maps_url" id="maps_url" class="form-control"
+                                            placeholder="Contoh: https://www.google.com/maps/@-7.0981,107.9754,17z">
+                                        <small class="form-text text-muted">
+                                            Tempel link lokasi perusahaan dari Google Maps. Koordinat akan terisi
+                                            otomatis jika link memuat titik koordinat.
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-0">
+                                        <label for="latitude">Latitude</label>
+                                        <input type="text" name="latitude" id="latitude" class="form-control"
+                                            placeholder="Contoh: -7.0981234">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-0">
+                                        <label for="longitude">Longitude</label>
+                                        <input type="text" name="longitude" id="longitude" class="form-control"
+                                            placeholder="Contoh: 107.9754321">
+                                    </div>
+                                </div>
+                                <div class="col-md-12 mt-2">
+                                    <small class="form-text text-muted">
+                                        Koordinat dipakai untuk menghitung akurasi lokasi absen selfie siswa.
+                                    </small>
+                                </div>
+                            </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                            <button type="button" class="btn btn-success btn-simpan">Simpan</button>
+                            <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-primary btn-simpan">
+                                <i class="fas fa-save mr-1"></i> Simpan
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -109,8 +154,8 @@
 @endsection
 
 @section('css')
+    @include('partials.table_styles')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <style>
         .select2-container .select2-selection--single {
             height: calc(2.25rem + 2px);
@@ -130,11 +175,8 @@
 @endsection
 
 @section('js')
-    @include('sweetalert::alert')
-
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    @include('partials.table_scripts')
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function() {
             const originalSwalFire = Swal.fire.bind(Swal);
@@ -164,12 +206,6 @@
 
                 return originalSwalFire(options, ...args);
             };
-
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-            });
 
             const wilayahRoutes = {
                 provinsi: '{{ route('wilayah.provinsi') }}',
@@ -316,10 +352,17 @@
                         name: 'alamat'
                     },
                     {
+                        data: 'maps',
+                        name: 'maps',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
                         data: 'aksi',
                         name: 'aksi',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        className: 'text-center'
                     }
                 ],
                 drawCallback: function() {
@@ -359,6 +402,9 @@
                 $('#nama_pemilik_perusahaan').val(data.namaPemilik);
                 $('#telepon_pemilik_perusahaan').val(data.teleponPemilik);
                 $('#alamat').val(data.alamat);
+                $('#latitude').val(data.latitude ?? '');
+                $('#longitude').val(data.longitude ?? '');
+                $('#maps_url').val(data.mapsUrl ?? '');
                 $('#modalFormLabel').text('Edit Data Perusahaan');
                 $('#modalForm').modal('show');
 
@@ -398,6 +444,32 @@
                     });
             });
 
+            $(document).on('input change', '#maps_url', function() {
+                const url = $(this).val() || '';
+                const patterns = [
+                    /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,
+                    /[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/,
+                    /@(-?\d+\.\d+),(-?\d+\.\d+)/,
+                    /(-?\d{1,2}\.\d{4,}),\s*(-?\d{1,3}\.\d{4,})/
+                ];
+
+                for (const pattern of patterns) {
+                    const match = url.match(pattern);
+                    if (match) {
+                        $('#latitude').val(match[1]);
+                        $('#longitude').val(match[2]);
+                        return;
+                    }
+                }
+
+                // Link pendek (maps.app.goo.gl) tidak memuat koordinat;
+                // koordinat akan diekstrak otomatis oleh server saat disimpan.
+                if (/^https?:\/\/(maps\.app\.goo\.gl|goo\.gl|g\.co)\//i.test(url)) {
+                    $('#latitude').attr('placeholder', 'Otomatis dari link saat disimpan');
+                    $('#longitude').attr('placeholder', 'Otomatis dari link saat disimpan');
+                }
+            });
+
             $(document).on('change', '#provinsi_id', function() {
                 const provinceId = $(this).val();
                 loadKabupaten(provinceId);
@@ -432,6 +504,9 @@
                         kabupaten_kota_id: $kabupaten.val(),
                         kecamatan_id: $kecamatan.val(),
                         desa_id: $desa.val(),
+                        latitude: $('#latitude').val() || null,
+                        longitude: $('#longitude').val() || null,
+                        maps_url: $('#maps_url').val() || null,
                     },
                     success: function(response) {
                         $('#modalForm').modal('hide');
@@ -464,17 +539,10 @@
                 const id = $(this).data('id');
                 const url = '{{ route('perusahaan.destroy', ['id' => '__ID__']) }}'.replace('__ID__', id);
 
-                Swal.fire({
+                konfirmasiHapus({
                     title: 'Yakin hapus data ini?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Ya, hapus!',
-                    cancelButtonText: 'Batal'
-                }).then((result) => {
-                    if (!result.isConfirmed) {
-                        return;
-                    }
-
+                    text: 'Data yang dihapus tidak bisa dikembalikan.'
+                }, () => {
                     $.ajax({
                         url: url,
                         type: 'DELETE',
@@ -482,7 +550,7 @@
                             _token: '{{ csrf_token() }}',
                         },
                         success: function(response) {
-                            table.ajax.reload();
+                            table.ajax.reload(null, false);
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Berhasil',

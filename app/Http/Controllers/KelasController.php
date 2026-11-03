@@ -33,13 +33,16 @@ class KelasController extends Controller
                 })
                 ->addColumn('aksi', function ($row) {
                     return '
-                        <button class="btn btn-sm btn-warning btnEdit" data-id="' .
-                        $row->id .
-                        '">Edit</button>
-                        <button class="btn btn-sm btn-danger btnHapus" data-id="' .
-                        $row->id .
-                        '">Hapus</button>
-                    ';
+                        <div class="btn-group btn-aksi">
+                            <button type="button" class="btn btn-outline-primary btn-sm btnEdit" title="Edit"
+                                data-id="' . $row->id . '">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm btnHapus" title="Hapus"
+                                data-id="' . $row->id . '">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>';
                 })
                 ->rawColumns(['aksi'])
                 ->make(true);

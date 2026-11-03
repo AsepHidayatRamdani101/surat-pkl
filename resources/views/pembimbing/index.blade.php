@@ -3,25 +3,43 @@
 @section('title', 'Data Pembimbing Sekolah')
 
 @section('content')
-    <div class="container pt-4">
+    <div class="container-fluid pt-4">
         <div class="row">
             <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h4>Data Pembimbing</h4>
-                        <select id="filterStatusAkunPembimbing" class="form-control form-control-sm d-inline-block"
-                            style="width: 220px; margin-right: 8px;">
-                            <option value="">Semua Status Akun</option>
-                            <option value="without" selected>Belum Punya Akun</option>
-                            <option value="with">Sudah Punya Akun</option>
-                        </select>
-                        <button class="btn btn-sm btn-info" id="btnGenerateAkunPembimbing">Generate Akun Pembimbing</button>
-                        <button class="btn btn-sm btn-primary ms-auto" id="btnTambah">Tambah Data</button>
-                        <a href="{{ route('pembimbing.export-excel') }}" class="btn btn-sm btn-success">Export Excel</a>
-                        <a href="{{ route('pembimbing.export-pdf') }}" class="btn btn-sm btn-danger">Export PDF</a>
-                        <button class="btn btn-sm btn-secondary" id="btnImport">Import Excel</button>
+                <div class="card app-card">
+                    <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                        <div class="d-flex align-items-center my-1">
+                            <span class="card-title-icon"><i class="fas fa-chalkboard-teacher"></i></span>
+                            <div>
+                                <h4>Data Pembimbing</h4>
+                                <small>Kelola data pembimbing sekolah, akun login, import & export</small>
+                            </div>
+                        </div>
+                        <div class="my-1 d-flex align-items-center flex-wrap">
+                            <select id="filterStatusAkunPembimbing" class="form-control form-control-sm mr-2"
+                                style="width: 200px;">
+                                <option value="">Semua Status Akun</option>
+                                <option value="without" selected>Belum Punya Akun</option>
+                                <option value="with">Sudah Punya Akun</option>
+                            </select>
+                            <button class="btn btn-outline-info btn-sm mr-2" id="btnGenerateAkunPembimbing">
+                                <i class="fas fa-user-plus mr-1"></i> Generate Akun
+                            </button>
+                            <a href="{{ route('pembimbing.export-excel') }}" class="btn btn-outline-success btn-sm mr-2">
+                                <i class="fas fa-file-excel mr-1"></i> Export Excel
+                            </a>
+                            <a href="{{ route('pembimbing.export-pdf') }}" class="btn btn-outline-danger btn-sm mr-2">
+                                <i class="fas fa-file-pdf mr-1"></i> Export PDF
+                            </a>
+                            <button class="btn btn-outline-secondary btn-sm mr-2" id="btnImport">
+                                <i class="fas fa-file-import mr-1"></i> Import Excel
+                            </button>
+                            <button class="btn btn-primary btn-sm" id="btnTambah">
+                                <i class="fas fa-plus mr-1"></i> Tambah Data
+                            </button>
+                        </div>
                     </div>
-                    <div class="card-body ">
+                    <div class="card-body">
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <div class="small-box bg-info mb-0">
@@ -36,9 +54,8 @@
                             </div>
                         </div>
 
-                        <div class="table-responsive pembimbing-table-wrap">
-                            <table id="pembimbingTable" class="table table-bordered table-striped w-100"
-                                style="width: 100%;">
+                        <div class="pembimbing-table-wrap">
+                            <table id="pembimbingTable" class="table table-striped table-hover" style="width: 100%;">
                                 <thead>
                                     <tr>
                                         <th>No</th>
@@ -50,7 +67,7 @@
                                         <th>Kelas</th>
                                         <th>No HP</th>
                                         <th>Status Akun</th>
-                                        <th>Aksi</th>
+                                        <th class="text-center">Aksi</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -174,8 +191,10 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                            <button type="button" class="btn btn-primary btn-simpan">Simpan</button>
+                            <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-primary btn-simpan">
+                                <i class="fas fa-save mr-1"></i> Simpan
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -204,7 +223,7 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
                             <button type="submit" class="btn btn-primary">Import</button>
                         </div>
                     </div>
@@ -230,8 +249,10 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                        <button type="button" class="btn btn-primary" id="btnSimpanKelas">Simpan Kelas</button>
+                        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-primary" id="btnSimpanKelas">
+                            <i class="fas fa-save mr-1"></i> Simpan Kelas
+                        </button>
                     </div>
                 </div>
             </div>
@@ -240,7 +261,7 @@
 @endsection
 
 @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    @include('partials.table_styles')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         .select2-container--default .select2-selection--multiple {
@@ -274,9 +295,7 @@
 @endsection
 
 @section('js')
-    @include('sweetalert::alert')
-    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    @include('partials.table_scripts')
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
@@ -453,6 +472,8 @@
             }
 
             let table = $('#pembimbingTable').DataTable({
+                processing: true,
+                serverSide: true,
                 ajax: {
                     url: '{{ route('pembimbing.data') }}',
                     data: function(d) {
@@ -503,7 +524,8 @@
                         data: 'aksi',
                         name: 'aksi',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        className: 'text-center'
                     }
                 ],
                 autoWidth: false,
@@ -732,7 +754,7 @@
                     data: payload,
                     success: function() {
                         $('#modalForm').modal('hide');
-                        table.ajax.reload();
+                        table.ajax.reload(null, false);
                         Swal.fire({
                             icon: 'success',
                             title: 'Berhasil',
@@ -757,40 +779,35 @@
                 let id = $(this).data('id');
                 let url = '{{ route('pembimbing.destroy', ':id') }}';
                 url = url.replace(':id', id);
-                Swal.fire({
+                konfirmasiHapus({
                     title: 'Yakin hapus data ini?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Ya, hapus!',
-                    cancelButtonText: 'Batal'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        $.ajax({
-                            url: url,
-                            type: 'DELETE',
-                            data: {
-                                _token: '{{ csrf_token() }}',
-                            },
-                            success: function() {
-                                table.ajax.reload();
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Berhasil',
-                                    text: 'Data telah dihapus.',
-                                    timer: 1500,
-                                    showConfirmButton: false
-                                });
-                            },
-                            error: function(xhr) {
-                                console.log(xhr.responseText);
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Oops...',
-                                    text: 'Terjadi kesalahan.',
-                                });
-                            }
-                        });
-                    }
+                    text: 'Data yang dihapus tidak bisa dikembalikan.'
+                }, () => {
+                    $.ajax({
+                        url: url,
+                        type: 'DELETE',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                        },
+                        success: function() {
+                            table.ajax.reload(null, false);
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: 'Data telah dihapus.',
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                        },
+                        error: function(xhr) {
+                            console.log(xhr.responseText);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Oops...',
+                                text: 'Terjadi kesalahan.',
+                            });
+                        }
+                    });
                 });
             });
         });

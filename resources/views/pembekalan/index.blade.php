@@ -12,24 +12,34 @@
 
 @section('content')
     <div class="container-fluid pt-3">
-        <div class="card shadow-sm border-0 mb-3">
-            <div class="card-body py-3">
-                <div class="d-flex flex-wrap align-items-center justify-content-between">
-                    <div class="mb-2 mb-md-0">
-                        <h5 class="mb-1">Sub Menu Pembekalan</h5>
-                        <small class="text-muted">Pantau materi, tugas, absensi, dan catatan sikap siswa pembekalan.</small>
-                    </div>
+        <div class="card app-card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-layer-group"></i></span>
                     <div>
-                        <a href="#materi-pembekalan" class="btn btn-sm btn-outline-primary mb-1">Materi</a>
-                        <a href="#tugas-pembekalan" class="btn btn-sm btn-outline-success mb-1">Tugas</a>
-                        <a href="#absensi-pembekalan" class="btn btn-sm btn-outline-info mb-1">Absensi</a>
-                        <a href="#sikap-pembekalan" class="btn btn-sm btn-outline-warning mb-1">Catatan Sikap</a>
+                        <h4>Sub Menu Pembekalan</h4>
+                        <small>Pantau materi, tugas, absensi, dan catatan sikap siswa pembekalan.</small>
                     </div>
+                </div>
+                <div class="my-1">
+                    <a href="#materi-pembekalan" class="btn btn-sm btn-outline-primary mb-1">Materi</a>
+                    <a href="#tugas-pembekalan" class="btn btn-sm btn-outline-success mb-1">Tugas</a>
+                    <a href="#absensi-pembekalan" class="btn btn-sm btn-outline-info mb-1">Absensi</a>
+                    <a href="#sikap-pembekalan" class="btn btn-sm btn-outline-warning mb-1">Catatan Sikap</a>
                 </div>
             </div>
         </div>
 
-        <div class="card shadow-sm border-0 mb-3">
+        <div class="card app-card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-filter"></i></span>
+                    <div>
+                        <h4>Filter Data</h4>
+                        <small>Saring data pembekalan berdasarkan pembimbing, kelas, dan tanggal</small>
+                    </div>
+                </div>
+            </div>
             <div class="card-body py-3">
                 <form method="GET" action="{{ route('pembekalan.index') }}">
                     <div class="form-row align-items-end">
@@ -116,12 +126,18 @@
             </div>
         </div>
 
-        <div class="card shadow-sm border-0 mb-3" id="materi-pembekalan">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">Materi Pembekalan</h5>
+        <div class="card app-card mb-3" id="materi-pembekalan">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-book-open"></i></span>
+                    <div>
+                        <h4>Materi Pembekalan</h4>
+                        <small>Daftar materi/topik pembekalan</small>
+                    </div>
+                </div>
             </div>
-            <div class="card-body table-responsive">
-                <table class="table table-bordered table-striped table-sm datatable-pembekalan">
+            <div class="card-body">
+                <table class="table table-striped table-hover datatable-pembekalan" style="width:100%">
                     <thead>
                         <tr>
                             <th>No</th>
@@ -153,12 +169,18 @@
             </div>
         </div>
 
-        <div class="card shadow-sm border-0 mb-3" id="tugas-pembekalan">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">Tugas Pembekalan</h5>
+        <div class="card app-card mb-3" id="tugas-pembekalan">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-tasks"></i></span>
+                    <div>
+                        <h4>Tugas Pembekalan</h4>
+                        <small>Daftar tugas dan jawaban siswa</small>
+                    </div>
+                </div>
             </div>
-            <div class="card-body table-responsive">
-                <table class="table table-bordered table-striped table-sm datatable-pembekalan">
+            <div class="card-body">
+                <table class="table table-striped table-hover datatable-pembekalan" style="width:100%">
                     <thead>
                         <tr>
                             <th>No</th>
@@ -190,12 +212,18 @@
             </div>
         </div>
 
-        <div class="card shadow-sm border-0 mb-3" id="absensi-pembekalan">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">Absensi Pembekalan</h5>
+        <div class="card app-card mb-3" id="absensi-pembekalan">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-user-check"></i></span>
+                    <div>
+                        <h4>Absensi Pembekalan</h4>
+                        <small>Daftar kehadiran siswa pembekalan</small>
+                    </div>
+                </div>
             </div>
-            <div class="card-body table-responsive">
-                <table class="table table-bordered table-striped table-sm datatable-pembekalan">
+            <div class="card-body">
+                <table class="table table-striped table-hover datatable-pembekalan" style="width:100%">
                     <thead>
                         <tr>
                             <th>No</th>
@@ -225,12 +253,18 @@
             </div>
         </div>
 
-        <div class="card shadow-sm border-0 mb-3" id="sikap-pembekalan">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">Catatan Sikap Pembekalan</h5>
+        <div class="card app-card mb-3" id="sikap-pembekalan">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-user-graduate"></i></span>
+                    <div>
+                        <h4>Catatan Sikap Pembekalan</h4>
+                        <small>Daftar penilaian sikap siswa</small>
+                    </div>
+                </div>
             </div>
-            <div class="card-body table-responsive">
-                <table class="table table-bordered table-striped table-sm datatable-pembekalan">
+            <div class="card-body">
+                <table class="table table-striped table-hover datatable-pembekalan" style="width:100%">
                     <thead>
                         <tr>
                             <th>No</th>
@@ -264,6 +298,7 @@
 @endsection
 
 @section('css')
+    @include('partials.table_styles')
     <style>
         #materi-pembekalan,
         #tugas-pembekalan,
@@ -274,9 +309,8 @@
     </style>
 @endsection
 
-@section('plugins.Datatables', true)
-
 @section('js')
+    @include('partials.table_scripts')
     <script>
         $(function() {
             $('.datatable-pembekalan').DataTable({
@@ -285,10 +319,7 @@
                 ordering: true,
                 searching: true,
                 responsive: true,
-                autoWidth: false,
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json'
-                }
+                autoWidth: false
             });
         });
     </script>

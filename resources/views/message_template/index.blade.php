@@ -2,36 +2,15 @@
 
 @section('title', 'Template Informasi')
 
-@push('css')
+@section('css')
+    @include('partials.table_styles')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
         rel="stylesheet" />
-    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css" rel="stylesheet" />
-@endpush
-
-@push('js')
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
-@endpush
+@endsection
 
 @section('content')
-    <div class="container-fluid">
-        <div class="row mb-3">
-            <div class="col-md-12">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h2>Template Informasi Siswa</h2>
-                    <div>
-                        <button type="button" class="btn btn-primary" id="btnTambahTemplate">
-                            <i class="fas fa-plus"></i> Buat Template Baru
-                        </button>
-                        <a href="{{ route('message-template.logs') }}" class="btn btn-info">
-                            <i class="fas fa-history"></i> Riwayat Pengiriman
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="container-fluid pt-4">
         @if (session('success'))
             <div class="alert alert-success alert-dismissible fade show">
                 <button type="button" class="close" data-dismiss="alert">&times;</button>
@@ -39,12 +18,26 @@
             </div>
         @endif
 
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Daftar Template</h3>
+        <div class="card app-card">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-comment-dots"></i></span>
+                    <div>
+                        <h4>Template Informasi Siswa</h4>
+                        <small>Kelola template pesan WhatsApp dan kirim ke siswa</small>
+                    </div>
+                </div>
+                <div class="my-1 d-flex align-items-center flex-wrap">
+                    <a href="{{ route('message-template.logs') }}" class="btn btn-outline-info mr-2">
+                        <i class="fas fa-history mr-1"></i> Riwayat Pengiriman
+                    </a>
+                    <button type="button" class="btn btn-primary" id="btnTambahTemplate">
+                        <i class="fas fa-plus mr-1"></i> Buat Template Baru
+                    </button>
+                </div>
             </div>
             <div class="card-body">
-                <table id="templatesTable" class="table table-bordered table-striped table-hover">
+                <table id="templatesTable" class="table table-striped table-hover" style="width:100%">
                     <thead>
                         <tr>
                             <th style="width: 5%;">No</th>
@@ -53,7 +46,7 @@
                             <th style="width: 25%;">Konten</th>
                             <th style="width: 12%;">Pembuat</th>
                             <th style="width: 10%;">Tanggal</th>
-                            <th style="width: 16%;">Aksi</th>
+                            <th style="width: 16%;" class="text-center">Aksi</th>
                         </tr>
                     </thead>
                 </table>
@@ -102,8 +95,10 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan Template</button>
+                        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save mr-1"></i> Simpan Template
+                        </button>
                     </div>
                 </form>
             </div>
@@ -202,6 +197,8 @@
 @endsection
 
 @section('js')
+    @include('partials.table_scripts')
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         var currentTemplate = null;
 
@@ -261,7 +258,8 @@
                         data: 'aksi',
                         name: 'aksi',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        className: 'text-center'
                     }
                 ]
             });

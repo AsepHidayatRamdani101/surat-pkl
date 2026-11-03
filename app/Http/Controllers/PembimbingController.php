@@ -80,7 +80,7 @@ class PembimbingController extends Controller
                 $kelasIds = $perusahaan->kelas_ids ?? [];
 
                 if (empty($kelasIds) || in_array('all', $kelasIds, true)) {
-                    return '<span class="badge badge-info">Semua Kelas</span>';
+                    return '<span class="badge badge-soft-info px-2 py-1">Semua Kelas</span>';
                 }
 
                 $kelasLabels = Kelas::whereIn('id', $kelasIds)
@@ -96,7 +96,7 @@ class PembimbingController extends Controller
                 $remainingCount = count($kelasLabels) - count($visibleLabels);
 
                 $html = collect($visibleLabels)
-                    ->map(fn($namaKelas) => '<span class="badge badge-secondary mr-1 mb-1">' . e($namaKelas) . '</span>')
+                    ->map(fn($namaKelas) => '<span class="badge badge-soft-secondary px-2 py-1 mr-1 mb-1">' . e($namaKelas) . '</span>')
                     ->implode(' ');
 
                 if ($remainingCount > 0) {
@@ -110,25 +110,27 @@ class PembimbingController extends Controller
                 $hasAccount = isset($existingUsernames[(string) $perusahaan->nip_pembimbing]);
 
                 return $hasAccount
-                    ? '<span class="badge badge-success">Sudah Ada</span>'
-                    : '<span class="badge badge-secondary">Belum Ada</span>';
+                    ? '<span class="badge badge-soft-success px-2 py-1">Sudah Ada</span>'
+                    : '<span class="badge badge-soft-secondary px-2 py-1">Belum Ada</span>';
             })
             ->addColumn('aksi', function ($perusahaan) {
                 return '
-                    <a href="javascript:void(0)" class="btn btn-sm btn-warning btnEdit" 
-                    data-id="' . $perusahaan->id . '"
-                    data-nama="' . $perusahaan->nama_pembimbing . '"
-                      data-nip="' . $perusahaan->nip_pembimbing . '"
-                      data-jabatan="' . $perusahaan->jabatan_pembimbing . '"
-                      data-jenis="' . $perusahaan->jenis_kelamin . '"
-                                            data-nohp="' . $perusahaan->no_hp_pembimbing . '"
-                                            data-jumlah-jam="' . $perusahaan->jumlah_jam . '"
-                                            data-jenis-guru="' . $perusahaan->jenis_guru . '"
-                                            data-jurusan-id="' . $perusahaan->jurusan_id . '"
-                                            data-kelas-ids="' . e(json_encode($perusahaan->kelas_ids ?? [])) . '"
-                                            data-jumlah-siswa="' . $perusahaan->jumlah_siswa . '"
-                    >Edit</a>
-                    <a href="javascript:void(0)" class="btn btn-sm btn-danger btnHapus" data-id="' . $perusahaan->id . '">Hapus</a>
+                    <div class="btn-group btn-aksi">
+                        <button type="button" class="btn btn-outline-primary btn-sm btnEdit" title="Edit"
+                            data-id="' . $perusahaan->id . '"
+                            data-nama="' . $perusahaan->nama_pembimbing . '"
+                            data-nip="' . $perusahaan->nip_pembimbing . '"
+                            data-jabatan="' . $perusahaan->jabatan_pembimbing . '"
+                            data-jenis="' . $perusahaan->jenis_kelamin . '"
+                            data-nohp="' . $perusahaan->no_hp_pembimbing . '"
+                            data-jumlah-jam="' . $perusahaan->jumlah_jam . '"
+                            data-jenis-guru="' . $perusahaan->jenis_guru . '"
+                            data-jurusan-id="' . $perusahaan->jurusan_id . '"
+                            data-kelas-ids="' . e(json_encode($perusahaan->kelas_ids ?? [])) . '"
+                            data-jumlah-siswa="' . $perusahaan->jumlah_siswa . '"
+                        ><i class="fas fa-pen"></i></button>
+                        <button type="button" class="btn btn-outline-danger btn-sm btnHapus" title="Hapus" data-id="' . $perusahaan->id . '"><i class="fas fa-trash"></i></button>
+                    </div>
                 ';
             })
             ->addIndexColumn()

@@ -51,20 +51,17 @@ class MonitoringController extends Controller
                 ->addIndexColumn()
                 ->addColumn('aksi', function ($row) {
                     return '
-                        <button class="btn btn-sm btn-warning btn-edit"
-                        data-id="' . $row->id . '"
-                        data-perusahaan="' . $row->perusahaan_id . '"
-                        data-siswa="' . $row->siswa_id . '"
-                        data-pembimbing="' . ($row->pembimbing_id ?? '') . '"
-                        >Edit
-                        </button>
-                        <button class="btn btn-sm btn-success btnUpdateKesediaan"
-                        data-id="' . $row->id . '"
-                        >Upload
-                        </button>
-                        <button class="btn btn-sm btn-danger btn-hapus" data-id="' . $row->id . '">
-                            Hapus
-                        </button>
+                        <div class="btn-group btn-aksi">
+                            <button type="button" class="btn btn-outline-primary btn-sm btn-edit" title="Edit"
+                                data-id="' . $row->id . '"
+                                data-perusahaan="' . $row->perusahaan_id . '"
+                                data-siswa="' . $row->siswa_id . '"
+                                data-pembimbing="' . ($row->pembimbing_id ?? '') . '"><i class="fas fa-pen"></i></button>
+                            <button type="button" class="btn btn-outline-success btn-sm btnUpdateKesediaan" title="Upload"
+                                data-id="' . $row->id . '"><i class="fas fa-upload"></i></button>
+                            <button type="button" class="btn btn-outline-danger btn-sm btn-hapus" title="Hapus"
+                                data-id="' . $row->id . '"><i class="fas fa-trash"></i></button>
+                        </div>
                     ';
                 })
                 ->rawColumns(['aksi'])
@@ -113,9 +110,11 @@ class MonitoringController extends Controller
                 ->addIndexColumn()
                 ->addColumn('aksi', function ($row) {
                     return '
-                        <button type="button" class="btn btn-sm btn-warning btn-edit-pembimbing" data-id="' . $row['id'] . '" data-pembimbing="' . $row['pembimbing'] . '">Edit Pembimbing</button>
-                        <a href="' . route('monitoring.cetak-monitoring', ['id' => $row['id'], 'pembimbing_id' => $row['pembimbing_id']]) . '" target="_blank" class="btn btn-sm btn-success btn-cetak" data-id="' . $row['id'] . '">Cetak</a>
-                        <a href="' . route('monitoring.cetak-sppd', ['id' => $row['id'], 'pembimbing_id' => $row['pembimbing_id']]) . '" target="_blank" class="btn btn-sm btn-info btn-cetak" data-id="' . $row['id'] . '">Cetak SPPD</a>';
+                        <div class="btn-group btn-aksi">
+                            <button type="button" class="btn btn-outline-primary btn-sm btn-edit-pembimbing" title="Edit Pembimbing" data-id="' . $row['id'] . '" data-pembimbing="' . $row['pembimbing'] . '"><i class="fas fa-pen"></i></button>
+                            <a href="' . route('monitoring.cetak-monitoring', ['id' => $row['id'], 'pembimbing_id' => $row['pembimbing_id']]) . '" target="_blank" class="btn btn-outline-success btn-sm btn-cetak" title="Cetak" data-id="' . $row['id'] . '"><i class="fas fa-print"></i></a>
+                            <a href="' . route('monitoring.cetak-sppd', ['id' => $row['id'], 'pembimbing_id' => $row['pembimbing_id']]) . '" target="_blank" class="btn btn-outline-info btn-sm btn-cetak" title="Cetak SPPD" data-id="' . $row['id'] . '"><i class="fas fa-file-alt"></i></a>
+                        </div>';
                 })
                 ->rawColumns(['aksi'])
                 ->make(true);

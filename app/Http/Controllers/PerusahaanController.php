@@ -38,6 +38,9 @@ class PerusahaanController extends Controller
                     data-desa-id="' . e($perusahaan->desa_id) . '"
                     data-nama-pemilik="' . $perusahaan->nama_pemilik_perusahaan . '"
                     data-telepon-pemilik="' . $perusahaan->telepon_pemilik_perusahaan . '"
+                    data-latitude="' . e($perusahaan->latitude) . '"
+                    data-longitude="' . e($perusahaan->longitude) . '"
+                    data-maps-url="' . e($perusahaan->maps_url) . '"
                     >Edit</a>
                     <a href="javascript:void(0)" class="btn btn-sm btn-danger btnHapus" data-id="' . $perusahaan->id . '">Hapus</a>
                 ';
@@ -45,8 +48,18 @@ class PerusahaanController extends Controller
             ->addColumn('alamat', function ($perusahaan) {
                 return $this->formatAlamatLengkap($perusahaan);
             })
+            ->addColumn('maps', function ($perusahaan) {
+                if ($perusahaan->latitude !== null && $perusahaan->longitude !== null) {
+                    $url = 'https://www.google.com/maps?q=' . $perusahaan->latitude . ',' . $perusahaan->longitude;
+                    return '<a href="' . e($url) . '" target="_blank" rel="noopener" class="btn btn-xs btn-outline-success"><i class="fas fa-map-marker-alt mr-1"></i>Lihat Maps</a>';
+                }
+                if ($perusahaan->maps_url) {
+                    return '<a href="' . e($perusahaan->maps_url) . '" target="_blank" rel="noopener" class="btn btn-xs btn-outline-success"><i class="fas fa-map-marker-alt mr-1"></i>Lihat Maps</a>';
+                }
+                return '<span class="text-muted">Belum diatur</span>';
+            })
             ->addIndexColumn()
-            ->rawColumns(['checkbox', 'aksi', 'alamat'])
+            ->rawColumns(['checkbox', 'aksi', 'alamat', 'maps'])
             ->make(true);
     }
 
@@ -59,7 +72,12 @@ class PerusahaanController extends Controller
             'kabupaten_kota_id' => 'required',
             'kecamatan_id' => 'required',
             'desa_id' => 'required',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180|required_with:latitude',
+            'maps_url' => 'nullable|string|max:500',
         ]);
+
+        $koordinat = $this->resolveKoordinat($request);
 
         Perusahaan::create([
             'nama_perusahaan' => $request->nama_perusahaan,
@@ -70,6 +88,9 @@ class PerusahaanController extends Controller
             'kabupaten_kota_id' => $request->kabupaten_kota_id,
             'kecamatan_id' => $request->kecamatan_id,
             'desa_id' => $request->desa_id,
+            'latitude' => $koordinat['latitude'],
+            'longitude' => $koordinat['longitude'],
+            'maps_url' => $request->maps_url,
         ]);
 
         $this->forgetRekapWilayahCache();
@@ -88,7 +109,12 @@ class PerusahaanController extends Controller
             'kabupaten_kota_id' => 'required',
             'kecamatan_id' => 'required',
             'desa_id' => 'required',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180|required_with:latitude',
+            'maps_url' => 'nullable|string|max:500',
         ]);
+
+        $koordinat = $this->resolveKoordinat($request);
 
         $perusahaan = Perusahaan::find($id);
         $perusahaan->update([
@@ -100,6 +126,9 @@ class PerusahaanController extends Controller
             'kabupaten_kota_id' => $request->kabupaten_kota_id,
             'kecamatan_id' => $request->kecamatan_id,
             'desa_id' => $request->desa_id,
+            'latitude' => $koordinat['latitude'],
+            'longitude' => $koordinat['longitude'],
+            'maps_url' => $request->maps_url,
         ]);
 
         $this->forgetRekapWilayahCache();
@@ -366,6 +395,68 @@ class PerusahaanController extends Controller
         }
     }
 
+
+    private function resolveKoordinat(Request $request): array
+    {
+        $latitude = $request->latitude;
+        $longitude = $request->longitude;
+
+        // Jika koordinat tidak diisi manual, coba ekstrak dari link Google Maps.
+        if (($latitude === null || $longitude === null || $latitude === '' || $longitude === '') && $request->filled('maps_url')) {
+            $koordinat = $this->ekstrakKoordinatDariUrl($request->maps_url)
+                ?? $this->ekstrakKoordinatDariUrl($this->resolveShortMapsUrl($request->maps_url));
+
+            if ($koordinat) {
+                [$latitude, $longitude] = $koordinat;
+            }
+        }
+
+        return [
+            'latitude' => $latitude !== null && $latitude !== '' ? (float) $latitude : null,
+            'longitude' => $longitude !== null && $longitude !== '' ? (float) $longitude : null,
+        ];
+    }
+
+    private function ekstrakKoordinatDariUrl(?string $url): ?array
+    {
+        if (!$url) {
+            return null;
+        }
+
+        $patterns = [
+            '/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/',      // ...!3d-7.123!4d107.456 (titik marker, paling akurat)
+            '/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/',     // ...maps?q=-7.123,107.456
+            '/@(-?\d+\.\d+),(-?\d+\.\d+)/',          // .../maps/@-7.123,107.456,17z (titik tengah peta)
+            '/(-?\d{1,2}\.\d{4,}),\s*(-?\d{1,3}\.\d{4,})/', // koordinat polos
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $url, $matches)) {
+                return [(float) $matches[1], (float) $matches[2]];
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveShortMapsUrl(string $url): ?string
+    {
+        // Link pendek (maps.app.goo.gl / goo.gl) tidak memuat koordinat;
+        // ikuti redirect untuk mendapatkan URL Google Maps lengkap.
+        if (!preg_match('/^https?:\/\/(maps\.app\.goo\.gl|goo\.gl|g\.co)\//i', $url)) {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(10)
+                ->withHeaders(['User-Agent' => 'Mozilla/5.0'])
+                ->get($url);
+
+            return $response->effectiveUri() ? (string) $response->effectiveUri() : null;
+        } catch (\Throwable $exception) {
+            return null;
+        }
+    }
 
     private function forgetRekapWilayahCache(): void
     {

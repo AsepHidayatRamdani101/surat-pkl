@@ -15,7 +15,12 @@ use App\Http\Controllers\MateriController;
 use App\Http\Controllers\TugasPembekalanController;
 use App\Http\Controllers\AbsensiPembekalanController;
 use App\Http\Controllers\PembinaanPembekalanController;
+use App\Http\Controllers\AbsensiSelfiePklController;
+use App\Http\Controllers\JadwalSidangController;
+use App\Http\Controllers\KriteriaSidangController;
 use App\Http\Controllers\PklController;
+use App\Http\Controllers\RuanganSidangController;
+use App\Http\Controllers\SidangController;
 use App\Http\Controllers\JawabanTugasSiswaController;
 use App\Http\Controllers\NilaiTugasPembekalanController;
 use App\Http\Controllers\NilaiSikapPembekalanController;
@@ -64,6 +69,45 @@ Route::get('/dashboard/panitia/top-guru/export-pdf', [DashboardController::class
 Route::middleware('auth')->group(function () {
     Route::view('/evaluasi/jurnal', 'evaluasi.penilaian_jurnal')->name('evaluasi.jurnal');
     Route::view('/evaluasi/laporan-ppt', 'evaluasi.penilaian_laporan_ppt')->name('evaluasi.laporan-ppt');
+
+    Route::get('/absensi-selfie', [AbsensiSelfiePklController::class, 'index'])->name('absensi-selfie.index');
+    Route::get('/absensi-selfie/data', [AbsensiSelfiePklController::class, 'data'])->name('absensi-selfie.data');
+    Route::get('/absensi-selfie/monitoring', [AbsensiSelfiePklController::class, 'monitoring'])->name('absensi-selfie.monitoring');
+    Route::get('/absensi-selfie/monitoring/detail', [AbsensiSelfiePklController::class, 'monitoringDetail'])->name('absensi-selfie.monitoring.detail');
+
+    // Sidang PKL
+    Route::get('/sidang/ruangan', [RuanganSidangController::class, 'index'])->name('sidang.ruangan');
+    Route::get('/sidang/ruangan/data', [RuanganSidangController::class, 'data'])->name('sidang.ruangan.data');
+    Route::post('/sidang/ruangan', [RuanganSidangController::class, 'store'])->name('sidang.ruangan.store');
+    Route::put('/sidang/ruangan/{id}', [RuanganSidangController::class, 'update'])->name('sidang.ruangan.update');
+    Route::delete('/sidang/ruangan/{id}', [RuanganSidangController::class, 'destroy'])->name('sidang.ruangan.destroy');
+
+    Route::get('/sidang/kriteria', [KriteriaSidangController::class, 'index'])->name('sidang.kriteria');
+    Route::get('/sidang/kriteria/data', [KriteriaSidangController::class, 'data'])->name('sidang.kriteria.data');
+    Route::post('/sidang/kriteria', [KriteriaSidangController::class, 'store'])->name('sidang.kriteria.store');
+    Route::put('/sidang/kriteria/{id}', [KriteriaSidangController::class, 'update'])->name('sidang.kriteria.update');
+    Route::delete('/sidang/kriteria/{id}', [KriteriaSidangController::class, 'destroy'])->name('sidang.kriteria.destroy');
+
+    Route::get('/sidang/jadwal', [JadwalSidangController::class, 'index'])->name('sidang.jadwal');
+    Route::get('/sidang/jadwal/data', [JadwalSidangController::class, 'data'])->name('sidang.jadwal.data');
+    Route::post('/sidang/jadwal', [JadwalSidangController::class, 'store'])->name('sidang.jadwal.store');
+    Route::post('/sidang/jadwal/generate', [JadwalSidangController::class, 'generate'])->name('sidang.jadwal.generate');
+    Route::put('/sidang/jadwal/{id}', [JadwalSidangController::class, 'update'])->name('sidang.jadwal.update');
+    Route::delete('/sidang/jadwal/{id}', [JadwalSidangController::class, 'destroy'])->name('sidang.jadwal.destroy');
+
+    Route::get('/sidang/laporan', [SidangController::class, 'laporan'])->name('sidang.laporan');
+    Route::post('/sidang/laporan', [SidangController::class, 'laporanStore'])->name('sidang.laporan.store');
+
+    Route::get('/sidang/penilaian', [SidangController::class, 'penilaian'])->name('sidang.penilaian');
+    Route::get('/sidang/penilaian/data', [SidangController::class, 'penilaianData'])->name('sidang.penilaian.data');
+    Route::post('/sidang/penilaian', [SidangController::class, 'penilaianStore'])->name('sidang.penilaian.store');
+
+    Route::get('/sidang/nilai', [SidangController::class, 'nilaiSiswa'])->name('sidang.nilai');
+
+    Route::post('/sidang/sertifikat/generate', [SidangController::class, 'generateSertifikat'])->name('sidang.sertifikat.generate');
+    Route::get('/sidang/sertifikat/cetak/{siswaId?}', [SidangController::class, 'cetakSertifikat'])->name('sidang.sertifikat.cetak');
+    Route::get('/sidang/sertifikat/download/{siswaId?}', [SidangController::class, 'downloadSertifikat'])->name('sidang.sertifikat.download');
+    Route::post('/absensi-selfie', [AbsensiSelfiePklController::class, 'store'])->name('absensi-selfie.store');
 
     Route::get('/pkl/jurnal-rekap', [PklController::class, 'jurnalRekap'])->name('pkl.jurnal-rekap');
     Route::post('/pkl/jurnal-rekap', [PklController::class, 'simpanJurnalRekap'])->name('pkl.jurnal-rekap.store');

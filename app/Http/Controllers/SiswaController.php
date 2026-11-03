@@ -63,17 +63,15 @@ class SiswaController extends Controller
                     $hasAccount = isset($existingUsernames[(string) $row->nis]);
 
                     return $hasAccount
-                        ? '<span class="badge badge-success">Sudah Ada</span>'
-                        : '<span class="badge badge-secondary">Belum Ada</span>';
+                        ? '<span class="badge badge-soft-success px-2 py-1">Sudah Ada</span>'
+                        : '<span class="badge badge-soft-secondary px-2 py-1">Belum Ada</span>';
                 })
                 ->addColumn('aksi', function ($row) {
                     return '
-                        <button class="btn btn-sm btn-warning btnEdit" data-id="' .
-                        $row->id .
-                        '">Edit</button>
-                        <button class="btn btn-sm btn-danger btnHapus" data-id="' .
-                        $row->id .
-                        '">Hapus</button>
+                        <div class="btn-group btn-aksi">
+                            <button type="button" class="btn btn-outline-primary btn-sm btnEdit" title="Edit" data-id="' . $row->id . '"><i class="fas fa-pen"></i></button>
+                            <button type="button" class="btn btn-outline-danger btn-sm btnHapus" title="Hapus" data-id="' . $row->id . '"><i class="fas fa-trash"></i></button>
+                        </div>
                     ';
                 })
                 ->rawColumns(['checkbox', 'status_akun', 'aksi'])

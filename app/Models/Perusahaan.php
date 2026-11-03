@@ -20,6 +20,9 @@ class Perusahaan extends Model
         'kabupaten_kota_id',
         'kecamatan_id',
         'desa_id',
+        'latitude',
+        'longitude',
+        'maps_url',
     ];
 
     public function tempatPkl()

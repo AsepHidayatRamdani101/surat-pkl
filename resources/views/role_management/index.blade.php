@@ -3,21 +3,29 @@
 @section('title', 'Manajemen Role')
 
 @section('content')
-    <div class="container pt-4">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="m-0">Manajemen Role</h4>
-                <div class="float-right">
-                    <button class="btn btn-sm btn-primary" id="btnTambah">Tambah Data</button>
+    <div class="container-fluid pt-4">
+        <div class="card app-card">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-user-shield"></i></span>
+                    <div>
+                        <h4>Manajemen Role</h4>
+                        <small>Kelola role / hak akses pengguna aplikasi</small>
+                    </div>
+                </div>
+                <div class="my-1">
+                    <button class="btn btn-primary" id="btnTambah">
+                        <i class="fas fa-plus mr-1"></i> Tambah Data
+                    </button>
                 </div>
             </div>
             <div class="card-body">
-                <table id="roleTable" class="table table-bordered table-striped">
+                <table id="roleTable" class="table table-striped table-hover" style="width: 100%;">
                     <thead>
                         <tr>
-                            <th>No</th>
+                            <th style="width: 50px;">No</th>
                             <th>Nama Role</th>
-                            <th>Aksi</th>
+                            <th style="width: 100px;" class="text-center">Aksi</th>
                         </tr>
                     </thead>
                 </table>
@@ -42,8 +50,10 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                        <button type="button" class="btn btn-success" id="btnSimpan">Simpan</button>
+                        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-primary" id="btnSimpan">
+                            <i class="fas fa-save mr-1"></i> Simpan
+                        </button>
                     </div>
                 </div>
             </form>
@@ -52,50 +62,13 @@
 @endsection
 
 @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    @include('partials.table_styles')
 @endsection
 
 @section('js')
-    @include('sweetalert::alert')
-
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @include('partials.table_scripts')
     <script>
         $(document).ready(function() {
-            const originalSwalFire = Swal.fire.bind(Swal);
-            Swal.fire = function(options, ...args) {
-                if (typeof options === 'object' && options !== null) {
-                    const merged = {
-                        confirmButtonColor: '#0d6efd',
-                        cancelButtonColor: '#6c757d',
-                        ...options,
-                    };
-
-                    if (merged.showCancelButton) {
-                        merged.confirmButtonText = merged.confirmButtonText || 'Ya, lanjut';
-                        merged.cancelButtonText = merged.cancelButtonText || 'Batal';
-                    } else {
-                        merged.confirmButtonText = merged.confirmButtonText || 'OK';
-                    }
-
-                    if (merged.icon === 'success' && merged.timer === undefined && merged.showConfirmButton ===
-                        undefined) {
-                        merged.timer = 1800;
-                        merged.showConfirmButton = false;
-                    }
-
-                    return originalSwalFire(merged, ...args);
-                }
-
-                return originalSwalFire(options, ...args);
-            };
-
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-            });
-
             const table = $('#roleTable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -114,7 +87,8 @@
                         data: 'aksi',
                         name: 'aksi',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        className: 'text-center'
                     }
                 ]
             });
@@ -138,7 +112,7 @@
                     data: $('#formRole').serialize(),
                     success: function(response) {
                         $('#modalForm').modal('hide');
-                        table.ajax.reload();
+                        table.ajax.reload(null, false);
                         Swal.fire({
                             icon: 'success',
                             title: 'Berhasil',
@@ -183,23 +157,15 @@
                 const id = $(this).data('id');
                 const url = '{{ route('role-management.destroy', ':id') }}'.replace(':id', id);
 
-                Swal.fire({
+                konfirmasiHapus({
                     title: 'Hapus data ini?',
-                    text: 'Data yang dihapus tidak bisa dikembalikan.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Ya, hapus',
-                    cancelButtonText: 'Batal'
-                }).then((result) => {
-                    if (!result.isConfirmed) {
-                        return;
-                    }
-
+                    text: 'Data yang dihapus tidak bisa dikembalikan.'
+                }, () => {
                     $.ajax({
                         url: url,
                         type: 'DELETE',
                         success: function(response) {
-                            table.ajax.reload();
+                            table.ajax.reload(null, false);
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Berhasil',

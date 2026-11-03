@@ -3,33 +3,47 @@
 @section('title', 'Data Siswa')
 
 @section('content')
-    <div class="container pt-4">
+    <div class="container-fluid pt-4">
         @if (($statusFilter ?? null) === 'belum_terdaftar')
             <div class="alert alert-warning">
                 <strong>Jumlah siswa belum mendaftar:</strong> {{ $jumlahBelumMendaftar }} siswa
             </div>
         @endif
 
-        <div class="card">
-            <div class="card-header">
-                <h4 class="d-inline">Data Siswa</h4>
-                <div class="float-right">
-                    <select id="filterStatusAkunSiswa" class="form-control form-control-sm d-inline-block"
-                        style="width: 220px; margin-right: 8px;">
+        <div class="card app-card">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-user-graduate"></i></span>
+                    <div>
+                        <h4>Data Siswa</h4>
+                        <small>Kelola data siswa, akun login, import & export</small>
+                    </div>
+                </div>
+                <div class="my-1 d-flex align-items-center flex-wrap">
+                    <select id="filterStatusAkunSiswa" class="form-control form-control-sm mr-2" style="width: 200px;">
                         <option value="">Semua Status Akun</option>
                         <option value="without" selected>Belum Punya Akun</option>
                         <option value="with">Sudah Punya Akun</option>
                     </select>
-                    <button class="btn btn-sm btn-info" id="btnGenerateAkunSiswa">Generate Akun Siswa</button>
-                    <button class="btn btn-sm btn-primary" id="btnTambah">Tambah Data</button>
-                    <a href="{{ route('siswa.export-pdf') }}" class="btn btn-sm btn-danger">Export PDF</a>
-                    <button class="btn btn-sm btn-success" id="btnImport">Import Data</button>
-                    <button class="btn btn-sm btn-danger" id="btnHapusMultiple" style="display: none;">Hapus
-                        Pilihan</button>
+                    <button class="btn btn-outline-info btn-sm mr-2" id="btnGenerateAkunSiswa">
+                        <i class="fas fa-user-plus mr-1"></i> Generate Akun
+                    </button>
+                    <a href="{{ route('siswa.export-pdf') }}" class="btn btn-outline-danger btn-sm mr-2">
+                        <i class="fas fa-file-pdf mr-1"></i> Export PDF
+                    </a>
+                    <button class="btn btn-outline-success btn-sm mr-2" id="btnImport">
+                        <i class="fas fa-file-excel mr-1"></i> Import
+                    </button>
+                    <button class="btn btn-danger btn-sm mr-2" id="btnHapusMultiple" style="display: none;">
+                        <i class="fas fa-trash mr-1"></i> Hapus Pilihan
+                    </button>
+                    <button class="btn btn-primary btn-sm" id="btnTambah">
+                        <i class="fas fa-plus mr-1"></i> Tambah Data
+                    </button>
                 </div>
             </div>
             <div class="card-body">
-                <table id="siswaTable" class="table table-bordered">
+                <table id="siswaTable" class="table table-striped table-hover" style="width: 100%;">
                     <thead>
                         <tr>
                             <th style="width: 30px;"><input type="checkbox" id="checkAll" class="form-check"></th>
@@ -40,7 +54,7 @@
                             <th>Jurusan</th>
                             <th>Status</th>
                             <th>Status Akun</th>
-                            <th>Aksi</th>
+                            <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
                 </table>
@@ -55,7 +69,7 @@
                             </div>
                             <div class="modal-body">
                                 <p class="text-muted mb-3">
-                                    <a href="{{ route('siswa.downloadTemplate') }}" class="btn btn-sm btn-info">
+                                    <a href="{{ route('siswa.downloadTemplate') }}" class="btn btn-sm btn-outline-info">
                                         <i class="fas fa-download"></i> Download Format Template
                                     </a>
                                 </p>
@@ -106,8 +120,10 @@
 
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-success btn-simpan">Simpan</button>
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+                                    <button type="button" class="btn btn-primary btn-simpan">
+                                        <i class="fas fa-save mr-1"></i> Simpan
+                                    </button>
                                 </div>
                             </div>
                         </form>
@@ -119,15 +135,11 @@
 @endsection
 
 @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-
+    @include('partials.table_styles')
 @endsection
 
 @section('js')
-    @include('sweetalert::alert')
-
-    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    @include('partials.table_scripts')
 
     <script>
         $(document).ready(function() {
@@ -173,12 +185,6 @@
                     }
                 });
             }
-
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-            });
 
             let table = $('#siswaTable').DataTable({
                 processing: true,
@@ -231,7 +237,8 @@
                         data: 'aksi',
                         name: 'aksi',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        className: 'text-center'
                     },
                 ]
             });
@@ -319,7 +326,7 @@
                     processData: false,
                     success: function() {
                         $('#modalImport').modal('hide');
-                        table.ajax.reload();
+                        table.ajax.reload(null, false);
                         Swal.fire({
                             icon: 'success',
                             title: 'Berhasil',
@@ -342,23 +349,15 @@
                 let url = '{{ route('siswa.destroy', ':id') }}';
                 url = url.replace(':id', id);
 
-                Swal.fire({
+                konfirmasiHapus({
                     title: 'Hapus data ini?',
-                    text: 'Data yang dihapus tidak bisa dikembalikan.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Ya, hapus',
-                    cancelButtonText: 'Batal'
-                }).then((result) => {
-                    if (!result.isConfirmed) {
-                        return;
-                    }
-
+                    text: 'Data yang dihapus tidak bisa dikembalikan.'
+                }, () => {
                     $.ajax({
                         url: url,
                         type: 'DELETE',
                         success: function() {
-                            table.ajax.reload();
+                            table.ajax.reload(null, false);
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Berhasil',
@@ -394,7 +393,7 @@
                     },
                     success: function() {
                         $('#modalForm').modal('hide');
-                        table.ajax.reload();
+                        table.ajax.reload(null, false);
                         Swal.fire({
                             icon: 'success',
                             title: 'Berhasil',
@@ -458,18 +457,10 @@
                     return;
                 }
 
-                Swal.fire({
+                konfirmasiHapus({
                     title: 'Hapus data terpilih?',
-                    text: 'Yakin hapus ' + selectedIds.length + ' data siswa ini?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Ya, hapus',
-                    cancelButtonText: 'Batal'
-                }).then((result) => {
-                    if (!result.isConfirmed) {
-                        return;
-                    }
-
+                    text: 'Yakin hapus ' + selectedIds.length + ' data siswa ini?'
+                }, () => {
                     $.ajax({
                         url: '{{ route('siswa.destroyMultiple') }}',
                         type: 'DELETE',
@@ -483,7 +474,7 @@
                                 title: 'Berhasil',
                                 text: response.message,
                             });
-                            table.ajax.reload();
+                            table.ajax.reload(null, false);
                             $('#btnHapusMultiple').hide();
                         },
                         error: function(xhr) {

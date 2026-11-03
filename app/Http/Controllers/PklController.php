@@ -168,7 +168,7 @@ class PklController extends Controller
     private function resumeBimbingan(Request $request)
     {
         $bulan = $request->filled('bulan')
-            ? Carbon::createFromFormat('Y-m', $request->input('bulan'))->startOfMonth()
+            ? Carbon::createFromFormat('Y-m-d', $request->input('bulan') . '-01')->startOfMonth()
             : Carbon::now()->startOfMonth();
 
         $pembimbingId = $this->selectedPembimbingId($request);
@@ -294,7 +294,7 @@ class PklController extends Controller
         $data = $this->validatedRecord($type, $request);
 
         if ($type === 'resume') {
-            $data['bulan'] = Carbon::createFromFormat('Y-m', $data['bulan'])
+            $data['bulan'] = Carbon::createFromFormat('Y-m-d', $data['bulan'] . '-01')
                 ->startOfMonth()
                 ->toDateString();
             $existing = ResumePklBulanan::where('siswa_id', $data['siswa_id'])

@@ -11,6 +11,7 @@ use App\Models\KelompokBimbingan;
 use App\Models\Materi;
 use App\Models\NilaiSikapPembekalan;
 use App\Models\Pembimbing;
+use App\Models\Sekolah;
 use App\Models\TugasPembekalan;
 use App\Models\Siswa;
 use App\Models\SuratIzinOrtu;
@@ -609,37 +610,29 @@ class DashboardController extends Controller
 
     public function cetakSertifikatPembekalan()
     {
-        $user = auth()->user();
-
-        if (!$user || $user->role !== 'siswa') {
-            abort(403);
+        $data = $this->buildSertifikatPembekalanData();
+        if (!is_array($data)) {
+            return $data;
         }
-
-        $siswa = Siswa::with('kelas.jurusan')
-            ->where('nis', (string) $user->username)
-            ->first();
-
-        if (!$siswa) {
-            return redirect()->route('dashboard')->with('error', 'Data siswa tidak ditemukan.');
-        }
-
-        $bimbingan = Bimbingan::where('siswa_id', $siswa->id)->get();
-        $totalSesi = $bimbingan->count();
-        $hadir = $bimbingan->where('status_absensi', 'hadir')->count();
-        $progres = $totalSesi > 0 ? (int) round(($hadir / $totalSesi) * 100) : 0;
-
-        $data = [
-            'siswa' => $siswa,
-            'totalSesi' => $totalSesi,
-            'hadir' => $hadir,
-            'progres' => $progres,
-            'tanggalCetak' => now(),
-        ];
 
         return view('siswa.sertifikat_pembekalan', $data);
     }
 
     public function downloadSertifikatPembekalan()
+    {
+        $data = $this->buildSertifikatPembekalanData();
+        if (!is_array($data)) {
+            return $data;
+        }
+
+        $pdf = Pdf::loadView('siswa.sertifikat_pembekalan_pdf', $data)->setPaper('A4', 'landscape');
+
+        $filename = 'sertifikat-pembekalan-' . ($data['siswa']->nis ?? 'siswa') . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
+    private function buildSertifikatPembekalanData()
     {
         $user = auth()->user();
 
@@ -655,24 +648,92 @@ class DashboardController extends Controller
             return redirect()->route('dashboard')->with('error', 'Data siswa tidak ditemukan.');
         }
 
-        $bimbingan = Bimbingan::where('siswa_id', $siswa->id)->get();
-        $totalSesi = $bimbingan->count();
-        $hadir = $bimbingan->where('status_absensi', 'hadir')->count();
+        // Kehadiran pembekalan: sumber sama dengan dashboard siswa (absensi_pembekalans).
+        $dailyAbsensi = AbsensiPembekalan::where('siswa_id', $siswa->id)
+            ->get()
+            ->groupBy(fn ($entry) => (string) $entry->tanggal_absensi)
+            ->sortKeys();
+
+        $totalSesi = $dailyAbsensi->count();
+        $hadir = 0;
+        foreach ($dailyAbsensi as $entries) {
+            $statusDatang = optional($entries->firstWhere('sesi_absensi', 'datang'))->status;
+            $statusPulang = optional($entries->firstWhere('sesi_absensi', 'pulang'))->status;
+            if ($statusDatang === 'hadir' && $statusPulang === 'hadir') {
+                $hadir++;
+            }
+        }
         $progres = $totalSesi > 0 ? (int) round(($hadir / $totalSesi) * 100) : 0;
 
-        $data = [
+        // Nilai tugas pembekalan.
+        $tugasPembekalan = TugasPembekalan::with([
+            'jawabanSiswa' => fn ($q) => $q->where('siswa_id', $siswa->id),
+            'jawabanSiswa.nilaiTugas',
+        ])->get();
+
+        $totalTugas = $tugasPembekalan->count();
+        $tugasSelesai = $tugasPembekalan
+            ->filter(fn ($item) => !empty($item->jawabanSiswa->first()?->submitted_at))
+            ->count();
+        $avgNilai = $tugasPembekalan
+            ->map(fn ($item) => $item->jawabanSiswa->first()?->nilaiTugas?->nilai)
+            ->filter(fn ($nilai) => $nilai !== null)
+            ->avg();
+        $avgNilai = $avgNilai !== null ? round((float) $avgNilai, 2) : null;
+
+        // Catatan sikap pembekalan (modus dari seluruh penilaian, fallback penilaian terakhir).
+        $nilaiSikap = NilaiSikapPembekalan::where('siswa_id', $siswa->id)
+            ->orderByDesc('tanggal_penilaian')
+            ->orderByDesc('id')
+            ->get();
+        $sikapTerbanyak = $nilaiSikap->isNotEmpty()
+            ? $nilaiSikap->countBy('nilai_sikap')->sortDesc()->keys()->first()
+            : null;
+        $sikapLabel = [
+            'sangat_baik' => 'Sangat Baik',
+            'baik' => 'Baik',
+            'cukup' => 'Cukup',
+            'kurang' => 'Kurang',
+            'perlu_bimbingan' => 'Perlu Bimbingan',
+        ][$sikapTerbanyak] ?? null;
+
+        $sekolah = Sekolah::latest('id')->first();
+        $relatifJikaAda = fn (?string $path) => $path && is_file(public_path($path)) ? $path : null;
+        $ttdPath = $relatifJikaAda($sekolah?->ttd_kepala_sekolah_path ? 'storage/' . $sekolah->ttd_kepala_sekolah_path : null);
+        $capPath = $relatifJikaAda($sekolah?->cap_sekolah_path ? 'storage/' . $sekolah->cap_sekolah_path : null);
+        $logoPath = $relatifJikaAda('logo.png');
+
+        return [
             'siswa' => $siswa,
             'totalSesi' => $totalSesi,
             'hadir' => $hadir,
             'progres' => $progres,
-            'tanggalCetak' => now(),
+            'totalTugas' => $totalTugas,
+            'tugasSelesai' => $tugasSelesai,
+            'avgNilai' => $avgNilai,
+            'predikatNilai' => $this->predikatNilaiPembekalan($avgNilai),
+            'sikap' => $sikapLabel,
+            'tanggalCetak' => now()->locale('id'),
+            'kepalaSekolah' => optional($sekolah)->nama_kepala_sekolah ?? 'MOH. ROFIK ZEN, S.Pd., M.M.Pd.',
+            'nipKepalaSekolah' => optional($sekolah)->nip_kepala_sekolah ?? '196906131994121002',
+            'ttdPath' => $ttdPath,
+            'capPath' => $capPath,
+            'logoPath' => $logoPath,
         ];
+    }
 
-        $pdf = Pdf::loadView('siswa.sertifikat_pembekalan_pdf', $data)->setPaper('A4', 'landscape');
+    private function predikatNilaiPembekalan(?float $nilai): ?string
+    {
+        if ($nilai === null) {
+            return null;
+        }
 
-        $filename = 'sertifikat-pembekalan-' . ($siswa->nis ?? 'siswa') . '.pdf';
-
-        return $pdf->download($filename);
+        return match (true) {
+            $nilai >= 90 => 'Sangat Baik (A)',
+            $nilai >= 80 => 'Baik (B)',
+            $nilai >= 70 => 'Cukup (C)',
+            default => 'Perlu Bimbingan (D)',
+        };
     }
 
     public function exportTopGuruPanitiaExcel(Request $request)

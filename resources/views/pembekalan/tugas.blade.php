@@ -12,7 +12,16 @@
 
 @section('content')
     <div class="container-fluid pt-3">
-        <div class="card shadow-sm border-0 mb-3">
+        <div class="card app-card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-filter"></i></span>
+                    <div>
+                        <h4>Filter Tugas</h4>
+                        <small>Saring tugas berdasarkan tanggal dan kata kunci</small>
+                    </div>
+                </div>
+            </div>
             <div class="card-body py-3">
                 <form method="GET" action="{{ route('pembekalan.tugas') }}">
                     <div class="form-row align-items-end">
@@ -42,18 +51,25 @@
             </div>
         </div>
 
-        <div class="card shadow-sm border-0 mb-3">
-            <div class="card-header bg-white d-flex align-items-center">
-                <div>
-                    <h5 class="mb-0">Daftar Tugas Pembekalan</h5>
-                    <small class="text-muted">{{ $tugas->count() }} data</small>
+        <div class="card app-card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-tasks"></i></span>
+                    <div>
+                        <h4>Daftar Tugas Pembekalan</h4>
+                        <small>{{ $tugas->count() }} data</small>
+                    </div>
                 </div>
                 @can('panitia')
-                    <button type="button" class="btn btn-sm btn-primary ml-auto" id="btnOpenTugasModal">Tambah Tugas</button>
+                    <div class="my-1">
+                        <button type="button" class="btn btn-primary" id="btnOpenTugasModal">
+                            <i class="fas fa-plus mr-1"></i> Tambah Tugas
+                        </button>
+                    </div>
                 @endcan
             </div>
-            <div class="card-body table-responsive">
-                <table class="table table-bordered table-striped datatable-tugas">
+            <div class="card-body">
+                <table class="table table-striped table-hover datatable-tugas" style="width:100%">
                     <thead>
                         <tr>
                             <th style="width: 95px;">Tanggal</th>

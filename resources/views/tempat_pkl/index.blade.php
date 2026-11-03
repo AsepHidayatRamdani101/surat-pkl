@@ -3,17 +3,27 @@
 @section('title', 'Data Tempat PKL')
 
 @section('content')
-    <div class="container pt-4">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="m-0">Data Tempat PKL</h4>
-                <div>
-                    <button class="btn btn-sm btn-primary" id="btnTambah">Tambah Data</button>
-                    <a href="{{ route('tempat-pkl.export-excel') }}" class="btn btn-sm btn-success">Export Excel</a>
+    <div class="container-fluid pt-4">
+        <div class="card app-card">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-building"></i></span>
+                    <div>
+                        <h4>Data Tempat PKL</h4>
+                        <small>Kelola pendaftaran siswa ke tempat PKL</small>
+                    </div>
+                </div>
+                <div class="my-1 d-flex align-items-center flex-wrap">
+                    <a href="{{ route('tempat-pkl.export-excel') }}" class="btn btn-outline-success mr-2">
+                        <i class="fas fa-file-excel mr-1"></i> Export Excel
+                    </a>
+                    <button class="btn btn-primary" id="btnTambah">
+                        <i class="fas fa-plus mr-1"></i> Tambah Data
+                    </button>
                 </div>
             </div>
             <div class="card-body">
-                <table id="tempatPklTable" class="table table-bordered table-striped">
+                <table id="tempatPklTable" class="table table-striped table-hover" style="width:100%">
                     <thead>
                         <tr>
                             <th>No</th>
@@ -22,7 +32,7 @@
                             <th>Tgl Mulai</th>
                             <th>Tgl Selesai</th>
                             <th>Status</th>
-                            <th>Aksi</th>
+                            <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
                 </table>
@@ -91,8 +101,10 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                            <button type="button" class="btn btn-primary btnSimpanKesediaan">Simpan</button>
+                            <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-primary btnSimpanKesediaan">
+                                <i class="fas fa-save mr-1"></i> Simpan
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -172,8 +184,10 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                            <button type="button" class="btn btn-success btn-simpan">Simpan</button>
+                            <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-primary btn-simpan">
+                                <i class="fas fa-save mr-1"></i> Simpan
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -183,18 +197,15 @@
 @endsection
 
 @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    @include('partials.table_styles')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
         rel="stylesheet" />
 @endsection
 
 @section('js')
-    @include('sweetalert::alert')
-
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    @include('partials.table_scripts')
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function() {
             const originalSwalFire = Swal.fire.bind(Swal);
@@ -224,12 +235,6 @@
 
                 return originalSwalFire(options, ...args);
             };
-
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-            });
 
             $('.select2').select2({
                 theme: 'bootstrap-5',
@@ -454,18 +459,10 @@
             $(document).on('click', '.btn-hapus', function() {
                 const id = $(this).data('id');
 
-                Swal.fire({
+                konfirmasiHapus({
                     title: 'Yakin?',
-                    text: 'Data akan dihapus.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Ya, hapus',
-                    cancelButtonText: 'Batal'
-                }).then((result) => {
-                    if (!result.isConfirmed) {
-                        return;
-                    }
-
+                    text: 'Data akan dihapus.'
+                }, function() {
                     $.ajax({
                         url: `/tempat-pkl/${id}`,
                         type: 'DELETE',
@@ -473,7 +470,7 @@
                             _token: '{{ csrf_token() }}'
                         },
                         success: function() {
-                            table.ajax.reload();
+                            table.ajax.reload(null, false);
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Berhasil',

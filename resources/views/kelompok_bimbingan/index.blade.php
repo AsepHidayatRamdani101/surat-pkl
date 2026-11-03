@@ -15,9 +15,15 @@
         @if ($canManageKelompok)
             <div class="row mb-3">
                 <div class="col-md-6 mb-3 mb-md-0">
-                    <div class="card h-100 shadow-sm border-0">
-                        <div class="card-header bg-white">
-                            <h5 class="mb-0">Penentuan Otomatis</h5>
+                    <div class="card app-card h-100">
+                        <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                            <div class="d-flex align-items-center my-1">
+                                <span class="card-title-icon"><i class="fas fa-magic"></i></span>
+                                <div>
+                                    <h4>Penentuan Otomatis</h4>
+                                    <small>Generate kelompok bimbingan secara otomatis</small>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-body">
                             <p class="mb-2">Aturan otomatis:</p>
@@ -55,9 +61,15 @@
                 </div>
 
                 <div class="col-md-6">
-                    <div class="card h-100 shadow-sm border-0">
-                        <div class="card-header bg-white">
-                            <h5 class="mb-0">Penentuan Manual</h5>
+                    <div class="card app-card h-100">
+                        <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                            <div class="d-flex align-items-center my-1">
+                                <span class="card-title-icon"><i class="fas fa-hand-pointer"></i></span>
+                                <div>
+                                    <h4>Penentuan Manual</h4>
+                                    <small>Susun kelompok bimbingan secara manual</small>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-body">
                             <form action="{{ route('kelompok-bimbingan.store-manual') }}" method="POST"
@@ -180,10 +192,18 @@
 
             <div class="row mb-3">
                 <div class="col-md-6 mb-3 mb-md-0">
-                    <div class="card shadow-sm border-0 h-100">
-                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0 text-danger">Pembimbing Kelebihan Kuota</h5>
-                            <span class="badge bg-danger">{{ $pembimbingKelebihanKuota->count() }}</span>
+                    <div class="card app-card h-100">
+                        <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                            <div class="d-flex align-items-center my-1">
+                                <span class="card-title-icon"><i class="fas fa-user-plus"></i></span>
+                                <div>
+                                    <h4 class="text-danger">Pembimbing Kelebihan Kuota</h4>
+                                    <small>Pembimbing dengan jumlah siswa melebihi kuota</small>
+                                </div>
+                            </div>
+                            <div class="my-1">
+                                <span class="badge badge-soft-danger px-2 py-1">{{ $pembimbingKelebihanKuota->count() }}</span>
+                            </div>
                         </div>
                         <div class="card-body p-0">
                             <ul class="list-group list-group-flush">
@@ -208,10 +228,18 @@
                 </div>
 
                 <div class="col-md-6">
-                    <div class="card shadow-sm border-0 h-100">
-                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0 text-warning">Pembimbing Kekurangan Kuota</h5>
-                            <span class="badge bg-warning">{{ $pembimbingKekuranganKuota->count() }}</span>
+                    <div class="card app-card h-100">
+                        <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                            <div class="d-flex align-items-center my-1">
+                                <span class="card-title-icon"><i class="fas fa-user-minus"></i></span>
+                                <div>
+                                    <h4 class="text-warning">Pembimbing Kekurangan Kuota</h4>
+                                    <small>Pembimbing dengan jumlah siswa di bawah kuota</small>
+                                </div>
+                            </div>
+                            <div class="my-1">
+                                <span class="badge badge-soft-warning px-2 py-1">{{ $pembimbingKekuranganKuota->count() }}</span>
+                            </div>
                         </div>
                         <div class="card-body p-0">
                             <ul class="list-group list-group-flush">
@@ -633,44 +661,8 @@
     @endsection
 
     @section('css')
-        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
-        <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
+        @include('partials.table_styles')
         <style>
-            table.dataTable.dtr-inline.collapsed>tbody>tr>td.dtr-control:before,
-            table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
-                content: '+';
-                background: linear-gradient(135deg, #0d6efd 0%, #3b82f6 100%);
-                border: 0;
-                box-shadow: 0 6px 16px rgba(13, 110, 253, 0.22);
-                font-weight: 700;
-                font-size: 12px;
-                line-height: 18px;
-                text-align: center;
-                width: 20px;
-                height: 20px;
-                border-radius: 999px;
-                color: #fff;
-                transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
-            }
-
-            table.dataTable.dtr-inline.collapsed>tbody>tr.parent>td.dtr-control:before,
-            table.dataTable.dtr-inline.collapsed>tbody>tr.parent>th.dtr-control:before {
-                content: '-';
-                background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
-                box-shadow: 0 6px 16px rgba(249, 115, 22, 0.22);
-                transform: rotate(180deg);
-            }
-
-            table.dataTable.dtr-inline.collapsed>tbody>tr:hover>td.dtr-control:before,
-            table.dataTable.dtr-inline.collapsed>tbody>tr:hover>th.dtr-control:before {
-                transform: scale(1.06);
-            }
-
-            table.dataTable.dtr-inline.collapsed>tbody>tr.parent:hover>td.dtr-control:before,
-            table.dataTable.dtr-inline.collapsed>tbody>tr.parent:hover>th.dtr-control:before {
-                transform: rotate(180deg) scale(1.06);
-            }
-
             .manual-quota-status {
                 display: inline-block;
                 margin-left: 8px;
@@ -886,16 +878,8 @@
         </style>
     @endsection
 
-    @section('plugins.Datatables', true)
-
 @section('js')
-    @include('sweetalert::alert')
-
-    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap4.min.js"></script>
+    @include('partials.table_scripts')
 
     <script>
         const successMessage = @json(session('success'));
@@ -961,31 +945,16 @@
                     lengthChange: true,
                     ordering: true,
                     searching: true,
-                    responsive: true,
-                    autoWidth: false,
                     order: [
                         [0, 'asc'],
                         [1, 'asc'],
                         [5, 'asc']
                     ],
                     columnDefs: [{
-                            targets: 7,
-                            searchable: false,
-                            orderable: false
-                        },
-                        {
-                            targets: [0, 1, 2, 3, 4],
-                            responsivePriority: 1
-                        },
-                        {
-                            targets: [5, 6],
-                            responsivePriority: 2
-                        }
-                    ],
-                    language: {
-                        url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json',
-                        emptyTable: 'Belum ada kelompok bimbingan.'
-                    },
+                        targets: 7,
+                        searchable: false,
+                        orderable: false
+                    }],
                     drawCallback: function() {
                         const api = this.api();
                         const info = api.page.info();
@@ -1107,9 +1076,6 @@
                 });
 
                 kelompokTable.columns.adjust();
-                if (kelompokTable.responsive) {
-                    kelompokTable.responsive.recalc();
-                }
                 kelompokTable.draw();
             @else
                 if ($.fn.DataTable.isDataTable('#kelompokTablePembimbing')) {
@@ -1121,22 +1087,13 @@
                     lengthChange: true,
                     ordering: true,
                     searching: true,
-                    responsive: true,
-                    autoWidth: false,
                     order: [
                         [0, 'asc']
-                    ],
-                    language: {
-                        url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json',
-                        emptyTable: 'Belum ada kelompok bimbingan.'
-                    }
+                    ]
                 });
 
                 const kelompokTablePembimbing = $('#kelompokTablePembimbing').DataTable();
                 kelompokTablePembimbing.columns.adjust();
-                if (kelompokTablePembimbing.responsive) {
-                    kelompokTablePembimbing.responsive.recalc();
-                }
             @endif
 
             @if ($canManageKelompok)

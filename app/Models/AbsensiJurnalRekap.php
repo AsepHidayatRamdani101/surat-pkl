@@ -21,8 +21,8 @@ class AbsensiJurnalRekap extends Model
     ];
 
     protected $casts = [
-        'periode_mulai' => 'date',
-        'periode_selesai' => 'date',
+        'periode_mulai' => 'date:Y-m-d',
+        'periode_selesai' => 'date:Y-m-d',
     ];
 
     public function siswa() { return $this->belongsTo(Siswa::class); }

@@ -4,27 +4,35 @@
 
 
 @section('content')
-    <div class="container pt-4">
-        <div class="card">
-            <div class="card-header">
-                <h4>Surat Izin Orang Tua</h4>
-                <button class="btn btn-sm btn-primary mb-3" id="btnTambah">Tambah Surat Izin</button>
+    <div class="container-fluid pt-4">
+        <div class="card app-card">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-envelope-open-text"></i></span>
+                    <div>
+                        <h4>Surat Izin Orang Tua</h4>
+                        <small>Kelola dan cetak surat izin orang tua siswa PKL</small>
+                    </div>
+                </div>
+                <div class="my-1 d-flex align-items-center flex-wrap">
+                    <button class="btn btn-primary" id="btnTambah">
+                        <i class="fas fa-plus mr-1"></i> Tambah Surat Izin
+                    </button>
+                </div>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered" id="izin-table">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Nama Siswa</th>
-                                <th>Nama Ortu</th>
-                                <th>Alamat Ortu</th>
-                                <th>Tanggal Pengajuan</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                    </table>
-                </div>
+                <table class="table table-striped table-hover" id="izin-table" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama Siswa</th>
+                            <th>Nama Ortu</th>
+                            <th>Alamat Ortu</th>
+                            <th>Tanggal Pengajuan</th>
+                            <th class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                </table>
             </div>
         </div>
 
@@ -89,8 +97,10 @@
                         </div>
 
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-success btn-simpan">Simpan</button>
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-primary btn-simpan">
+                                <i class="fas fa-save mr-1"></i> Simpan
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -99,7 +109,7 @@
     @stop
 
     @section('css')
-        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+        @include('partials.table_styles')
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
         <style>
             /* Menyamakan tinggi select2 dengan input form */
@@ -123,14 +133,8 @@
     @endsection
 
     @section('js')
-        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
+        @include('partials.table_scripts')
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-        @include('sweetalert::alert')
-        <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        
-
-
         <script>
             $(document).ready(function() {
 
@@ -194,29 +198,21 @@
                 // Delete
                 $(document).on('click', '.btn-hapus', function() {
                     let siswa = $(this).data('siswa');
-                    console.log(siswa);
+                    let id = $(this).data('id');
 
-                    Swal.fire({
+                    konfirmasiHapus({
                         title: 'Hapus data ini?',
-                        text: 'Data yang dihapus tidak bisa dikembalikan.',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'Ya, hapus',
-                        cancelButtonText: 'Batal'
-                    }).then((result) => {
-                        if (!result.isConfirmed) {
-                            return;
-                        }
-
+                        text: 'Data yang dihapus tidak bisa dikembalikan.'
+                    }, function() {
                         $.ajax({
-                            url: `/izin-ortu/${$(this).data('id')}`,
+                            url: `/izin-ortu/${id}`,
                             type: 'DELETE',
                             data: {
                                 _token: '{{ csrf_token() }}',
                                 siswa_id: siswa
                             },
                             success: function(data) {
-                                table.ajax.reload();
+                                table.ajax.reload(null, false);
                             }
                         });
                     });

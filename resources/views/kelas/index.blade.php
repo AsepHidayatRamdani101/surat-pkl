@@ -3,30 +3,40 @@
 @section('title', 'Data Kelas')
 
 @section('content')
-    <div class="container pt-4">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="m-0">Data Kelas</h4>
-                <div class="float-right">
-                    <div class="custom-control custom-switch d-inline-block mr-2 align-middle">
+    <div class="container-fluid pt-4">
+        <div class="card app-card">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <div class="d-flex align-items-center my-1">
+                    <span class="card-title-icon"><i class="fas fa-chalkboard"></i></span>
+                    <div>
+                        <h4>Data Kelas</h4>
+                        <small>Kelola kelas, tingkat, dan jumlah rombel per jurusan</small>
+                    </div>
+                </div>
+                <div class="my-1 d-flex align-items-center flex-wrap">
+                    <div class="custom-control custom-switch d-inline-block mr-3 align-middle">
                         <input type="checkbox" class="custom-control-input" id="toggleSwitchKelas">
                         <label class="custom-control-label" for="toggleSwitchKelas" id="toggleSwitchKelasLabel">Switch XII ke
                             XI</label>
                     </div>
-                    <button class="btn btn-sm btn-primary" id="btnTambah">Tambah Data</button>
-                    <button class="btn btn-sm btn-success" id="btnImport">Import Data</button>
+                    <button class="btn btn-outline-success mr-2" id="btnImport">
+                        <i class="fas fa-file-import mr-1"></i> Import Data
+                    </button>
+                    <button class="btn btn-primary" id="btnTambah">
+                        <i class="fas fa-plus mr-1"></i> Tambah Data
+                    </button>
                 </div>
             </div>
             <div class="card-body">
-                <table id="kelasTable" class="table table-bordered table-striped">
+                <table id="kelasTable" class="table table-striped table-hover" style="width: 100%;">
                     <thead>
                         <tr>
-                            <th>No</th>
+                            <th style="width: 50px;">No</th>
                             <th>Nama Kelas</th>
                             <th>Jurusan</th>
                             <th>Tingkat</th>
                             <th>Jumlah Rombel</th>
-                            <th>Aksi</th>
+                            <th style="width: 100px;" class="text-center">Aksi</th>
                         </tr>
                     </thead>
                 </table>
@@ -57,8 +67,10 @@
                                 </form>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-primary" id="btnImportFile">Import</button>
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+                                <button type="button" class="btn btn-primary" id="btnImportFile">
+                                    <i class="fas fa-file-import mr-1"></i> Import
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -109,8 +121,11 @@
                                     </div>
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                                    <button type="button" class="btn btn-primary" id="btnSimpan">Simpan</button>
+                                    <button type="button" class="btn btn-outline-secondary"
+                                        data-dismiss="modal">Batal</button>
+                                    <button type="button" class="btn btn-primary" id="btnSimpan">
+                                        <i class="fas fa-save mr-1"></i> Simpan
+                                    </button>
                                 </div>
                             </div>
                         </form>
@@ -122,48 +137,13 @@
 @endsection
 
 @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    @include('partials.table_styles')
 @endsection
 
 @section('js')
-    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    @include('partials.table_scripts')
     <script>
         $(document).ready(function() {
-            const originalSwalFire = Swal.fire.bind(Swal);
-            Swal.fire = function(options, ...args) {
-                if (typeof options === 'object' && options !== null) {
-                    const merged = {
-                        confirmButtonColor: '#0d6efd',
-                        cancelButtonColor: '#6c757d',
-                        ...options,
-                    };
-
-                    if (merged.showCancelButton) {
-                        merged.confirmButtonText = merged.confirmButtonText || 'Ya, lanjut';
-                        merged.cancelButtonText = merged.cancelButtonText || 'Batal';
-                    } else {
-                        merged.confirmButtonText = merged.confirmButtonText || 'OK';
-                    }
-
-                    if (merged.icon === 'success' && merged.timer === undefined && merged.showConfirmButton ===
-                        undefined) {
-                        merged.timer = 1800;
-                        merged.showConfirmButton = false;
-                    }
-
-                    return originalSwalFire(merged, ...args);
-                }
-
-                return originalSwalFire(options, ...args);
-            };
-
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-            })
-
             let table = $('#kelasTable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -194,7 +174,8 @@
                         data: 'aksi',
                         name: 'aksi',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        className: 'text-center'
                     }
                 ]
             });
@@ -267,7 +248,7 @@
                     url: url,
                     type: 'POST',
                     success: function(response) {
-                        table.ajax.reload();
+                        table.ajax.reload(null, false);
                         showSuccess(response.message + ' Total data: ' + response.jumlah);
                     },
                     error: function(xhr) {
@@ -291,7 +272,7 @@
                     data: $('#formKelas').serialize(),
                     success: function(response) {
                         $('#modalForm').modal('hide');
-                        table.ajax.reload();
+                        table.ajax.reload(null, false);
                         showSuccess(response.message);
                     },
                     error: function(xhr) {
@@ -317,7 +298,7 @@
                     processData: false,
                     success: function(response) {
                         $('#modalImport').modal('hide');
-                        table.ajax.reload();
+                        table.ajax.reload(null, false);
                         showSuccess(response.message);
                     },
                     error: function(xhr) {
@@ -337,7 +318,6 @@
             // Edit Data
             $(document).on('click', '.btnEdit', function() {
                 let id = $(this).data('id');
-                console.log(id);
 
                 $.ajax({
                     url: `kelas/${id}/edit`,
@@ -355,32 +335,24 @@
             });
 
             // Hapus Data
-            $(document).on('click', '.btnHapus', async function() {
+            $(document).on('click', '.btnHapus', function() {
                 let id = $(this).data('id');
-                let result = await Swal.fire({
-                    icon: 'warning',
+                konfirmasiHapus({
                     title: 'Hapus data?',
-                    text: 'Apakah Anda yakin ingin menghapus data ini?',
-                    showCancelButton: true,
-                    confirmButtonText: 'Ya, hapus',
-                    cancelButtonText: 'Batal'
-                });
-
-                if (!result.isConfirmed) {
-                    return;
-                }
-
-                $.ajax({
-                    url: '{{ route('kelas.destroy', '') }}/' + id,
-                    type: 'DELETE',
-                    success: function(response) {
-                        table.ajax.reload();
-                        showSuccess(response.message);
-                    },
-                    error: function(xhr) {
-                        showError(xhr.responseJSON?.message ||
-                            'Terjadi kesalahan saat menghapus data.');
-                    }
+                    text: 'Apakah Anda yakin ingin menghapus data ini?'
+                }, () => {
+                    $.ajax({
+                        url: '{{ route('kelas.destroy', '') }}/' + id,
+                        type: 'DELETE',
+                        success: function(response) {
+                            table.ajax.reload(null, false);
+                            showSuccess(response.message);
+                        },
+                        error: function(xhr) {
+                            showError(xhr.responseJSON?.message ||
+                                'Terjadi kesalahan saat menghapus data.');
+                        }
+                    });
                 });
             });
         });

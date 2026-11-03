@@ -36,4 +36,9 @@ class Siswa extends Model
     {
         return $this->hasMany(AbsensiPembekalan::class, 'siswa_id');
     }
+
+    public function jadwalSidangPembimbing()
+    {
+        return $this->hasMany(JadwalSidang::class, 'siswa_id');
+    }
 }

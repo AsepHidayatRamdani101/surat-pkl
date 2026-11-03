@@ -27,6 +27,7 @@ use App\Http\Controllers\NilaiSikapPembekalanController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleManagementController;
 use App\Http\Controllers\SekolahController;
+use App\Http\Controllers\SertifikatController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\SuratIzinOrtuController;
 use App\Http\Controllers\TempatPklController;
@@ -61,6 +62,23 @@ Route::get('/dashboard/siswa/sikap', [DashboardController::class, 'siswaSikap'])
 Route::post('/dashboard/siswa/bimbingan/{id}/submit-tugas', [DashboardController::class, 'submitTugas'])->middleware(['auth'])->name('dashboard.siswa.submit-tugas');
 Route::get('/dashboard/siswa/cetak-sertifikat', [DashboardController::class, 'cetakSertifikatPembekalan'])->middleware(['auth'])->name('dashboard.siswa.cetak-sertifikat');
 Route::get('/dashboard/siswa/cetak-sertifikat/download', [DashboardController::class, 'downloadSertifikatPembekalan'])->middleware(['auth'])->name('dashboard.siswa.download-sertifikat');
+
+// Sertifikat pelaksanaan PKL (siswa)
+Route::middleware(['auth', 'can:siswa'])->group(function () {
+    Route::get('/sertifikat/pelaksanaan/form', [SertifikatController::class, 'siswaForm'])->name('sertifikat.pelaksanaan.form');
+    Route::post('/sertifikat/pelaksanaan/form', [SertifikatController::class, 'siswaFormStore'])->name('sertifikat.pelaksanaan.form.store');
+    Route::get('/sertifikat/pelaksanaan/cetak', [SertifikatController::class, 'siswaCetakPelaksanaan'])->name('sertifikat.pelaksanaan.cetak');
+    Route::get('/sertifikat/pelaksanaan/download', [SertifikatController::class, 'siswaDownloadPelaksanaan'])->name('sertifikat.pelaksanaan.download');
+});
+
+// Cetak sertifikat PKL (admin/panitia)
+Route::middleware(['auth', 'can:panitia'])->group(function () {
+    Route::get('/sertifikat/admin', [SertifikatController::class, 'adminIndex'])->name('sertifikat.admin.index');
+    Route::get('/sertifikat/admin/{siswa}/pembekalan/cetak', [SertifikatController::class, 'adminCetakPembekalan'])->name('sertifikat.admin.pembekalan.cetak');
+    Route::get('/sertifikat/admin/{siswa}/pembekalan/download', [SertifikatController::class, 'adminDownloadPembekalan'])->name('sertifikat.admin.pembekalan.download');
+    Route::get('/sertifikat/admin/{siswa}/pelaksanaan/cetak', [SertifikatController::class, 'adminCetakPelaksanaan'])->name('sertifikat.admin.pelaksanaan.cetak');
+    Route::get('/sertifikat/admin/{siswa}/pelaksanaan/download', [SertifikatController::class, 'adminDownloadPelaksanaan'])->name('sertifikat.admin.pelaksanaan.download');
+});
 Route::post('/dashboard/pembimbing/bimbingan/{id}/update-nilai', [DashboardController::class, 'updateNilaiTugasPembimbing'])->middleware(['auth'])->name('dashboard.pembimbing.update-nilai');
 Route::post('/dashboard/pembimbing/bimbingan/{id}/update-evaluasi', [DashboardController::class, 'updateEvaluasiSiswaPembimbing'])->middleware(['auth'])->name('dashboard.pembimbing.update-evaluasi');
 Route::get('/dashboard/panitia/top-guru/export-excel', [DashboardController::class, 'exportTopGuruPanitiaExcel'])->middleware(['auth'])->name('dashboard.panitia.top-guru.export-excel');

@@ -306,9 +306,9 @@
 
 <body>
     <div class="print-actions">
-        <a class="btn btn-primary" href="{{ route('dashboard.siswa.download-sertifikat') }}">Download PDF</a>
+        <a class="btn btn-primary" href="{{ $downloadUrl ?? route('dashboard.siswa.download-sertifikat') }}">Download PDF</a>
         <button class="btn" onclick="window.print()">Print</button>
-        <a class="btn" href="{{ route('dashboard') }}">Kembali ke Dashboard</a>
+        <a class="btn" href="{{ $backUrl ?? route('dashboard') }}">Kembali</a>
     </div>
 
     <div class="sheet">

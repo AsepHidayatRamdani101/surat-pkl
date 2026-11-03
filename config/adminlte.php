@@ -426,6 +426,14 @@ return [
                 ['text' => 'Penilaian & Sertifikat', 'url' => 'sidang/penilaian', 'icon' => 'fas fa-certificate'],
             ],
         ],
+        [
+            'text' => 'Cetak Sertifikat',
+            'icon' => 'fas fa-certificate',
+            'can'  => 'panitia',
+            'submenu' => [
+                ['text' => 'Sertifikat Pembekalan & Pelaksanaan', 'url' => 'sertifikat/admin', 'icon' => 'fas fa-print'],
+            ],
+        ],
         // Menu untuk Kepala Program
         [
             'text' => 'Dashboard',
@@ -593,6 +601,16 @@ return [
                 [
                     'text' => 'Cetak Sertifikat Pembekalan',
                     'url'  => 'dashboard/siswa/cetak-sertifikat',
+                    'icon' => 'fas fa-certificate',
+                ],
+                [
+                    'text' => 'Data Sertifikat Pelaksanaan',
+                    'url'  => 'sertifikat/pelaksanaan/form',
+                    'icon' => 'fas fa-user-tie',
+                ],
+                [
+                    'text' => 'Cetak Sertifikat Pelaksanaan',
+                    'url'  => 'sertifikat/pelaksanaan/cetak',
                     'icon' => 'fas fa-certificate',
                 ],
             ],

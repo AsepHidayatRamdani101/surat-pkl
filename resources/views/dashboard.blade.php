@@ -31,7 +31,7 @@
             ->distinct('siswa_id')
             ->count('siswa_id');
 
-        $totalPerusahaan = \App\Models\Perusahaan::count();
+        $totalPerusahaan = \App\Models\Perusahaan::whereHas('tempatPkl.siswa')->count();
         $totalSuratIzin = \App\Models\SuratIzinOrtu::distinct('siswa_id')->count('siswa_id');
         $totalTempatPkl = \App\Models\TempatPkl::distinct('siswa_id')->count('siswa_id');
         $totalPembimbing = \App\Models\Pembimbing::count();

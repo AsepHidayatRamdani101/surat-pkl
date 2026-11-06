@@ -313,23 +313,23 @@ return [
             'can'  => 'panitia',
             'submenu' => [
                 [
-                    'text' => 'Manajemen Sekolah',
+                    'text' => 'Sekolah',
                     'url'  => 'sekolah',
                     'icon' => 'fas fa-school',
                     'can'  => ['kepala_program', 'panitia'],
                 ],
                 [
-                    'text' => 'Management Siswa',
+                    'text' => 'Siswa',
                     'url'  => 'siswa',
                     'icon' => 'fas fa-user-graduate',
                 ],
                 [
-                    'text' => 'Manajemen Kelas',
+                    'text' => 'Kelas',
                     'url'  => 'kelas',
                     'icon' => 'fas fa-chalkboard-teacher',
                 ],
                 [
-                    'text' => 'Manajemen Jurusan',
+                    'text' => 'Jurusan',
                     'url'  => 'jurusan',
                     'icon' => 'fas fa-graduation-cap',
                 ],
@@ -338,7 +338,7 @@ return [
 
         ],
         [
-            'text' => 'Data Pembimbing',
+            'text' => 'Pembimbing',
             'url'  => 'pembimbing',
             'icon' => 'fas fa-users',
             'can'  => 'panitia',
@@ -361,17 +361,17 @@ return [
             ],
         ],
         [
-            'text' => 'User & Role',
+            'text' => 'User Role',
             'icon' => 'fas fa-user-shield',
             'can'  => 'panitia',
             'submenu' => [
                 [
-                    'text' => 'Manajemen User',
+                    'text' => 'User',
                     'url'  => 'manajemen-user',
                     'icon' => 'fas fa-users-cog',
                 ],
                 [
-                    'text' => 'Manajemen Role',
+                    'text' => 'Role',
                     'url'  => 'manajemen-role',
                     'icon' => 'fas fa-user-tag',
                 ],
@@ -388,19 +388,19 @@ return [
                     'icon' => 'fas fa-paper-plane',
                 ],
                 [
-                    'text' => 'Template Informasi',
+                    'text' => 'Template Pesan',
                     'url'  => 'template-informasi',
                     'icon' => 'fas fa-file-alt',
                 ],
                 [
-                    'text' => 'Riwayat Pengiriman',
+                    'text' => 'Riwayat Kirim',
                     'url'  => 'template-informasi/logs',
                     'icon' => 'fas fa-history',
                 ],
             ],
         ],
         [
-            'text' => 'System Setting',
+            'text' => 'Pengaturan',
             'url'  => 'setting/system',
             'icon' => 'fas fa-tools',
             'can'  => 'panitia',
@@ -410,9 +410,9 @@ return [
             'icon' => 'fas fa-briefcase',
             'can'  => 'panitia',
             'submenu' => [
-                ['text' => 'Data Resume PKL per Bulan', 'url' => 'pkl/resume', 'icon' => 'fas fa-file-alt'],
-                ['text' => 'Data Upload Absensi Jurnal PKL', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
-                ['text' => 'Data Absen Selfie Siswa', 'url' => 'absensi-selfie', 'icon' => 'fas fa-camera'],
+                ['text' => 'Resume Bulanan', 'url' => 'pkl/resume', 'icon' => 'fas fa-file-alt'],
+                ['text' => 'Absensi Jurnal', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
+                ['text' => 'Absen Selfie', 'url' => 'absensi-selfie', 'icon' => 'fas fa-camera'],
             ],
         ],
         [
@@ -420,18 +420,18 @@ return [
             'icon' => 'fas fa-gavel',
             'can'  => 'panitia',
             'submenu' => [
-                ['text' => 'Ruangan Sidang', 'url' => 'sidang/ruangan', 'icon' => 'fas fa-door-open'],
-                ['text' => 'Kriteria & Rubrik Sidang', 'url' => 'sidang/kriteria', 'icon' => 'fas fa-list-ol'],
-                ['text' => 'Jadwal Bimbingan & Sidang', 'url' => 'sidang/jadwal', 'icon' => 'fas fa-calendar-alt'],
-                ['text' => 'Penilaian & Sertifikat', 'url' => 'sidang/penilaian', 'icon' => 'fas fa-certificate'],
+                ['text' => 'Ruangan', 'url' => 'sidang/ruangan', 'icon' => 'fas fa-door-open'],
+                ['text' => 'Kriteria Sidang', 'url' => 'sidang/kriteria', 'icon' => 'fas fa-list-ol'],
+                ['text' => 'Jadwal Sidang', 'url' => 'sidang/jadwal', 'icon' => 'fas fa-calendar-alt'],
+                ['text' => 'Penilaian', 'url' => 'sidang/penilaian', 'icon' => 'fas fa-certificate'],
             ],
         ],
         [
-            'text' => 'Cetak Sertifikat',
+            'text' => 'Sertifikat',
             'icon' => 'fas fa-certificate',
             'can'  => 'panitia',
             'submenu' => [
-                ['text' => 'Sertifikat Pembekalan & Pelaksanaan', 'url' => 'sertifikat/admin', 'icon' => 'fas fa-print'],
+                ['text' => 'Cetak Sertifikat', 'url' => 'sertifikat/admin', 'icon' => 'fas fa-print'],
             ],
         ],
         // Menu untuk Kepala Program
@@ -442,7 +442,7 @@ return [
             'can'  => 'kepala_program',
         ],
         [
-            'text' => 'Surat Izin PKL',
+            'text' => 'Surat Izin',
             'url'  => 'surat-izin-ortu',
             'icon' => 'fas fa-file-alt',
             'can'  => ['kepala_program', 'panitia'],
@@ -467,12 +467,12 @@ return [
             'can'  => ['kepala_program', 'panitia'],
             'submenu' => [
                 [
-                    'text' => 'Data Tempat PKL',
+                    'text' => 'Data Tempat',
                     'url'  => 'tempat-pkl',
                     'icon' => 'fas fa-tasks',
                 ],
                 [
-                    'text' => 'Cetak Tempat PKL',
+                    'text' => 'Cetak Tempat',
                     'url'  => 'tempat-pkl/cetak',
                     'icon' => 'fas fa-print',
                 ],
@@ -530,23 +530,23 @@ return [
                     'icon' => 'fas fa-user-check',
                 ],
                 [
-                    'text' => 'Master Kelengkapan Siswa',
+                    'text' => 'Master Kelengkapan',
                     'url'  => 'pembekalan/kelengkapan-master',
                     'icon' => 'fas fa-list-check',
                     'can'  => 'panitia',
                 ],
                 [
-                    'text' => 'Cek Kelengkapan Siswa',
+                    'text' => 'Cek Kelengkapan',
                     'url'  => 'pembekalan/kelengkapan-siswa',
                     'icon' => 'fas fa-user-tag',
                 ],
                 [
-                    'text' => 'Input Catatan Sikap',
+                    'text' => 'Input Sikap',
                     'url'  => 'pembekalan/sikap/input',
                     'icon' => 'fas fa-notes-medical',
                 ],
                 [
-                    'text' => 'Lihat Catatan Sikap',
+                    'text' => 'Lihat Sikap',
                     'url'  => 'pembekalan/sikap/riwayat',
                     'icon' => 'fas fa-notes-medical',
                 ],
@@ -556,7 +556,7 @@ return [
                     'icon' => 'fas fa-user-shield',
                 ],
                 [
-                    'text' => 'Laporan Pembekalan',
+                    'text' => 'Laporan',
                     'url'  => 'pembekalan/laporan',
                     'icon' => 'fas fa-file-alt',
                 ],
@@ -564,22 +564,23 @@ return [
         ],
 
         [
-            'text' => 'Menu Siswa',
-            'icon' => 'fas fa-user-graduate',
+            'text' => 'Dashboard',
+            'url'  => 'dashboard',
+            'icon' => 'fas fa-home',
+            'can'  => 'siswa',
+        ],
+        [
+            'text' => 'Pembekalan PKL',
+            'icon' => 'fas fa-chalkboard-teacher',
             'can'  => 'siswa',
             'submenu' => [
                 [
-                    'text' => 'Dashboard Siswa',
-                    'url'  => 'dashboard',
-                    'icon' => 'fas fa-home',
-                ],
-                [
-                    'text' => 'Lihat Absensi',
+                    'text' => 'Absensi',
                     'url'  => 'dashboard/siswa/absensi',
                     'icon' => 'fas fa-user-check',
                 ],
                 [
-                    'text' => 'Materi Pembekalan',
+                    'text' => 'Materi',
                     'url'  => 'dashboard/siswa/materi',
                     'icon' => 'fas fa-book-open',
                 ],
@@ -589,7 +590,7 @@ return [
                     'icon' => 'fas fa-tasks',
                 ],
                 [
-                    'text' => 'Lihat Nilai Tugas',
+                    'text' => 'Nilai Tugas',
                     'url'  => 'dashboard/siswa/nilai',
                     'icon' => 'fas fa-star',
                 ],
@@ -599,18 +600,8 @@ return [
                     'icon' => 'fas fa-notes-medical',
                 ],
                 [
-                    'text' => 'Cetak Sertifikat Pembekalan',
+                    'text' => 'Sertifikat Pembekalan',
                     'url'  => 'dashboard/siswa/cetak-sertifikat',
-                    'icon' => 'fas fa-certificate',
-                ],
-                [
-                    'text' => 'Data Sertifikat Pelaksanaan',
-                    'url'  => 'sertifikat/pelaksanaan/form',
-                    'icon' => 'fas fa-user-tie',
-                ],
-                [
-                    'text' => 'Cetak Sertifikat Pelaksanaan',
-                    'url'  => 'sertifikat/pelaksanaan/cetak',
                     'icon' => 'fas fa-certificate',
                 ],
             ],
@@ -620,9 +611,19 @@ return [
             'icon' => 'fas fa-briefcase',
             'can'  => 'siswa',
             'submenu' => [
-                ['text' => 'Absen Datang & Pulang', 'url' => 'absensi-selfie', 'icon' => 'fas fa-camera'],
-                ['text' => 'Upload Absensi Jurnal PKL', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
-                ['text' => 'Input Resume PKL Bulanan', 'url' => 'pkl/input-resume', 'icon' => 'fas fa-file-alt'],
+                ['text' => 'Absen Selfie', 'url' => 'absensi-selfie', 'icon' => 'fas fa-camera'],
+                ['text' => 'Upload Jurnal', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
+                ['text' => 'Input Resume', 'url' => 'pkl/input-resume', 'icon' => 'fas fa-file-alt'],
+                [
+                    'text' => 'Data Pelaksanaan',
+                    'url'  => 'sertifikat/pelaksanaan/form',
+                    'icon' => 'fas fa-user-tie',
+                ],
+                [
+                    'text' => 'Sertifikat PKL',
+                    'url'  => 'sertifikat/pelaksanaan/cetak',
+                    'icon' => 'fas fa-certificate',
+                ],
             ],
         ],
         [
@@ -630,14 +631,14 @@ return [
             'icon' => 'fas fa-gavel',
             'can'  => 'siswa',
             'submenu' => [
-                ['text' => 'Jadwal Bimbingan & Sidang', 'url' => 'sidang/jadwal', 'icon' => 'fas fa-calendar-alt'],
-                ['text' => 'Upload Laporan PKL', 'url' => 'sidang/laporan', 'icon' => 'fas fa-file-upload'],
-                ['text' => 'Nilai & Sertifikat Sidang', 'url' => 'sidang/nilai', 'icon' => 'fas fa-star'],
+                ['text' => 'Jadwal Sidang', 'url' => 'sidang/jadwal', 'icon' => 'fas fa-calendar-alt'],
+                ['text' => 'Upload Laporan', 'url' => 'sidang/laporan', 'icon' => 'fas fa-file-upload'],
+                ['text' => 'Nilai Sidang', 'url' => 'sidang/nilai', 'icon' => 'fas fa-star'],
             ],
         ],
 
         [
-            'text' => 'Dashboard Pembimbing',
+            'text' => 'Dashboard',
             'url'  => 'dashboard',
             'icon' => 'fas fa-home',
             'can'  => 'pembimbing',
@@ -647,9 +648,9 @@ return [
             'icon' => 'fas fa-briefcase',
             'can'  => 'pembimbing',
             'submenu' => [
-                ['text' => 'Data Resume PKL per Bulan', 'url' => 'pkl/resume', 'icon' => 'fas fa-file-alt'],
-                ['text' => 'Data Upload Absensi Jurnal PKL', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
-                ['text' => 'Data Absen Selfie Siswa', 'url' => 'absensi-selfie', 'icon' => 'fas fa-camera'],
+                ['text' => 'Resume Bulanan', 'url' => 'pkl/resume', 'icon' => 'fas fa-file-alt'],
+                ['text' => 'Absensi Jurnal', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
+                ['text' => 'Absen Selfie', 'url' => 'absensi-selfie', 'icon' => 'fas fa-camera'],
             ],
         ],
         [
@@ -657,23 +658,23 @@ return [
             'icon' => 'fas fa-gavel',
             'can'  => 'pembimbing',
             'submenu' => [
-                ['text' => 'Jadwal Bimbingan & Sidang', 'url' => 'sidang/jadwal', 'icon' => 'fas fa-calendar-alt'],
+                ['text' => 'Jadwal Sidang', 'url' => 'sidang/jadwal', 'icon' => 'fas fa-calendar-alt'],
                 ['text' => 'Penilaian Sidang', 'url' => 'sidang/penilaian', 'icon' => 'fas fa-star'],
             ],
         ],
 
         [
-            'text' => 'Pembekalan PKL',
+            'text' => 'Pembekalan',
             'icon' => 'fas fa-user-tie',
             'can'  => 'pembimbing',
             'submenu' => [
                 [
-                    'text' => 'Data Materi',
+                    'text' => 'Materi',
                     'url'  => 'pembekalan/materi',
                     'icon' => 'fas fa-book-open',
                 ],
                 [
-                    'text' => 'Data Tugas',
+                    'text' => 'Tugas',
                     'url'  => 'pembekalan/tugas',
                     'icon' => 'fas fa-book',
                 ],
@@ -683,32 +684,32 @@ return [
                     'icon' => 'fas fa-layer-group',
                 ],
                 [
-                    'text' => 'Tugas Siswa & Nilai',
+                    'text' => 'Nilai Tugas',
                     'url'  => 'pembekalan/jawaban-siswa',
                     'icon' => 'fas fa-tasks',
                 ],
                 [
-                    'text' => 'Input Absensi Siswa',
+                    'text' => 'Input Absensi',
                     'url'  => 'pembekalan/absensi/input',
                     'icon' => 'fas fa-user-check',
                 ],
                 [
-                    'text' => 'Lihat Absensi Siswa',
+                    'text' => 'Lihat Absensi',
                     'url'  => 'pembekalan/absensi/riwayat',
                     'icon' => 'fas fa-user-check',
                 ],
                 [
-                    'text' => 'Cek Kelengkapan Siswa',
+                    'text' => 'Cek Kelengkapan',
                     'url'  => 'pembekalan/kelengkapan-siswa',
                     'icon' => 'fas fa-user-tag',
                 ],
                 [
-                    'text' => 'Input Catatan Sikap',
+                    'text' => 'Input Sikap',
                     'url'  => 'pembekalan/sikap/input',
                     'icon' => 'fas fa-notes-medical',
                 ],
                 [
-                    'text' => 'Lihat Catatan Sikap',
+                    'text' => 'Lihat Sikap',
                     'url'  => 'pembekalan/sikap/riwayat',
                     'icon' => 'fas fa-notes-medical',
                 ],
@@ -718,7 +719,7 @@ return [
                     'icon' => 'fas fa-user-shield',
                 ],
                 [
-                    'text' => 'Laporan Pembekalan PKL',
+                    'text' => 'Laporan',
                     'url'  => 'pembekalan/laporan-pembekalan-pkl',
                     'icon' => 'fas fa-file-export',
                 ],
@@ -749,7 +750,7 @@ return [
                     'icon' => 'fas fa-book-reader',
                 ],
                 [
-                    'text' => 'Penilaian Laporan PPT',
+                    'text' => 'Penilaian Laporan',
                     'url'  => 'evaluasi/laporan-ppt',
                     'icon' => 'fas fa-file-powerpoint',
                 ],

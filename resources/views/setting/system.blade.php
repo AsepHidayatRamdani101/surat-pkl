@@ -33,6 +33,88 @@
             </div>
         @endif
 
+        @if ($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <ul class="mb-0 pl-3">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        {{-- Set Waktu Absen Datang & Pulang --}}
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-clock mr-2 text-success"></i>Set Waktu Absen Datang & Pulang PKL</h6>
+                <small class="text-muted">Mengatur jam akses absen selfie siswa serta batas tepat waktu/terlambat.</small>
+            </div>
+            <form method="POST" action="{{ route('setting.absensi-waktu') }}">
+                @csrf
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 mb-3 mb-md-0">
+                                <h6 class="text-primary mb-3"><i class="fas fa-sign-in-alt mr-1"></i> Absen Datang</h6>
+                                <div class="form-group">
+                                    <label for="jam_datang_mulai">Mulai Bisa Diakses</label>
+                                    <input type="time" name="jam_datang_mulai" id="jam_datang_mulai"
+                                        class="form-control @error('jam_datang_mulai') is-invalid @enderror"
+                                        value="{{ old('jam_datang_mulai', substr($absensiSetting->jam_datang_mulai ?? '06:00', 0, 5)) }}"
+                                        required>
+                                    <small class="text-muted">Sebelum jam ini siswa belum bisa absen datang.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="jam_datang_tepat_waktu">Batas Tepat Waktu</label>
+                                    <input type="time" name="jam_datang_tepat_waktu" id="jam_datang_tepat_waktu"
+                                        class="form-control @error('jam_datang_tepat_waktu') is-invalid @enderror"
+                                        value="{{ old('jam_datang_tepat_waktu', substr($absensiSetting->jam_datang_tepat_waktu ?? '07:30', 0, 5)) }}"
+                                        required>
+                                    <small class="text-muted">Absen setelah jam ini dicatat sebagai
+                                        <strong>terlambat</strong>.</small>
+                                </div>
+                                <div class="form-group mb-0">
+                                    <label for="jam_datang_selesai">Berakhir / Ditutup</label>
+                                    <input type="time" name="jam_datang_selesai" id="jam_datang_selesai"
+                                        class="form-control @error('jam_datang_selesai') is-invalid @enderror"
+                                        value="{{ old('jam_datang_selesai', substr($absensiSetting->jam_datang_selesai ?? '12:00', 0, 5)) }}"
+                                        required>
+                                    <small class="text-muted">Setelah jam ini absen datang tidak bisa dilakukan.</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 h-100">
+                                <h6 class="text-info mb-3"><i class="fas fa-sign-out-alt mr-1"></i> Absen Pulang</h6>
+                                <div class="form-group">
+                                    <label for="jam_pulang_mulai">Mulai Bisa Diakses</label>
+                                    <input type="time" name="jam_pulang_mulai" id="jam_pulang_mulai"
+                                        class="form-control @error('jam_pulang_mulai') is-invalid @enderror"
+                                        value="{{ old('jam_pulang_mulai', substr($absensiSetting->jam_pulang_mulai ?? '15:00', 0, 5)) }}"
+                                        required>
+                                    <small class="text-muted">Sebelum jam ini siswa belum bisa absen pulang.</small>
+                                </div>
+                                <div class="form-group mb-0">
+                                    <label for="jam_pulang_selesai">Berakhir / Ditutup</label>
+                                    <input type="time" name="jam_pulang_selesai" id="jam_pulang_selesai"
+                                        class="form-control @error('jam_pulang_selesai') is-invalid @enderror"
+                                        value="{{ old('jam_pulang_selesai', substr($absensiSetting->jam_pulang_selesai ?? '21:00', 0, 5)) }}"
+                                        required>
+                                    <small class="text-muted">Setelah jam ini absen pulang tidak bisa dilakukan.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white text-right">
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="fas fa-save mr-1"></i> Simpan Pengaturan Waktu
+                    </button>
+                </div>
+            </form>
+        </div>
+
         {{-- Clear All --}}
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">

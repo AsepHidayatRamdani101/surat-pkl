@@ -24,11 +24,30 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <div class="alert alert-light border py-2 mb-2">
+                        <small class="d-block">
+                            <i class="fas fa-sign-in-alt text-primary mr-1"></i>
+                            Absen datang: <strong>{{ substr($setting->jam_datang_mulai, 0, 5) }}</strong> —
+                            <strong>{{ substr($setting->jam_datang_selesai, 0, 5) }}</strong>
+                            (tepat waktu sebelum <strong>{{ substr($setting->jam_datang_tepat_waktu, 0, 5) }}</strong>,
+                            setelahnya terlambat)
+                        </small>
+                        <small class="d-block">
+                            <i class="fas fa-sign-out-alt text-info mr-1"></i>
+                            Absen pulang: <strong>{{ substr($setting->jam_pulang_mulai, 0, 5) }}</strong> —
+                            <strong>{{ substr($setting->jam_pulang_selesai, 0, 5) }}</strong>
+                        </small>
+                    </div>
                     <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
                         <div>
                             <strong>Absen Datang</strong><br>
                             <span id="statusDatang" class="{{ $absenDatang ? 'text-success' : 'text-muted' }}">
                                 {{ $absenDatang ? 'Sudah absen pukul ' . substr($absenDatang->waktu, 0, 5) : 'Belum absen' }}
+                                @if ($absenDatang && $absenDatang->status_waktu)
+                                    <span class="badge badge-{{ $absenDatang->status_waktu === 'tepat_waktu' ? 'success' : 'danger' }}">
+                                        {{ $absenDatang->status_waktu === 'tepat_waktu' ? 'Tepat Waktu' : 'Terlambat' }}
+                                    </span>
+                                @endif
                             </span>
                         </div>
                         <i class="fas {{ $absenDatang ? 'fa-check-circle text-success' : 'fa-clock text-muted' }} fa-2x"></i>
@@ -78,6 +97,7 @@
                                 <th>Tanggal</th>
                                 <th>Jenis</th>
                                 <th>Waktu</th>
+                                <th>Status</th>
                                 <th>Akurasi Lokasi</th>
                                 <th>Foto</th>
                             </tr>
@@ -327,17 +347,24 @@
                 return `<span class="badge badge-${warna}">${value}% mendekati perusahaan</span>`;
             }
 
+            function statusWaktuBadge(value) {
+                if (value === 'tepat_waktu') return '<span class="badge badge-success">Tepat Waktu</span>';
+                if (value === 'terlambat') return '<span class="badge badge-danger">Terlambat</span>';
+                return '<span class="text-muted">-</span>';
+            }
+
             function muatRiwayat() {
                 $.getJSON('{{ route('absensi-selfie.data') }}', function(rows) {
                     const html = (rows || []).map(row => `<tr>
                         <td>${row.tanggal}</td>
                         <td class="text-capitalize">${row.jenis}</td>
                         <td>${(row.waktu || '').substring(0, 5)}</td>
+                        <td>${statusWaktuBadge(row.status_waktu)}</td>
                         <td>${persentaseBadge(row.persentase_lokasi)}${row.jarak_meter !== null ? `<br><small class="text-muted">± ${row.jarak_meter} m</small>` : ''}</td>
                         <td><a href="/storage/${row.foto_path}" target="_blank" rel="noopener">Lihat</a></td>
                     </tr>`).join('');
                     $('#riwayatBody').html(html ||
-                        '<tr><td colspan="5" class="text-center text-muted">Belum ada riwayat absen.</td></tr>'
+                        '<tr><td colspan="6" class="text-center text-muted">Belum ada riwayat absen.</td></tr>'
                     );
                 });
             }

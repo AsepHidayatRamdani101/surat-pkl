@@ -433,6 +433,7 @@ Route::middleware(['auth', 'can:panitia'])->group(function () {
     Route::post('/setting/system/clear-config', [\App\Http\Controllers\SystemSettingController::class, 'clearConfig'])->name('setting.clear-config');
     Route::post('/setting/system/clear-routes', [\App\Http\Controllers\SystemSettingController::class, 'clearRoutes'])->name('setting.clear-routes');
     Route::post('/setting/system/clear-all', [\App\Http\Controllers\SystemSettingController::class, 'clearAll'])->name('setting.clear-all');
+    Route::post('/setting/system/absensi-waktu', [\App\Http\Controllers\SystemSettingController::class, 'updateAbsensiWaktu'])->name('setting.absensi-waktu');
 });
 
 

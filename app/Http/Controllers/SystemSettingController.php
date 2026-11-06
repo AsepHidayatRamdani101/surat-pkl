@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AbsensiSelfieSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 
@@ -9,6 +10,8 @@ class SystemSettingController extends Controller
 {
     public function index()
     {
+        $absensiSetting = AbsensiSelfieSetting::current();
+
         $info = [
             'cache'    => $this->dirInfo(storage_path('framework/cache/data')),
             'sessions' => $this->dirInfo(storage_path('framework/sessions')),
@@ -29,7 +32,35 @@ class SystemSettingController extends Controller
             ],
         ];
 
-        return view('setting.system', compact('info'));
+        return view('setting.system', compact('info', 'absensiSetting'));
+    }
+
+    public function updateAbsensiWaktu(Request $request)
+    {
+        $data = $request->validate([
+            'jam_datang_mulai' => ['required', 'date_format:H:i'],
+            'jam_datang_tepat_waktu' => ['required', 'date_format:H:i', 'after_or_equal:jam_datang_mulai'],
+            'jam_datang_selesai' => ['required', 'date_format:H:i', 'after:jam_datang_tepat_waktu'],
+            'jam_pulang_mulai' => ['required', 'date_format:H:i', 'after:jam_datang_selesai'],
+            'jam_pulang_selesai' => ['required', 'date_format:H:i', 'after:jam_pulang_mulai'],
+        ], [
+            'jam_datang_tepat_waktu.after_or_equal' => 'Batas tepat waktu tidak boleh sebelum jam mulai absen datang.',
+            'jam_datang_selesai.after' => 'Jam tutup absen datang harus setelah batas tepat waktu.',
+            'jam_pulang_mulai.after' => 'Jam buka absen pulang harus setelah jam tutup absen datang.',
+            'jam_pulang_selesai.after' => 'Jam tutup absen pulang harus setelah jam buka absen pulang.',
+        ]);
+
+        $setting = AbsensiSelfieSetting::current();
+        $setting->update([
+            'jam_datang_mulai' => $data['jam_datang_mulai'] . ':00',
+            'jam_datang_tepat_waktu' => $data['jam_datang_tepat_waktu'] . ':00',
+            'jam_datang_selesai' => $data['jam_datang_selesai'] . ':00',
+            'jam_pulang_mulai' => $data['jam_pulang_mulai'] . ':00',
+            'jam_pulang_selesai' => $data['jam_pulang_selesai'] . ':00',
+            'updated_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Pengaturan waktu absen datang & pulang berhasil disimpan.');
     }
 
     public function clearCache()

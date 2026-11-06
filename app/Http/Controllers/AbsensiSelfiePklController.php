@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AbsensiSelfiePkl;
+use App\Models\AbsensiSelfieSetting;
 use App\Models\Pembimbing;
 use App\Models\ResumePklBulanan;
 use App\Models\Siswa;
@@ -40,6 +41,7 @@ class AbsensiSelfiePklController extends Controller
                 'perusahaan' => $perusahaan,
                 'absenDatang' => $absenHariIni->get('datang'),
                 'absenPulang' => $absenHariIni->get('pulang'),
+                'setting' => AbsensiSelfieSetting::current(),
             ]);
         }
 
@@ -242,6 +244,13 @@ class AbsensiSelfiePklController extends Controller
         ]);
 
         $today = Carbon::today()->toDateString();
+        $now = Carbon::now();
+
+        $setting = AbsensiSelfieSetting::current();
+        $gagalWaktu = $this->validasiJendelaWaktu($setting, $data['jenis'], $now);
+        if ($gagalWaktu !== null) {
+            return response()->json(['message' => $gagalWaktu], 422);
+        }
 
         $sudahAbsen = AbsensiSelfiePkl::where('siswa_id', $siswa->id)
             ->whereDate('tanggal', $today)
@@ -280,25 +289,74 @@ class AbsensiSelfiePklController extends Controller
             $persentase = $this->hitungPersentase($jarak);
         }
 
+        $statusWaktu = $this->tentukanStatusWaktu($setting, $data['jenis'], $now);
+
         $record = AbsensiSelfiePkl::create([
             'siswa_id' => $siswa->id,
             'perusahaan_id' => $perusahaan?->id,
             'tanggal' => $today,
             'jenis' => $data['jenis'],
-            'waktu' => Carbon::now()->format('H:i:s'),
+            'waktu' => $now->format('H:i:s'),
             'foto_path' => $fotoPath,
             'latitude' => $data['latitude'],
             'longitude' => $data['longitude'],
             'akurasi_gps' => isset($data['akurasi_gps']) ? (int) round($data['akurasi_gps']) : null,
             'jarak_meter' => $jarak,
             'persentase_lokasi' => $persentase,
+            'status_waktu' => $statusWaktu,
         ]);
 
+        $pesanStatus = $statusWaktu === 'terlambat'
+            ? ' Anda tercatat TERLAMBAT.'
+            : ($statusWaktu === 'tepat_waktu' ? ' Anda tercatat tepat waktu.' : '');
+
         return response()->json([
-            'message' => 'Absen ' . $data['jenis'] . ' berhasil disimpan.',
+            'message' => 'Absen ' . $data['jenis'] . ' berhasil disimpan.' . $pesanStatus,
             'data' => $record,
-            'keterangan_lokasi' => $this->keteranganLokasi($jarak, $persentase, $perusahaan?->nama_perusahaan),
+            'keterangan_lokasi' => trim($this->keteranganLokasi($jarak, $persentase, $perusahaan?->nama_perusahaan) . $pesanStatus),
         ], 201);
+    }
+
+    private function validasiJendelaWaktu(AbsensiSelfieSetting $setting, string $jenis, Carbon $now): ?string
+    {
+        $jam = fn (?string $time) => $time ? Carbon::parse($now->toDateString() . ' ' . $time) : null;
+
+        if ($jenis === 'datang') {
+            $mulai = $jam($setting->jam_datang_mulai);
+            $selesai = $jam($setting->jam_datang_selesai);
+
+            if ($mulai && $now->lt($mulai)) {
+                return 'Absen datang belum dibuka. Absen dapat dilakukan mulai pukul ' . $mulai->format('H:i') . '.';
+            }
+            if ($selesai && $now->gt($selesai)) {
+                return 'Absen datang sudah ditutup pada pukul ' . $selesai->format('H:i') . '.';
+            }
+
+            return null;
+        }
+
+        $mulai = $jam($setting->jam_pulang_mulai);
+        $selesai = $jam($setting->jam_pulang_selesai);
+
+        if ($mulai && $now->lt($mulai)) {
+            return 'Absen pulang belum dibuka. Absen dapat dilakukan mulai pukul ' . $mulai->format('H:i') . '.';
+        }
+        if ($selesai && $now->gt($selesai)) {
+            return 'Absen pulang sudah ditutup pada pukul ' . $selesai->format('H:i') . '.';
+        }
+
+        return null;
+    }
+
+    private function tentukanStatusWaktu(AbsensiSelfieSetting $setting, string $jenis, Carbon $now): ?string
+    {
+        if ($jenis !== 'datang' || !$setting->jam_datang_tepat_waktu) {
+            return null;
+        }
+
+        $batas = Carbon::parse($now->toDateString() . ' ' . $setting->jam_datang_tepat_waktu);
+
+        return $now->lte($batas) ? 'tepat_waktu' : 'terlambat';
     }
 
     private function simpanFotoSelfie(string $dataUrl): string

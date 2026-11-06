@@ -42,6 +42,7 @@
                             <th>Perusahaan</th>
                             <th>Jenis</th>
                             <th>Waktu</th>
+                            <th>Status</th>
                             <th>Akurasi Lokasi</th>
                             <th>Lokasi</th>
                             <th>Foto</th>
@@ -95,6 +96,14 @@
                     {
                         data: 'waktu',
                         render: value => (value || '').substring(0, 5)
+                    },
+                    {
+                        data: 'status_waktu',
+                        render: value => {
+                            if (value === 'tepat_waktu') return '<span class="badge badge-soft-success px-2 py-1">Tepat Waktu</span>';
+                            if (value === 'terlambat') return '<span class="badge badge-soft-danger px-2 py-1">Terlambat</span>';
+                            return '<span class="text-muted">-</span>';
+                        }
                     },
                     {
                         data: null,

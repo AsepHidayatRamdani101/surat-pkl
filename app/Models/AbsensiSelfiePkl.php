@@ -21,6 +21,7 @@ class AbsensiSelfiePkl extends Model
         'akurasi_gps',
         'jarak_meter',
         'persentase_lokasi',
+        'status_waktu',
     ];
 
     protected $casts = [

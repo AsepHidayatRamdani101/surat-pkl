@@ -75,6 +75,7 @@ Route::middleware(['auth', 'can:siswa'])->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/sertifikat/data', [SertifikatController::class, 'dataIndex'])->name('sertifikat.data.index');
     Route::post('/sertifikat/data/{siswa}/kirim-wa', [SertifikatController::class, 'kirimWaPengisian'])->name('sertifikat.data.kirim-wa');
+    Route::post('/sertifikat/data/kirim-wa-massal', [SertifikatController::class, 'kirimWaPengisianMassal'])->name('sertifikat.data.kirim-wa-massal');
 });
 
 // Cetak sertifikat PKL (admin/panitia)

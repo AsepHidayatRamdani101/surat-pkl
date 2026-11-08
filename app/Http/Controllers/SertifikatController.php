@@ -324,6 +324,80 @@ class SertifikatController extends Controller
         return back()->with('error', 'Gagal mengirim WA ke ' . $siswa->nama_siswa . '. ' . ($response['error'] ?? ''));
     }
 
+    public function kirimWaPengisianMassal()
+    {
+        $pembimbingId = $this->resolvePembimbingMonitoringId();
+
+        $belumLengkap = TempatPkl::with(['siswa', 'perusahaan'])
+            ->when($pembimbingId, fn ($q) => $q->where('pembimbing_id', $pembimbingId))
+            ->whereHas('siswa')
+            ->orderByDesc('id')
+            ->get()
+            ->unique('siswa_id')
+            ->reject(fn ($t) => filled($t->nama_pemilik_instansi) && filled($t->nama_pembimbing_instansi))
+            ->values();
+
+        if ($belumLengkap->isEmpty()) {
+            return back()->with('error', 'Tidak ada siswa yang belum mengisi data pemilik & pembimbing perusahaan.');
+        }
+
+        $successCount = 0;
+        $failCount = 0;
+        $tanpaHp = 0;
+
+        foreach ($belumLengkap as $tempatPkl) {
+            $siswa = $tempatPkl->siswa;
+
+            if (!$siswa->no_hp_siswa) {
+                $tanpaHp++;
+                continue;
+            }
+
+            $kosong = [];
+            if (blank($tempatPkl->nama_pemilik_instansi)) {
+                $kosong[] = 'Pemilik/Pimpinan Perusahaan';
+            }
+            if (blank($tempatPkl->nama_pembimbing_instansi)) {
+                $kosong[] = 'Pembimbing Perusahaan';
+            }
+
+            $namaPerusahaan = $tempatPkl->perusahaan->nama_perusahaan ?? 'tempat PKL kamu';
+
+            $pesan = "Halo *{$siswa->nama_siswa}*,\n\n"
+                . "Mohon segera lengkapi data *" . implode('* dan *', $kosong) . "* "
+                . "di {$namaPerusahaan} untuk keperluan Sertifikat Pelaksanaan PKL.\n\n"
+                . "Silakan isi melalui menu *PKL > Data Pelaksanaan* di aplikasi:\n"
+                . route('sertifikat.pelaksanaan.form') . "\n\n"
+                . "Terima kasih.";
+
+            $response = $this->sendViaFonnte($siswa->no_hp_siswa, $pesan);
+            $status = $response['success'] ? 'terkirim' : 'gagal';
+
+            MessageLog::create([
+                'template_id' => null,
+                'nomor_penerima' => $siswa->no_hp_siswa,
+                'isi_pesan' => $pesan,
+                'tipe_pengiriman' => 'masal',
+                'status_pengiriman' => $status,
+                'response_fonnte' => json_encode($response),
+                'dikirim_oleh' => auth()->id(),
+            ]);
+
+            if ($response['success']) {
+                $successCount++;
+            } else {
+                $failCount++;
+            }
+        }
+
+        $message = "Pengiriman WA massal selesai. Berhasil: {$successCount}, Gagal: {$failCount}";
+        if ($tanpaHp > 0) {
+            $message .= ", Tanpa No HP: {$tanpaHp}";
+        }
+
+        return back()->with($successCount > 0 ? 'success' : 'error', $message);
+    }
+
     private function resolvePembimbingMonitoringId(): ?int
     {
         $user = auth()->user();

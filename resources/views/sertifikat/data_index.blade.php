@@ -77,18 +77,31 @@
                                 <small>Pengisian data pemilik &amp; pembimbing perusahaan oleh siswa (satu perusahaan boleh berbeda pembimbing per siswa)</small>
                             </div>
                         </div>
-                        <form method="GET" action="{{ route('sertifikat.data.index') }}" class="form-inline my-1">
-                            <select name="status" class="form-control form-control-sm mr-2">
-                                <option value="">Semua Status</option>
-                                <option value="sudah" {{ $statusFilter === 'sudah' ? 'selected' : '' }}>Sudah Mengisi</option>
-                                <option value="belum" {{ $statusFilter === 'belum' ? 'selected' : '' }}>Belum Mengisi</option>
-                            </select>
-                            <input type="text" name="q" value="{{ $search }}" class="form-control form-control-sm mr-2"
-                                placeholder="Cari nama / NIS / perusahaan...">
-                            <button type="submit" class="btn btn-sm btn-primary">
-                                <i class="fas fa-search mr-1"></i> Cari
-                            </button>
-                        </form>
+                        <div class="d-flex align-items-center flex-wrap my-1">
+                            <form method="GET" action="{{ route('sertifikat.data.index') }}" class="form-inline mr-2">
+                                <select name="status" class="form-control form-control-sm mr-2">
+                                    <option value="">Semua Status</option>
+                                    <option value="sudah" {{ $statusFilter === 'sudah' ? 'selected' : '' }}>Sudah Mengisi</option>
+                                    <option value="belum" {{ $statusFilter === 'belum' ? 'selected' : '' }}>Belum Mengisi</option>
+                                </select>
+                                <input type="text" name="q" value="{{ $search }}" class="form-control form-control-sm mr-2"
+                                    placeholder="Cari nama / NIS / perusahaan...">
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-search mr-1"></i> Cari
+                                </button>
+                            </form>
+                            @if ($siswaBelum > 0)
+                                <form method="POST" action="{{ route('sertifikat.data.kirim-wa-massal') }}"
+                                    class="d-inline" id="formKirimWaMassal">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-success"
+                                        title="Kirim WA pengingat ke semua siswa yang belum mengisi">
+                                        <i class="fab fa-whatsapp mr-1"></i> Kirim WA ke Semua yang Belum Mengisi
+                                        <span class="badge badge-light ml-1">{{ $siswaBelum }}</span>
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -196,5 +209,18 @@
                 }
             });
         });
+
+        var formMassal = document.getElementById('formKirimWaMassal');
+        if (formMassal) {
+            formMassal.addEventListener('submit', function (e) {
+                if (!confirm('Kirim pesan WhatsApp pengingat ke SEMUA siswa yang belum mengisi ({{ $siswaBelum }} siswa)?')) {
+                    e.preventDefault();
+                    return;
+                }
+                var btn = formMassal.querySelector('button[type="submit"]');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm mr-1"></span> Mengirim...';
+            });
+        }
     </script>
 @endsection

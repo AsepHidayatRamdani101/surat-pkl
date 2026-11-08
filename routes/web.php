@@ -71,6 +71,12 @@ Route::middleware(['auth', 'can:siswa'])->group(function () {
     Route::get('/sertifikat/pelaksanaan/download', [SertifikatController::class, 'siswaDownloadPelaksanaan'])->name('sertifikat.pelaksanaan.download');
 });
 
+// Data sertifikat PKL (admin/panitia & pembimbing sekolah/monitoring)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/sertifikat/data', [SertifikatController::class, 'dataIndex'])->name('sertifikat.data.index');
+    Route::post('/sertifikat/data/{siswa}/kirim-wa', [SertifikatController::class, 'kirimWaPengisian'])->name('sertifikat.data.kirim-wa');
+});
+
 // Cetak sertifikat PKL (admin/panitia)
 Route::middleware(['auth', 'can:panitia'])->group(function () {
     Route::get('/sertifikat/admin', [SertifikatController::class, 'adminIndex'])->name('sertifikat.admin.index');

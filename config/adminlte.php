@@ -413,6 +413,7 @@ return [
                 ['text' => 'Resume Bulanan', 'url' => 'pkl/resume', 'icon' => 'fas fa-file-alt'],
                 ['text' => 'Absensi Jurnal', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
                 ['text' => 'Absen Selfie', 'url' => 'absensi-selfie', 'icon' => 'fas fa-camera'],
+                ['text' => 'Data Sertifikat', 'url' => 'sertifikat/data', 'icon' => 'fas fa-certificate'],
             ],
         ],
         [
@@ -651,6 +652,7 @@ return [
                 ['text' => 'Resume Bulanan', 'url' => 'pkl/resume', 'icon' => 'fas fa-file-alt'],
                 ['text' => 'Absensi Jurnal', 'url' => 'pkl/upload-absensi-jurnal', 'icon' => 'fas fa-upload'],
                 ['text' => 'Absen Selfie', 'url' => 'absensi-selfie', 'icon' => 'fas fa-camera'],
+                ['text' => 'Data Sertifikat', 'url' => 'sertifikat/data', 'icon' => 'fas fa-certificate'],
             ],
         ],
         [

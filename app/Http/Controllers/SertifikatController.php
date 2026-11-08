@@ -3,10 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\BuildsSertifikatData;
+use App\Models\MessageLog;
+use App\Models\Pembimbing;
 use App\Models\Siswa;
 use App\Models\TempatPkl;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Http;
 
 class SertifikatController extends Controller
 {
@@ -193,6 +197,176 @@ class SertifikatController extends Controller
         $pdf = Pdf::loadView('sertifikat.pelaksanaan_pdf', $data)->setPaper('A4', 'landscape');
 
         return $pdf->download('sertifikat-pelaksanaan-pkl-' . $siswa->nis . '.pdf');
+    }
+
+    // ===== Admin & pembimbing sekolah (monitoring): data sertifikat =====
+
+    public function dataIndex(Request $request)
+    {
+        $pembimbingId = $this->resolvePembimbingMonitoringId();
+
+        $search = trim((string) $request->query('q', ''));
+        $statusFilter = $request->query('status', '');
+
+        $all = TempatPkl::with(['siswa.kelas', 'perusahaan', 'pembimbing', 'pembimbingPerusahaan'])
+            ->when($pembimbingId, fn ($q) => $q->where('pembimbing_id', $pembimbingId))
+            ->whereHas('siswa')
+            ->orderByDesc('id')
+            ->get()
+            ->unique('siswa_id')
+            ->values();
+
+        $isTerisi = fn ($t) => filled($t->nama_pemilik_instansi) && filled($t->nama_pembimbing_instansi);
+
+        $siswaSudah = $all->filter($isTerisi)->count();
+        $siswaBelum = $all->count() - $siswaSudah;
+
+        $byPerusahaan = $all->groupBy('perusahaan_id');
+        $perusahaanTerisi = $byPerusahaan->filter(fn ($rows) => $rows->every($isTerisi))->count();
+        $perusahaanBelum = $byPerusahaan->count() - $perusahaanTerisi;
+
+        $rows = $all;
+
+        if ($search !== '') {
+            $needle = mb_strtolower($search);
+            $rows = $rows->filter(function ($t) use ($needle) {
+                return str_contains(mb_strtolower($t->siswa->nama_siswa ?? ''), $needle)
+                    || str_contains(mb_strtolower($t->siswa->nis ?? ''), $needle)
+                    || str_contains(mb_strtolower($t->perusahaan->nama_perusahaan ?? ''), $needle);
+            });
+        }
+
+        if ($statusFilter === 'sudah') {
+            $rows = $rows->filter($isTerisi);
+        } elseif ($statusFilter === 'belum') {
+            $rows = $rows->reject($isTerisi);
+        }
+
+        $rows = $rows->sortBy(fn ($t) => mb_strtolower($t->siswa->nama_siswa ?? ''))->values();
+
+        $perPage = 25;
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $tempatList = new LengthAwarePaginator(
+            $rows->forPage($page, $perPage)->values(),
+            $rows->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return view('sertifikat.data_index', compact(
+            'tempatList',
+            'search',
+            'statusFilter',
+            'siswaSudah',
+            'siswaBelum',
+            'perusahaanTerisi',
+            'perusahaanBelum'
+        ));
+    }
+
+    public function kirimWaPengisian(Siswa $siswa)
+    {
+        $pembimbingId = $this->resolvePembimbingMonitoringId();
+
+        $tempatPkl = TempatPkl::with('perusahaan')
+            ->where('siswa_id', $siswa->id)
+            ->when($pembimbingId, fn ($q) => $q->where('pembimbing_id', $pembimbingId))
+            ->latest('id')
+            ->first();
+
+        if (!$tempatPkl) {
+            return back()->with('error', 'Data tempat PKL siswa tidak ditemukan.');
+        }
+
+        if (filled($tempatPkl->nama_pemilik_instansi) && filled($tempatPkl->nama_pembimbing_instansi)) {
+            return back()->with('error', 'Siswa ' . $siswa->nama_siswa . ' sudah mengisi data pemilik & pembimbing perusahaan.');
+        }
+
+        if (!$siswa->no_hp_siswa) {
+            return back()->with('error', 'Nomor HP siswa ' . $siswa->nama_siswa . ' tidak tersedia.');
+        }
+
+        $kosong = [];
+        if (blank($tempatPkl->nama_pemilik_instansi)) {
+            $kosong[] = 'Pemilik/Pimpinan Perusahaan';
+        }
+        if (blank($tempatPkl->nama_pembimbing_instansi)) {
+            $kosong[] = 'Pembimbing Perusahaan';
+        }
+
+        $namaPerusahaan = $tempatPkl->perusahaan->nama_perusahaan ?? 'tempat PKL kamu';
+
+        $pesan = "Halo *{$siswa->nama_siswa}*,\n\n"
+            . "Mohon segera lengkapi data *" . implode('* dan *', $kosong) . "* "
+            . "di {$namaPerusahaan} untuk keperluan Sertifikat Pelaksanaan PKL.\n\n"
+            . "Silakan isi melalui menu *PKL > Data Pelaksanaan* di aplikasi:\n"
+            . route('sertifikat.pelaksanaan.form') . "\n\n"
+            . "Terima kasih.";
+
+        $response = $this->sendViaFonnte($siswa->no_hp_siswa, $pesan);
+        $status = $response['success'] ? 'terkirim' : 'gagal';
+
+        MessageLog::create([
+            'template_id' => null,
+            'nomor_penerima' => $siswa->no_hp_siswa,
+            'isi_pesan' => $pesan,
+            'tipe_pengiriman' => 'personal',
+            'status_pengiriman' => $status,
+            'response_fonnte' => json_encode($response),
+            'dikirim_oleh' => auth()->id(),
+        ]);
+
+        if ($response['success']) {
+            return back()->with('success', 'Pesan WA berhasil dikirim ke ' . $siswa->nama_siswa . ' (' . $siswa->no_hp_siswa . ').');
+        }
+
+        return back()->with('error', 'Gagal mengirim WA ke ' . $siswa->nama_siswa . '. ' . ($response['error'] ?? ''));
+    }
+
+    private function resolvePembimbingMonitoringId(): ?int
+    {
+        $user = auth()->user();
+
+        if (!$user || !in_array($user->role, ['panitia', 'pembimbing'], true)) {
+            abort(403);
+        }
+
+        if ($user->role !== 'pembimbing') {
+            return null;
+        }
+
+        $id = Pembimbing::where('nip_pembimbing', (string) $user->username)->value('id');
+        abort_if(!$id, 403, 'Data pembimbing untuk akun ini tidak ditemukan.');
+
+        return (int) $id;
+    }
+
+    private function sendViaFonnte($nomorTujuan, $pesan): array
+    {
+        try {
+            $nomorTujuan = preg_replace('/^0/', '62', $nomorTujuan);
+
+            $response = Http::withHeaders([
+                'Authorization' => env('FONNTE_TOKEN'),
+            ])->asForm()->post('https://api.fonnte.com/send', [
+                'target' => $nomorTujuan,
+                'message' => $pesan,
+            ]);
+
+            $data = $response->json();
+
+            return [
+                'success' => $data['status'] ?? false,
+                'message_id' => $data['data']['id_message'] ?? null,
+                'error' => $data['reason'] ?? null,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
     }
 
     private function resolveSiswa(): Siswa

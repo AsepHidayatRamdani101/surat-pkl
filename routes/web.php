@@ -419,6 +419,10 @@ Route::middleware(['auth', 'can:panitia'])->group(function () {
     Route::get('/template-informasi/data', [MessageTemplateController::class, 'data'])->name('message-template.data');
     Route::get('/template-informasi/create', [MessageTemplateController::class, 'create'])->name('message-template.create');
     Route::get('/template-informasi/send-message', [MessageTemplateController::class, 'sendMessage'])->name('message-template.send-message');
+    Route::get('/template-informasi/pengaturan-fonnte', [MessageTemplateController::class, 'fonnteSetting'])->name('message-template.fonnte-setting');
+    Route::post('/template-informasi/pengaturan-fonnte', [MessageTemplateController::class, 'fonnteSettingStore'])->name('message-template.fonnte-setting.store');
+    Route::post('/template-informasi/pengaturan-fonnte/test-connection', [MessageTemplateController::class, 'fonnteTestConnection'])->name('message-template.fonnte-test-connection');
+    Route::post('/template-informasi/pengaturan-fonnte/test-send', [MessageTemplateController::class, 'fonnteTestSend'])->name('message-template.fonnte-test-send');
     Route::get('/template-informasi/logs', [MessageTemplateController::class, 'logs'])->name('message-template.logs');
     Route::get('/template-informasi/logs/data', [MessageTemplateController::class, 'logsData'])->name('message-template.logs-data');
     Route::post('/template-informasi', [MessageTemplateController::class, 'store'])->name('message-template.store');

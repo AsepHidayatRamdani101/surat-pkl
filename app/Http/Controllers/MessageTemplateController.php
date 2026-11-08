@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FonnteSetting;
 use App\Models\MessageTemplate;
 use App\Models\MessageLog;
 use App\Models\Siswa;
@@ -460,7 +461,7 @@ class MessageTemplateController extends Controller
             $nomorTujuan = preg_replace('/^0/', '62', $nomorTujuan);
 
             $response = Http::withHeaders([
-                'Authorization' => env('FONNTE_TOKEN'),
+                'Authorization' => FonnteSetting::activeToken(),
             ])->asForm()->post('https://api.fonnte.com/send', [
                 'target' => $nomorTujuan,
                 'message' => $pesan,
@@ -479,6 +480,125 @@ class MessageTemplateController extends Controller
                 'error' => $e->getMessage(),
             ];
         }
+    }
+
+    // ===== Pengaturan Fonnte =====
+
+    public function fonnteSetting()
+    {
+        $setting = FonnteSetting::current();
+        $envToken = env('FONNTE_TOKEN');
+
+        return view('message_template.fonnte_setting', compact('setting', 'envToken'));
+    }
+
+    public function fonnteSettingStore(Request $request)
+    {
+        $validated = $request->validate([
+            'token' => 'nullable|string|max:500',
+        ]);
+
+        $setting = FonnteSetting::current();
+        $setting->update([
+            'token' => $validated['token'] ?: null,
+            'updated_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Token Fonnte berhasil disimpan.');
+    }
+
+    public function fonnteTestConnection()
+    {
+        $token = FonnteSetting::activeToken();
+
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token Fonnte belum diatur. Simpan token terlebih dahulu.',
+            ], 400);
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => $token,
+            ])->asForm()->post('https://api.fonnte.com/device');
+
+            $data = $response->json();
+
+            if (($data['status'] ?? false) && !empty($data['data'])) {
+                $device = $data['data'][0] ?? [];
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Koneksi berhasil! Token valid.',
+                    'device' => [
+                        'name' => $device['name'] ?? '-',
+                        'device' => $device['device'] ?? '-',
+                        'status' => $device['status'] ?? '-',
+                        'quota' => $device['quota'] ?? '-',
+                        'expired' => $device['expired'] ?? '-',
+                    ],
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Token tidak valid atau device tidak ditemukan. ' . ($data['reason'] ?? ''),
+            ], 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal terhubung ke server Fonnte: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function fonnteTestSend(Request $request)
+    {
+        $validated = $request->validate([
+            'nomor_tujuan' => 'required|string|max:20',
+        ], [
+            'nomor_tujuan.required' => 'Nomor tujuan wajib diisi.',
+        ]);
+
+        $token = FonnteSetting::activeToken();
+
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token Fonnte belum diatur. Simpan token terlebih dahulu.',
+            ], 400);
+        }
+
+        $pesan = "✅ *Tes Kirim Pesan*\n\n"
+            . "Ini adalah pesan percobaan dari aplikasi SIPKL.\n"
+            . "Jika Anda menerima pesan ini, berarti konfigurasi Fonnte sudah berfungsi dengan baik.\n\n"
+            . "Dikirim: " . now()->format('d/m/Y H:i:s');
+
+        $response = $this->sendViaffonnte($validated['nomor_tujuan'], $pesan);
+        $status = $response['success'] ? 'terkirim' : 'gagal';
+
+        MessageLog::create([
+            'template_id' => null,
+            'nomor_penerima' => $validated['nomor_tujuan'],
+            'isi_pesan' => $pesan,
+            'tipe_pengiriman' => 'personal',
+            'status_pengiriman' => $status,
+            'response_fonnte' => json_encode($response),
+            'dikirim_oleh' => auth()->id(),
+        ]);
+
+        if ($response['success']) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Pesan tes berhasil dikirim ke ' . $validated['nomor_tujuan'] . '. Silakan cek WhatsApp.',
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal mengirim pesan tes. ' . ($response['error'] ?? 'Periksa token dan status device Fonnte.'),
+        ], 400);
     }
 
     public function logs()

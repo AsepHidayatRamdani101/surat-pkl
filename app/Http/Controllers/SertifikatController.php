@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\BuildsSertifikatData;
+use App\Models\FonnteSetting;
 use App\Models\MessageLog;
 use App\Models\Pembimbing;
 use App\Models\Siswa;
@@ -422,7 +423,7 @@ class SertifikatController extends Controller
             $nomorTujuan = preg_replace('/^0/', '62', $nomorTujuan);
 
             $response = Http::withHeaders([
-                'Authorization' => env('FONNTE_TOKEN'),
+                'Authorization' => FonnteSetting::activeToken(),
             ])->asForm()->post('https://api.fonnte.com/send', [
                 'target' => $nomorTujuan,
                 'message' => $pesan,

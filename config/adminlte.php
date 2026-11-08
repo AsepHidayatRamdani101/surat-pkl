@@ -397,6 +397,11 @@ return [
                     'url'  => 'template-informasi/logs',
                     'icon' => 'fas fa-history',
                 ],
+                [
+                    'text' => 'Pengaturan Fonnte',
+                    'url'  => 'template-informasi/pengaturan-fonnte',
+                    'icon' => 'fas fa-plug',
+                ],
             ],
         ],
         [

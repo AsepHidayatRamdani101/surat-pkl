@@ -9,6 +9,10 @@ use App\Models\NilaiSidang;
 use App\Models\Pembimbing;
 use App\Models\Sekolah;
 use App\Models\SertifikatSidang;
+use App\Models\SertifikatSetting;
+use App\Models\SertifikatFont;
+use App\Models\SertifikatAspek;
+use App\Models\SertifikatPenilaian;
 use App\Models\Siswa;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -280,6 +284,10 @@ class SidangController extends Controller
         ]);
 
         $sekolah = Sekolah::latest('id')->first();
+        $sertifikatSetting = SertifikatSetting::current();
+        $customFont = SertifikatFont::where('name', $sertifikatSetting->font_family)->latest('id')->first();
+        $aspeksSertifikat = SertifikatAspek::where('jurusan_id', $siswa->kelas?->jurusan_id)->orderBy('urutan')->orderBy('id')->get();
+        $nilaiSertifikat = SertifikatPenilaian::where('siswa_id', $siswa->id)->get()->keyBy('sertifikat_aspek_id');
         $relatifJikaAda = fn (?string $path) => $path && is_file(public_path($path)) ? $path : null;
 
         return [
@@ -292,6 +300,15 @@ class SidangController extends Controller
             'ttdPath' => $relatifJikaAda($sekolah?->ttd_kepala_sekolah_path ? 'storage/' . $sekolah->ttd_kepala_sekolah_path : null),
             'capPath' => $relatifJikaAda($sekolah?->cap_sekolah_path ? 'storage/' . $sekolah->cap_sekolah_path : null),
             'logoPath' => $relatifJikaAda('logo.png'),
+            'fontFamily' => $sertifikatSetting->font_family,
+            'backgroundDataUri' => $sertifikatSetting->backgroundDataUri(),
+            'backgroundFrontDataUri' => $sertifikatSetting->backgroundFrontDataUri(),
+            'backgroundBackDataUri' => $sertifikatSetting->backgroundBackDataUri(),
+            'customFontDataUri' => $customFont?->dataUri() ?? $sertifikatSetting->customFontDataUri(),
+            'customFontName' => $customFont?->name ?? $sertifikatSetting->custom_font_name,
+            'customFontFaces' => SertifikatFont::orderBy('id')->get()->map(fn ($font) => ['name' => $font->name, 'src' => $font->dataUri()])->filter(fn ($font) => !empty($font['src']))->values(),
+            'designLayout' => $sertifikatSetting->layout(),
+            'assessmentRows' => $aspeksSertifikat->map(fn ($aspek) => ['aspek' => $aspek->nama_aspek, 'nilai' => $nilaiSertifikat->get($aspek->id)?->nilai, 'predikat' => $nilaiSertifikat->get($aspek->id)?->predikat]),
         ];
     }
 

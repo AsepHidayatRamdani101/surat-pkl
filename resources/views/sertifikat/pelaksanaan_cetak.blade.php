@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sertifikat Pelaksanaan PKL</title>
     <style>
+        @if(!empty($customFontDataUri) && !empty($customFontName)) @font-face { font-family: '{{ $customFontName }}'; src: url('{{ $customFontDataUri }}'); } @endif
         * {
             box-sizing: border-box;
         }
@@ -13,7 +14,7 @@
         body {
             margin: 0;
             padding: 24px;
-            font-family: Georgia, "Times New Roman", serif;
+            font-family: {{ $fontFamily ?? 'Georgia, "Times New Roman", serif' }};
             background: #e5e7eb;
             color: #1f2937;
         }
@@ -48,6 +49,7 @@
             height: 794px;
             margin: 0 auto;
             background: #fffdf7;
+            @if(!empty($backgroundFrontDataUri ?? $backgroundDataUri)) background-image: url('{{ $backgroundFrontDataUri ?? $backgroundDataUri }}'); background-size: cover; background-position: center; @endif
             box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
             padding: 18px;
             position: relative;
@@ -371,7 +373,9 @@
                 </div>
             </div>
         </div>
+        @include('sertifikat.partials.design_overlay')
     </div>
+@include('sertifikat.partials.halaman_nilai')
 </body>
 
 </html>

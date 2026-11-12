@@ -28,6 +28,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleManagementController;
 use App\Http\Controllers\SekolahController;
 use App\Http\Controllers\SertifikatController;
+use App\Http\Controllers\SertifikatSettingController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\SuratIzinOrtuController;
 use App\Http\Controllers\TempatPklController;
@@ -80,7 +81,15 @@ Route::middleware(['auth'])->group(function () {
 
 // Cetak sertifikat PKL (admin/panitia)
 Route::middleware(['auth', 'can:panitia'])->group(function () {
+    Route::get('/sertifikat/pengaturan', [SertifikatSettingController::class, 'edit'])->name('sertifikat.setting.edit');
+    Route::put('/sertifikat/pengaturan', [SertifikatSettingController::class, 'update'])->name('sertifikat.setting.update');
+    Route::delete('/sertifikat/pengaturan/background', [SertifikatSettingController::class, 'removeBackground'])->name('sertifikat.setting.remove-background');
+    Route::delete('/sertifikat/pengaturan/font/{font}', [SertifikatSettingController::class, 'removeFont'])->name('sertifikat.setting.remove-font');
+    Route::post('/sertifikat/pengaturan/aspek', [SertifikatSettingController::class, 'storeAspek'])->name('sertifikat.setting.aspek.store');
+    Route::delete('/sertifikat/pengaturan/aspek/{aspek}', [SertifikatSettingController::class, 'destroyAspek'])->name('sertifikat.setting.aspek.destroy');
     Route::get('/sertifikat/admin', [SertifikatController::class, 'adminIndex'])->name('sertifikat.admin.index');
+    Route::get('/sertifikat/admin/{siswa}/penilaian', [SertifikatController::class, 'editPenilaian'])->name('sertifikat.admin.penilaian.edit');
+    Route::put('/sertifikat/admin/{siswa}/penilaian', [SertifikatController::class, 'updatePenilaian'])->name('sertifikat.admin.penilaian.update');
     Route::get('/sertifikat/admin/{siswa}/pembekalan/cetak', [SertifikatController::class, 'adminCetakPembekalan'])->name('sertifikat.admin.pembekalan.cetak');
     Route::get('/sertifikat/admin/{siswa}/pembekalan/download', [SertifikatController::class, 'adminDownloadPembekalan'])->name('sertifikat.admin.pembekalan.download');
     Route::get('/sertifikat/admin/{siswa}/pelaksanaan/cetak', [SertifikatController::class, 'adminCetakPelaksanaan'])->name('sertifikat.admin.pelaksanaan.cetak');

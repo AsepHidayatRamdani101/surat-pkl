@@ -12,6 +12,17 @@
                         <p>Dashboard</p>
                     </a>
                 </li>
+                @if(auth()->check() && auth()->user()->role === 'panitia')
+                    <li class="nav-item has-treeview {{ request()->is('sertifikat/*') ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link {{ request()->is('sertifikat/*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-certificate"></i><p>Sertifikat <i class="right fas fa-angle-left"></i></p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item"><a href="{{ route('sertifikat.admin.index') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Cetak Sertifikat</p></a></li>
+                            <li class="nav-item"><a href="{{ route('sertifikat.setting.edit') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Pengaturan Sertifikat</p></a></li>
+                        </ul>
+                    </li>
+                @endif
                 {{-- Tambahkan menu lain sesuai kebutuhan --}}
             </ul>
         </nav>

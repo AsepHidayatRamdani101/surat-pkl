@@ -8,6 +8,8 @@ use App\Models\MessageLog;
 use App\Models\Pembimbing;
 use App\Models\Siswa;
 use App\Models\TempatPkl;
+use App\Models\SertifikatAspek;
+use App\Models\SertifikatPenilaian;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -151,6 +153,45 @@ class SertifikatController extends Controller
             ->withQueryString();
 
         return view('sertifikat.admin_index', compact('siswaList', 'search'));
+    }
+
+    public function editPenilaian(Siswa $siswa)
+    {
+        $siswa->load('kelas.jurusan');
+        $jurusan = $siswa->kelas?->jurusan;
+        abort_unless($jurusan, 422, 'Jurusan siswa belum tersedia.');
+        $aspeks = SertifikatAspek::where('jurusan_id', $jurusan->id)->orderBy('urutan')->orderBy('id')->get();
+        $penilaian = SertifikatPenilaian::where('siswa_id', $siswa->id)->get()->keyBy('sertifikat_aspek_id');
+        return view('sertifikat.penilaian', compact('siswa', 'jurusan', 'aspeks', 'penilaian'));
+    }
+
+    public function updatePenilaian(Request $request, Siswa $siswa)
+    {
+        $siswa->load('kelas.jurusan');
+        $aspekIds = SertifikatAspek::where('jurusan_id', $siswa->kelas?->jurusan_id)->pluck('id');
+        $data = $request->validate([
+            'nilai' => ['nullable', 'array'],
+            'nilai.*' => ['nullable', 'numeric', 'min:0', 'max:100'],
+        ]);
+        foreach ($aspekIds as $aspekId) {
+            $nilai = $data['nilai'][$aspekId] ?? null;
+            SertifikatPenilaian::updateOrCreate(
+                ['siswa_id' => $siswa->id, 'sertifikat_aspek_id' => $aspekId],
+                ['nilai' => $nilai, 'predikat' => $this->predikatSertifikat($nilai)]
+            );
+        }
+        return back()->with('success', 'Penilaian sertifikat berhasil disimpan.');
+    }
+
+    private function predikatSertifikat($nilai): ?string
+    {
+        if ($nilai === null || $nilai === '') return null;
+        return match (true) {
+            $nilai >= 90 => 'Sangat Baik',
+            $nilai >= 80 => 'Baik',
+            $nilai >= 70 => 'Cukup',
+            default => 'Perlu Bimbingan',
+        };
     }
 
     public function adminCetakPembekalan(Siswa $siswa)

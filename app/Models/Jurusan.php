@@ -16,4 +16,9 @@ class Jurusan extends Model
     {
         return $this->hasMany(Kelas::class);
     }
+
+    public function aspeks()
+    {
+        return $this->hasMany(SertifikatAspek::class);
+    }
 }

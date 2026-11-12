@@ -1,0 +1,10 @@
+@extends('adminlte::page')
+@section('title', 'Penilaian Sertifikat')
+@section('content_header')
+<div class="d-flex justify-content-between align-items-center"><div><h1 class="font-weight-bold mb-1">Penilaian Sertifikat</h1><p class="text-muted mb-0">{{ $siswa->nama_siswa }} · {{ $jurusan->nama_jurusan }}</p></div><a href="{{ route('sertifikat.admin.index') }}" class="btn btn-light"><i class="fas fa-arrow-left mr-1"></i>Kembali</a></div>
+@stop
+@section('content')
+@if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+<div class="card border-0 shadow-sm" style="border-radius:16px;overflow:hidden"><div class="card-header bg-primary py-3"><h3 class="card-title font-weight-bold">Aspek Penilaian {{ $jurusan->nama_jurusan }}</h3></div><form method="POST" action="{{ route('sertifikat.admin.penilaian.update', $siswa) }}">@csrf @method('PUT')<div class="card-body p-0"><table class="table table-hover mb-0"><thead class="bg-light"><tr><th width="70">No.</th><th>Aspek Penilaian</th><th width="220">Nilai (0–100)</th><th width="220">Predikat</th></tr></thead><tbody>@forelse($aspeks as $i => $aspek)@php($row=$penilaian->get($aspek->id))<tr><td>{{ $i+1 }}</td><td class="font-weight-bold">{{ $aspek->nama_aspek }}</td><td><input type="number" step="0.01" min="0" max="100" class="form-control nilai-input" name="nilai[{{ $aspek->id }}]" value="{{ old('nilai.'.$aspek->id, $row?->nilai) }}"></td><td class="predikat align-middle">{{ $row?->predikat ?? '-' }}</td></tr>@empty<tr><td colspan="4" class="text-center text-muted py-5">Aspek penilaian jurusan ini belum dibuat.</td></tr>@endforelse</tbody></table></div><div class="card-footer bg-white text-right"><button class="btn btn-primary px-4"><i class="fas fa-save mr-1"></i>Simpan Nilai</button></div></form></div>
+@stop
+@section('js')<script>document.querySelectorAll('.nilai-input').forEach(el=>el.addEventListener('input',()=>{const n=parseFloat(el.value),p=el.closest('tr').querySelector('.predikat');p.textContent=isNaN(n)?'-':n>=90?'Sangat Baik':n>=80?'Baik':n>=70?'Cukup':'Perlu Bimbingan'}));</script>@stop

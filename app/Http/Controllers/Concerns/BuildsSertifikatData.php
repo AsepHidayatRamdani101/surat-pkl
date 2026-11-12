@@ -7,6 +7,10 @@ use App\Models\NilaiSikapPembekalan;
 use App\Models\Sekolah;
 use App\Models\SertifikatSidang;
 use App\Models\Siswa;
+use App\Models\SertifikatSetting;
+use App\Models\SertifikatFont;
+use App\Models\SertifikatAspek;
+use App\Models\SertifikatPenilaian;
 use App\Models\TempatPkl;
 use App\Models\TugasPembekalan;
 use Carbon\Carbon;
@@ -76,7 +80,7 @@ trait BuildsSertifikatData
             'avgNilai' => $avgNilai,
             'predikatNilai' => $this->predikatNilaiPembekalan($avgNilai),
             'sikap' => $sikapLabel,
-        ], $this->sertifikatSekolahData());
+        ], $this->sertifikatSekolahData(), $this->sertifikatDesignData($siswa));
     }
 
     protected function buildSertifikatPelaksanaanDataForSiswa(Siswa $siswa): ?array
@@ -135,7 +139,7 @@ trait BuildsSertifikatData
             'tanggalSelesai' => $tanggalSelesai,
             'durasi' => $durasi,
             'sertifikatSidang' => $sertifikatSidang,
-        ], $this->sertifikatSekolahData());
+        ], $this->sertifikatSekolahData(), $this->sertifikatDesignData($siswa));
     }
 
     protected function sertifikatSekolahData(): array
@@ -145,6 +149,8 @@ trait BuildsSertifikatData
         $ttdPath = $relatifJikaAda($sekolah?->ttd_kepala_sekolah_path ? 'storage/' . $sekolah->ttd_kepala_sekolah_path : null);
         $capPath = $relatifJikaAda($sekolah?->cap_sekolah_path ? 'storage/' . $sekolah->cap_sekolah_path : null);
         $logoPath = $relatifJikaAda('logo.png');
+        $sertifikatSetting = SertifikatSetting::current();
+        $customFont = SertifikatFont::where('name', $sertifikatSetting->font_family)->latest('id')->first();
 
         return [
             'tanggalCetak' => now()->locale('id'),
@@ -153,6 +159,16 @@ trait BuildsSertifikatData
             'ttdPath' => $ttdPath,
             'capPath' => $capPath,
             'logoPath' => $logoPath,
+            'fontFamily' => $sertifikatSetting->font_family,
+            'backgroundDataUri' => $sertifikatSetting->backgroundDataUri(),
+            'backgroundFrontDataUri' => $sertifikatSetting->backgroundFrontDataUri(),
+            'backgroundBackDataUri' => $sertifikatSetting->backgroundBackDataUri(),
+            'customFontDataUri' => $customFont?->dataUri() ?? $sertifikatSetting->customFontDataUri(),
+            'customFontName' => $customFont?->name ?? $sertifikatSetting->custom_font_name,
+            'customFontFaces' => SertifikatFont::orderBy('id')->get()->map(fn ($font) => [
+                'name' => $font->name,
+                'src' => $font->dataUri(),
+            ])->filter(fn ($font) => !empty($font['src']))->values(),
         ];
     }
 
@@ -168,5 +184,21 @@ trait BuildsSertifikatData
             $nilai >= 70 => 'Cukup (C)',
             default => 'Perlu Bimbingan (D)',
         };
+    }
+
+    protected function sertifikatDesignData(Siswa $siswa): array
+    {
+        $setting = SertifikatSetting::current();
+        $jurusanId = $siswa->kelas?->jurusan_id;
+        $aspeks = SertifikatAspek::where('jurusan_id', $jurusanId)->orderBy('urutan')->orderBy('id')->get();
+        $nilai = SertifikatPenilaian::where('siswa_id', $siswa->id)->get()->keyBy('sertifikat_aspek_id');
+        return [
+            'designLayout' => $setting->layout(),
+            'assessmentRows' => $aspeks->map(fn ($aspek) => [
+                'aspek' => $aspek->nama_aspek,
+                'nilai' => $nilai->get($aspek->id)?->nilai,
+                'predikat' => $nilai->get($aspek->id)?->predikat,
+            ]),
+        ];
     }
 }

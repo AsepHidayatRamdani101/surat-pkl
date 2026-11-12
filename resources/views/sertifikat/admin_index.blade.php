@@ -40,6 +40,7 @@
                                         <th>Nama Siswa</th>
                                         <th>Kelas</th>
                                         <th>Tempat PKL</th>
+                                        <th class="text-center">Penilaian</th>
                                         <th class="text-center">Sertifikat Pembekalan</th>
                                         <th class="text-center">Sertifikat Pelaksanaan</th>
                                     </tr>
@@ -52,6 +53,7 @@
                                             <td>{{ $siswa->nama_siswa }}</td>
                                             <td>{{ $siswa->kelas->nama_kelas ?? '-' }}</td>
                                             <td>{{ $siswa->suratIzin->perusahaan->nama_perusahaan ?? '-' }}</td>
+                                            <td class="text-center"><a href="{{ route('sertifikat.admin.penilaian.edit', $siswa) }}" class="btn btn-xs btn-outline-warning"><i class="fas fa-star mr-1"></i>Input Nilai</a></td>
                                             <td class="text-center">
                                                 <a href="{{ route('sertifikat.admin.pembekalan.cetak', $siswa->id) }}"
                                                     class="btn btn-xs btn-outline-primary" target="_blank">
@@ -79,7 +81,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="7" class="text-center text-muted">Tidak ada data siswa.</td>
+                                            <td colspan="8" class="text-center text-muted">Tidak ada data siswa.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>

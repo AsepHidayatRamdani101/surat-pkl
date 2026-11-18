@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Storage;
 
 class SertifikatSetting extends Model
 {
+    private array $dataUriCache = [];
+
     protected $fillable = [
         'background_path', 'background_front_path', 'background_front_pembekalan_path', 'background_back_path',
         'font_family', 'custom_font_path', 'custom_font_name',
@@ -28,8 +30,49 @@ class SertifikatSetting extends Model
             return null;
         }
 
+        if (array_key_exists($path, $this->dataUriCache)) {
+            return $this->dataUriCache[$path];
+        }
+
         $mime = Storage::disk('public')->mimeType($path) ?: 'image/png';
-        return 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($path));
+        return $this->dataUriCache[$path] = 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($path));
+    }
+
+    public function fileUrl(?string $path): ?string
+    {
+        return $path && Storage::disk('public')->exists($path)
+            ? asset('storage/' . $path)
+            : null;
+    }
+
+    public function filePreviewUrl(?string $path): ?string
+    {
+        if (!$path || !Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        $previewPath = 'sertifikat/previews/' . sha1($path . '|' . Storage::disk('public')->lastModified($path)) . '.jpg';
+        if (!Storage::disk('public')->exists($previewPath) && function_exists('imagecreatefromstring')) {
+            $source = @imagecreatefromstring(Storage::disk('public')->get($path));
+            if ($source) {
+                $width = imagesx($source);
+                $height = imagesy($source);
+                $targetWidth = min(1400, $width);
+                $targetHeight = max(1, (int) round($height * ($targetWidth / $width)));
+                $preview = imagecreatetruecolor($targetWidth, $targetHeight);
+                imagecopyresampled($preview, $source, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height);
+                ob_start();
+                imagejpeg($preview, null, 82);
+                $contents = ob_get_clean();
+                imagedestroy($preview);
+                imagedestroy($source);
+                if ($contents !== false) {
+                    Storage::disk('public')->put($previewPath, $contents);
+                }
+            }
+        }
+
+        return $this->fileUrl(Storage::disk('public')->exists($previewPath) ? $previewPath : $path);
     }
 
     public function backgroundDataUri(): ?string
@@ -43,16 +86,52 @@ class SertifikatSetting extends Model
             ?: $this->publicImageDataUri('depan.jpg');
     }
 
+    public function backgroundFrontUrl(): ?string
+    {
+        return $this->fileUrl($this->background_front_path ?: $this->background_path)
+            ?: asset('depan.jpg');
+    }
+
+    public function backgroundFrontPreviewUrl(): ?string
+    {
+        return $this->filePreviewUrl($this->background_front_path ?: $this->background_path)
+            ?: asset('depan.jpg');
+    }
+
     public function backgroundFrontPembekalanDataUri(): ?string
     {
         return $this->fileDataUri($this->background_front_pembekalan_path)
             ?: $this->backgroundFrontDataUri();
     }
 
+    public function backgroundFrontPembekalanUrl(): ?string
+    {
+        return $this->fileUrl($this->background_front_pembekalan_path)
+            ?: $this->backgroundFrontUrl();
+    }
+
+    public function backgroundFrontPembekalanPreviewUrl(): ?string
+    {
+        return $this->filePreviewUrl($this->background_front_pembekalan_path)
+            ?: $this->backgroundFrontPreviewUrl();
+    }
+
     public function backgroundBackDataUri(): ?string
     {
         return $this->fileDataUri($this->background_back_path)
             ?: $this->publicImageDataUri('belakang.jpg');
+    }
+
+    public function backgroundBackUrl(): ?string
+    {
+        return $this->fileUrl($this->background_back_path)
+            ?: asset('belakang.jpg');
+    }
+
+    public function backgroundBackPreviewUrl(): ?string
+    {
+        return $this->filePreviewUrl($this->background_back_path)
+            ?: asset('belakang.jpg');
     }
 
     public function customFontDataUri(): ?string
@@ -71,6 +150,26 @@ class SertifikatSetting extends Model
     {
         $path = public_path($filename);
         return is_file($path) ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($path)) : null;
+    }
+
+    public function usedCustomFontNames(): array
+    {
+        $names = [];
+        $walk = function ($value) use (&$walk, &$names): void {
+            if (!is_array($value)) {
+                return;
+            }
+            if (isset($value['font']) && is_string($value['font'])) {
+                $names[] = $value['font'];
+            }
+            foreach ($value as $child) {
+                $walk($child);
+            }
+        };
+        $walk($this->design_layout ?: []);
+        $names[] = $this->font_family;
+
+        return array_values(array_unique(array_filter($names)));
     }
 
     public function layout(): array
@@ -108,6 +207,8 @@ class SertifikatSetting extends Model
         $layout['perusahaan']['x'] = 0;
         $layout['alamat_perusahaan']['x'] = 0;
         $layout['tanggal_cetak']['x'] = 0;
+        $layout['pimpinan_nip']['x'] = $layout['pimpinan']['x'];
+        $layout['kepala_nip']['x'] = $layout['kepala_sekolah']['x'];
 
         return $layout;
     }
@@ -139,7 +240,10 @@ class SertifikatSetting extends Model
             $defaults['title']['size'] = (float) $saved['title_size'];
         }
 
-        return array_replace_recursive($defaults, array_intersect_key($saved, $defaults));
+        $layout = array_replace_recursive($defaults, array_intersect_key($saved, $defaults));
+        $layout['signature_nip']['x'] = $layout['signature_name']['x'];
+
+        return $layout;
     }
 
     public function pembekalanLayout(): array
@@ -161,7 +265,10 @@ class SertifikatSetting extends Model
             'kepala_nip' => ['x' => 66, 'y' => 89, 'size' => 11, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
         ];
 
-        return array_replace_recursive($defaults, array_intersect_key($saved, $defaults));
+        $layout = array_replace_recursive($defaults, array_intersect_key($saved, $defaults));
+        $layout['kepala_nip']['x'] = $layout['kepala_sekolah']['x'];
+
+        return $layout;
     }
 
     public function pembekalanBackLayout(): array
@@ -170,6 +277,9 @@ class SertifikatSetting extends Model
         $saved = is_array($saved) ? $saved : [];
         $defaults = $this->backLayout();
 
-        return array_replace_recursive($defaults, array_intersect_key($saved, $defaults));
+        $layout = array_replace_recursive($defaults, array_intersect_key($saved, $defaults));
+        $layout['signature_nip']['x'] = $layout['signature_name']['x'];
+
+        return $layout;
     }
 }

@@ -252,14 +252,14 @@ class SidangController extends Controller
 
     public function downloadSertifikat($siswaId = null)
     {
-        $data = $this->buildSertifikatData($siswaId);
+        $data = $this->buildSertifikatData($siswaId, true);
 
         $pdf = Pdf::loadView('sidang.sertifikat.pdf', $data)->setPaper('A4', 'landscape');
 
         return $pdf->download('sertifikat-sidang-' . $data['siswa']->nis . '.pdf');
     }
 
-    private function buildSertifikatData($siswaId): array
+    private function buildSertifikatData($siswaId, bool $embedAssets = false): array
     {
         $user = auth()->user();
 
@@ -285,7 +285,11 @@ class SidangController extends Controller
 
         $sekolah = Sekolah::latest('id')->first();
         $sertifikatSetting = SertifikatSetting::current();
-        $customFont = SertifikatFont::where('name', $sertifikatSetting->font_family)->latest('id')->first();
+        $customFonts = SertifikatFont::whereIn('name', $sertifikatSetting->usedCustomFontNames())
+            ->orderBy('id')->get()->unique('name')->values();
+        $customFont = $customFonts->firstWhere('name', $sertifikatSetting->font_family);
+        $frontAsset = $embedAssets ? $sertifikatSetting->backgroundFrontDataUri() : $sertifikatSetting->backgroundFrontUrl();
+        $backAsset = $embedAssets ? $sertifikatSetting->backgroundBackDataUri() : $sertifikatSetting->backgroundBackUrl();
         $aspeksSertifikat = SertifikatAspek::where('jurusan_id', $siswa->kelas?->jurusan_id)->orderBy('urutan')->orderBy('id')->get();
         $nilaiSertifikat = SertifikatPenilaian::where('siswa_id', $siswa->id)->get()->keyBy('sertifikat_aspek_id');
         $relatifJikaAda = fn (?string $path) => $path && is_file(public_path($path)) ? $path : null;
@@ -301,12 +305,15 @@ class SidangController extends Controller
             'capPath' => $relatifJikaAda($sekolah?->cap_sekolah_path ? 'storage/' . $sekolah->cap_sekolah_path : null),
             'logoPath' => $relatifJikaAda('logo.png'),
             'fontFamily' => $sertifikatSetting->font_family,
-            'backgroundDataUri' => $sertifikatSetting->backgroundDataUri(),
-            'backgroundFrontDataUri' => $sertifikatSetting->backgroundFrontDataUri(),
-            'backgroundBackDataUri' => $sertifikatSetting->backgroundBackDataUri(),
-            'customFontDataUri' => $customFont?->dataUri() ?? $sertifikatSetting->customFontDataUri(),
+            'backgroundDataUri' => $frontAsset,
+            'backgroundFrontDataUri' => $frontAsset,
+            'backgroundBackDataUri' => $backAsset,
+            'customFontDataUri' => null,
             'customFontName' => $customFont?->name ?? $sertifikatSetting->custom_font_name,
-            'customFontFaces' => SertifikatFont::orderBy('id')->get()->map(fn ($font) => ['name' => $font->name, 'src' => $font->dataUri()])->filter(fn ($font) => !empty($font['src']))->values(),
+            'customFontFaces' => $customFonts->map(fn ($font) => [
+                'name' => $font->name,
+                'src' => $embedAssets ? $font->dataUri() : $font->url(),
+            ])->filter(fn ($font) => !empty($font['src']))->values(),
             'designLayout' => $sertifikatSetting->layout(),
             'assessmentRows' => $aspeksSertifikat->map(fn ($aspek) => ['aspek' => $aspek->nama_aspek, 'nilai' => $nilaiSertifikat->get($aspek->id)?->nilai, 'predikat' => $nilaiSertifikat->get($aspek->id)?->predikat]),
         ];

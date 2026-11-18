@@ -57,7 +57,7 @@ class SertifikatSettingController extends Controller
             'kepala_title' => 'Kepala SMK Negeri 8 Garut',
             'pimpinan' => $this->titleCasePerson($sampleTempat?->nama_pemilik_instansi
                 ?: ($sampleTempat?->perusahaan?->nama_pemilik_perusahaan ?: 'PIMPINAN PERUSAHAAN')),
-            'pimpinan_nip' => 'NIP. ' . ($sampleTempat?->nip_pemilik_instansi ?: '-'),
+            'pimpinan_nip' => $this->formatNip($sampleTempat?->nip_pemilik_instansi),
             'kepala_sekolah' => $sampleSekolah?->nama_kepala_sekolah ?? 'KEPALA SEKOLAH',
             'kepala_nip' => 'NIP. ' . ($sampleSekolah?->nip_kepala_sekolah ?? '-'),
         ];
@@ -86,7 +86,9 @@ class SertifikatSettingController extends Controller
             'date' => 'Garut, ' . now()->locale('id')->translatedFormat('d F Y'),
             'signature_title' => $activeTemplate === 'pembekalan' ? 'Kepala SMK Negeri 8 Garut' : 'Pembimbing DUDIKA',
             'signature_name' => $activeTemplate === 'pembekalan' ? ($sampleSekolah?->nama_kepala_sekolah ?? 'KEPALA SEKOLAH') : 'NAMA PEMBIMBING',
-            'signature_nip' => 'NIP. ' . ($activeTemplate === 'pembekalan' ? ($sampleSekolah?->nip_kepala_sekolah ?? '-') : '-'),
+            'signature_nip' => $this->formatNip($activeTemplate === 'pembekalan'
+                ? $sampleSekolah?->nip_kepala_sekolah
+                : $sampleTempat?->nip_pembimbing_instansi),
         ];
 
         return view('sertifikat.setting', compact(
@@ -316,5 +318,13 @@ class SertifikatSettingController extends Controller
                 ? $part
                 : mb_convert_case($part, MB_CASE_TITLE, 'UTF-8'))
             ->implode('');
+    }
+
+    private function formatNip($value): string
+    {
+        $nip = trim((string) $value);
+        $nip = trim((string) preg_replace('/^NIP\.?\s*/i', '', $nip));
+
+        return $nip !== '' && $nip !== '-' ? 'NIP. ' . $nip : '';
     }
 }

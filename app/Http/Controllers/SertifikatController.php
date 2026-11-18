@@ -124,7 +124,7 @@ class SertifikatController extends Controller
     public function siswaDownloadPelaksanaan()
     {
         $siswa = $this->resolveSiswa();
-        $data = $this->buildSertifikatPelaksanaanDataForSiswa($siswa);
+        $data = $this->buildSertifikatPelaksanaanDataForSiswa($siswa, true);
 
         if (!$data) {
             return redirect()->route('dashboard')
@@ -213,7 +213,7 @@ class SertifikatController extends Controller
 
     public function adminDownloadPembekalan(Siswa $siswa)
     {
-        $data = $this->buildSertifikatPembekalanDataForSiswa($siswa);
+        $data = $this->buildSertifikatPembekalanDataForSiswa($siswa, true);
 
         $pdf = Pdf::loadView('siswa.sertifikat_pembekalan_pdf', $data)->setPaper('A4', 'landscape');
 
@@ -237,7 +237,7 @@ class SertifikatController extends Controller
 
     public function adminDownloadPelaksanaan(Siswa $siswa)
     {
-        $data = $this->buildSertifikatPelaksanaanDataForSiswa($siswa);
+        $data = $this->buildSertifikatPelaksanaanDataForSiswa($siswa, true);
 
         if (!$data) {
             return redirect()->route('sertifikat.admin.index')

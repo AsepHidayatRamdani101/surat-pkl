@@ -4,6 +4,12 @@
     $personTitleCase = fn (string $value) => collect(preg_split('/(\s+)/u', $value, -1, PREG_SPLIT_DELIM_CAPTURE))
         ->map(fn (string $part) => substr_count($part, '.') >= 2 ? $part : mb_convert_case($part, MB_CASE_TITLE, 'UTF-8'))
         ->implode('');
+    $formatNip = function ($value): string {
+        $nip = trim((string) $value);
+        $nip = trim((string) preg_replace('/^NIP\.?\s*/i', '', $nip));
+
+        return $nip !== '' && $nip !== '-' ? 'NIP. ' . $nip : '';
+    };
     $defaultBackText = ['font' => $fontFamily ?? 'Georgia, serif', 'weight' => 400, 'italic' => false, 'color' => '#1f2937'];
     $backLayout = array_replace_recursive([
         '_table' => [
@@ -28,9 +34,9 @@
         'signature_name' => $isPembekalan
             ? ($kepalaSekolah ?? '-')
             : $personTitleCase(($namaPembimbing ?? null) ?: '-'),
-        'signature_nip' => 'NIP. ' . ($isPembekalan
-            ? ($nipKepalaSekolah ?? '-')
-            : (($nipPembimbing ?? null) ?: '-')),
+        'signature_nip' => $formatNip($isPembekalan
+            ? ($nipKepalaSekolah ?? null)
+            : ($nipPembimbing ?? null)),
     ];
     $aspekHeader = $isPembekalan ? 'Aspek Penilaian Kegiatan Pembekalan' : 'Aspek Penilaian Kompetensi';
 @endphp

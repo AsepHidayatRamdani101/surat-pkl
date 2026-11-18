@@ -19,7 +19,9 @@ use Carbon\Carbon;
 
 trait BuildsSertifikatData
 {
-    protected function buildSertifikatPembekalanDataForSiswa(Siswa $siswa): array
+    private ?SertifikatSetting $sertifikatSettingCache = null;
+
+    protected function buildSertifikatPembekalanDataForSiswa(Siswa $siswa, bool $embedAssets = false): array
     {
         $siswa->loadMissing('kelas.jurusan');
 
@@ -136,10 +138,10 @@ trait BuildsSertifikatData
             'nipPembimbing' => $nipPembimbing,
             'alamatPerusahaanLengkap' => app(WilayahIndonesiaService::class)
                 ->formatAlamatPerusahaan($tempatPkl?->perusahaan),
-        ], $this->sertifikatSekolahData(), $this->sertifikatDesignData($siswa, 'pembekalan', $pembekalanRows));
+        ], $this->sertifikatSekolahData($embedAssets), $this->sertifikatDesignData($siswa, 'pembekalan', $pembekalanRows));
     }
 
-    protected function buildSertifikatPelaksanaanDataForSiswa(Siswa $siswa): ?array
+    protected function buildSertifikatPelaksanaanDataForSiswa(Siswa $siswa, bool $embedAssets = false): ?array
     {
         $siswa->loadMissing('kelas.jurusan');
 
@@ -199,18 +201,32 @@ trait BuildsSertifikatData
             'sertifikatSidang' => $sertifikatSidang,
             'alamatPerusahaanLengkap' => app(WilayahIndonesiaService::class)
                 ->formatAlamatPerusahaan($perusahaan),
-        ], $this->sertifikatSekolahData(), $this->sertifikatDesignData($siswa));
+        ], $this->sertifikatSekolahData($embedAssets), $this->sertifikatDesignData($siswa));
     }
 
-    protected function sertifikatSekolahData(): array
+    protected function sertifikatSekolahData(bool $embedAssets = false): array
     {
         $sekolah = Sekolah::latest('id')->first();
         $relatifJikaAda = fn (?string $path) => $path && is_file(public_path($path)) ? $path : null;
         $ttdPath = $relatifJikaAda($sekolah?->ttd_kepala_sekolah_path ? 'storage/' . $sekolah->ttd_kepala_sekolah_path : null);
         $capPath = $relatifJikaAda($sekolah?->cap_sekolah_path ? 'storage/' . $sekolah->cap_sekolah_path : null);
         $logoPath = $relatifJikaAda('logo.png');
-        $sertifikatSetting = SertifikatSetting::current();
-        $customFont = SertifikatFont::where('name', $sertifikatSetting->font_family)->latest('id')->first();
+        $sertifikatSetting = $this->currentSertifikatSetting();
+        $customFonts = SertifikatFont::whereIn('name', $sertifikatSetting->usedCustomFontNames())
+            ->orderBy('id')
+            ->get()
+            ->unique('name')
+            ->values();
+        $customFont = $customFonts->firstWhere('name', $sertifikatSetting->font_family);
+        $frontAsset = $embedAssets
+            ? $sertifikatSetting->backgroundFrontDataUri()
+            : $sertifikatSetting->backgroundFrontUrl();
+        $pembekalanFrontAsset = $embedAssets
+            ? $sertifikatSetting->backgroundFrontPembekalanDataUri()
+            : $sertifikatSetting->backgroundFrontPembekalanUrl();
+        $backAsset = $embedAssets
+            ? $sertifikatSetting->backgroundBackDataUri()
+            : $sertifikatSetting->backgroundBackUrl();
 
         return [
             'tanggalCetak' => now()->locale('id'),
@@ -220,15 +236,16 @@ trait BuildsSertifikatData
             'capPath' => $capPath,
             'logoPath' => $logoPath,
             'fontFamily' => $sertifikatSetting->font_family,
-            'backgroundDataUri' => $sertifikatSetting->backgroundDataUri(),
-            'backgroundFrontDataUri' => $sertifikatSetting->backgroundFrontDataUri(),
-            'backgroundFrontPembekalanDataUri' => $sertifikatSetting->backgroundFrontPembekalanDataUri(),
-            'backgroundBackDataUri' => $sertifikatSetting->backgroundBackDataUri(),
-            'customFontDataUri' => $customFont?->dataUri() ?? $sertifikatSetting->customFontDataUri(),
+            'backgroundDataUri' => $frontAsset,
+            'backgroundFrontDataUri' => $frontAsset,
+            'backgroundFrontPembekalanDataUri' => $pembekalanFrontAsset,
+            'backgroundBackDataUri' => $backAsset,
+            // Font dirender satu kali melalui customFontFaces pada overlay aktif.
+            'customFontDataUri' => null,
             'customFontName' => $customFont?->name ?? $sertifikatSetting->custom_font_name,
-            'customFontFaces' => SertifikatFont::orderBy('id')->get()->map(fn ($font) => [
+            'customFontFaces' => $customFonts->map(fn ($font) => [
                 'name' => $font->name,
-                'src' => $font->dataUri(),
+                'src' => $embedAssets ? $font->dataUri() : $font->url(),
             ])->filter(fn ($font) => !empty($font['src']))->values(),
         ];
     }
@@ -249,7 +266,7 @@ trait BuildsSertifikatData
 
     protected function sertifikatDesignData(Siswa $siswa, string $type = 'pelaksanaan', $rows = null): array
     {
-        $setting = SertifikatSetting::current();
+        $setting = $this->currentSertifikatSetting();
         if ($type === 'pembekalan') {
             return [
                 'certificateType' => 'pembekalan',
@@ -272,5 +289,10 @@ trait BuildsSertifikatData
                 'predikat' => $nilai->get($aspek->id)?->predikat,
             ]),
         ];
+    }
+
+    private function currentSertifikatSetting(): SertifikatSetting
+    {
+        return $this->sertifikatSettingCache ??= SertifikatSetting::current();
     }
 }

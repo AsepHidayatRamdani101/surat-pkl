@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Perusahaan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\Pool;
 use Throwable;
 
 class WilayahIndonesiaService
@@ -16,6 +17,8 @@ class WilayahIndonesiaService
         if (! $perusahaan) {
             return '-';
         }
+
+        $this->primeRegionCache($perusahaan);
 
         $parts = [
             $perusahaan->alamat,
@@ -80,12 +83,54 @@ class WilayahIndonesiaService
     {
         return Cache::remember($cacheKey, now()->addDay(), function () use ($url) {
             try {
-                $response = Http::timeout(15)->retry(2, 150)->get($url);
+                $response = Http::connectTimeout(2)->timeout(4)->get($url);
 
                 return $response->successful() ? ($response->json() ?? []) : [];
             } catch (Throwable) {
                 return [];
             }
         });
+    }
+
+    private function primeRegionCache(Perusahaan $perusahaan): void
+    {
+        $requests = array_filter([
+            "wilayah:villages:{$perusahaan->kecamatan_id}" => $perusahaan->kecamatan_id
+                ? self::BASE_URL . "/villages/{$perusahaan->kecamatan_id}.json"
+                : null,
+            "wilayah:districts:{$perusahaan->kabupaten_kota_id}" => $perusahaan->kabupaten_kota_id
+                ? self::BASE_URL . "/districts/{$perusahaan->kabupaten_kota_id}.json"
+                : null,
+            "wilayah:regencies:{$perusahaan->provinsi_id}" => $perusahaan->provinsi_id
+                ? self::BASE_URL . "/regencies/{$perusahaan->provinsi_id}.json"
+                : null,
+            'wilayah:provinces' => $perusahaan->provinsi_id
+                ? self::BASE_URL . '/provinces.json'
+                : null,
+        ]);
+
+        $missing = array_filter($requests, fn ($url, $key) => !Cache::has($key), ARRAY_FILTER_USE_BOTH);
+        if ($missing === []) {
+            return;
+        }
+
+        try {
+            $responses = Http::pool(fn (Pool $pool) => collect($missing)
+                ->map(fn ($url, $key) => $pool->as($key)->connectTimeout(2)->timeout(4)->get($url))
+                ->all());
+
+            foreach ($missing as $key => $url) {
+                $response = $responses[$key] ?? null;
+                Cache::put(
+                    $key,
+                    $response && $response->successful() ? ($response->json() ?? []) : [],
+                    $response && $response->successful() ? now()->addDay() : now()->addHour()
+                );
+            }
+        } catch (Throwable) {
+            foreach (array_keys($missing) as $key) {
+                Cache::put($key, [], now()->addHour());
+            }
+        }
     }
 }

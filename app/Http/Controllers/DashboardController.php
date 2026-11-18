@@ -627,7 +627,7 @@ class DashboardController extends Controller
 
     public function downloadSertifikatPembekalan()
     {
-        $data = $this->buildSertifikatPembekalanData();
+        $data = $this->buildSertifikatPembekalanData(true);
         if (!is_array($data)) {
             return $data;
         }
@@ -639,7 +639,7 @@ class DashboardController extends Controller
         return $pdf->download($filename);
     }
 
-    private function buildSertifikatPembekalanData()
+    private function buildSertifikatPembekalanData(bool $embedAssets = false)
     {
         $user = auth()->user();
 
@@ -655,7 +655,7 @@ class DashboardController extends Controller
             return redirect()->route('dashboard')->with('error', 'Data siswa tidak ditemukan.');
         }
 
-        return $this->buildSertifikatPembekalanDataForSiswa($siswa);
+        return $this->buildSertifikatPembekalanDataForSiswa($siswa, $embedAssets);
 
         // Kehadiran pembekalan: sumber sama dengan dashboard siswa (absensi_pembekalans).
         $dailyAbsensi = AbsensiPembekalan::where('siswa_id', $siswa->id)

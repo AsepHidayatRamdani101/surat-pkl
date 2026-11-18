@@ -160,24 +160,25 @@
                                                 @endif
                                             </td>
                                             <td class="text-center">
-                                                @if (!$lengkap && $tempat->siswa)
-                                                    @if ($tempat->siswa->no_hp_siswa)
-                                                        <form method="POST"
-                                                            action="{{ route('sertifikat.data.kirim-wa', $tempat->siswa->id) }}"
-                                                            class="d-inline form-kirim-wa">
-                                                            @csrf
-                                                            <button type="submit" class="btn btn-xs btn-success"
-                                                                title="Kirim WA pengingat ke {{ $tempat->siswa->nama_siswa }}">
-                                                                <i class="fab fa-whatsapp mr-1"></i> Kirim WA
-                                                            </button>
-                                                        </form>
-                                                    @else
-                                                        <span class="badge badge-secondary" title="Nomor HP siswa tidak tersedia">
-                                                            <i class="fas fa-phone-slash mr-1"></i> No HP kosong
-                                                        </span>
-                                                    @endif
+                                                @if ($tempat->siswa?->no_hp_siswa)
+                                                    @php
+                                                        $nomorWa = preg_replace('/\D+/', '', $tempat->siswa->no_hp_siswa);
+                                                        $nomorWa = str_starts_with($nomorWa, '0') ? '62'.substr($nomorWa, 1) : $nomorWa;
+                                                        $namaPerusahaan = $tempat->perusahaan->nama_perusahaan ?? 'tempat PKL';
+                                                        $pesanWa = $lengkap
+                                                            ? "Halo {$tempat->siswa->nama_siswa}, data pemilik/pimpinan dan pembimbing {$namaPerusahaan} untuk Sertifikat PKL sudah terisi. Silakan periksa kembali melalui menu PKL > Data Pelaksanaan. Terima kasih."
+                                                            : "Halo {$tempat->siswa->nama_siswa}, mohon segera lengkapi data pemilik/pimpinan dan pembimbing {$namaPerusahaan} untuk keperluan Sertifikat PKL melalui menu PKL > Data Pelaksanaan. Terima kasih.";
+                                                        $waWebUrl = 'https://web.whatsapp.com/send?phone='.$nomorWa.'&text='.rawurlencode($pesanWa);
+                                                    @endphp
+                                                    <a href="{{ $waWebUrl }}" target="_blank" rel="noopener"
+                                                        class="btn btn-xs btn-success"
+                                                        title="Buka WhatsApp Web untuk {{ $tempat->siswa->nama_siswa }}">
+                                                        <i class="fab fa-whatsapp mr-1"></i> WA Web
+                                                    </a>
                                                 @else
-                                                    <span class="text-muted">-</span>
+                                                    <span class="badge badge-secondary" title="Nomor HP siswa tidak tersedia">
+                                                        <i class="fas fa-phone-slash mr-1"></i> No HP kosong
+                                                    </span>
                                                 @endif
                                             </td>
                                         </tr>

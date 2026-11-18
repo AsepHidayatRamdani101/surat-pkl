@@ -18,6 +18,12 @@
     $personTitleCase = fn (string $value) => collect(preg_split('/(\s+)/u', $value, -1, PREG_SPLIT_DELIM_CAPTURE))
         ->map(fn (string $part) => substr_count($part, '.') >= 2 ? $part : mb_convert_case($part, MB_CASE_TITLE, 'UTF-8'))
         ->implode('');
+    $formatNip = function ($value): string {
+        $nip = trim((string) $value);
+        $nip = trim((string) preg_replace('/^NIP\.?\s*/i', '', $nip));
+
+        return $nip !== '' && $nip !== '-' ? 'NIP. ' . $nip : '';
+    };
     $signaturePath = !empty($ttdPath) ? public_path($ttdPath) : null;
     $signatureSrc = $signaturePath && is_file($signaturePath)
         ? 'data:image/png;base64,' . base64_encode(file_get_contents($signaturePath))
@@ -25,6 +31,7 @@
     $centeredKeys = $isPembekalan
         ? ['nomor_sertifikat', 'nama', 'identitas', 'pembekalan_intro', 'pembekalan_title', 'pembekalan_result']
         : ['nama', 'identitas', 'perusahaan', 'alamat_perusahaan', 'tanggal_cetak'];
+    $signatureColumnKeys = ['pimpinan', 'pimpinan_nip', 'kepala_sekolah', 'kepala_nip'];
     $numberTemplate = $layout['nomor_sertifikat']['text']
         ?? ($isPembekalan ? 'Nomor: SPB/{nis}/{tahun}' : 'Nomor: SPL/{nis}/{tahun}');
     $certificateNumber = strtr($numberTemplate, [
@@ -41,7 +48,7 @@
         'tanggal_cetak' => 'Garut, ' . $tanggalCetak->translatedFormat('d F Y'),
         'kepala_title' => 'Kepala SMK Negeri 8 Garut',
         'kepala_sekolah' => $kepalaSekolah ?? 'Kepala Sekolah',
-        'kepala_nip' => 'NIP. ' . ($nipKepalaSekolah ?? '-'),
+        'kepala_nip' => $formatNip($nipKepalaSekolah ?? null),
     ] : [
         'nomor_sertifikat' => $certificateNumber,
         'nama' => mb_strtoupper($siswa->nama_siswa, 'UTF-8'),
@@ -56,9 +63,9 @@
         'pimpinan_title' => 'Pimpinan / Pembimbing DUDIKA',
         'kepala_title' => 'Kepala SMK Negeri 8 Garut',
         'pimpinan' => $personTitleCase($leaderName),
-        'pimpinan_nip' => 'NIP. ' . ($nipPemilik ?? '-'),
+        'pimpinan_nip' => $formatNip($nipPemilik ?? null),
         'kepala_sekolah' => $kepalaSekolah ?? 'Kepala Sekolah',
-        'kepala_nip' => 'NIP. ' . ($nipKepalaSekolah ?? '-'),
+        'kepala_nip' => $formatNip($nipKepalaSekolah ?? null),
     ];
 @endphp
 <style>
@@ -90,7 +97,9 @@
             $position = $layout[$key] ?? ['x'=>10,'y'=>10,'size'=>14];
             $horizontalStyle = in_array($key, $centeredKeys, true)
                 ? 'left:0;width:100%;text-align:center;'
-                : 'left:calc(' . $position['x'] . '% + ' . $canvasOffsetX . 'px);';
+                : (in_array($key, $signatureColumnKeys, true)
+                    ? 'left:calc(' . $position['x'] . '% + ' . $canvasOffsetX . 'px);width:28%;text-align:center;'
+                    : 'left:calc(' . $position['x'] . '% + ' . $canvasOffsetX . 'px);');
         @endphp
         <div class="dynamic-element" style="{!! $horizontalStyle !!}top:{{ $position['y'] }}%;font-size:{{ $position['size'] }}px;font-family:{!! $position['font'] ?? $fontFamily ?? 'Georgia, serif' !!};font-weight:{{ $position['weight'] ?? 400 }};font-style:{{ !empty($position['italic']) ? 'italic' : 'normal' }};color:{{ $position['color'] ?? '#1f2937' }};">{{ $value }}</div>
     @endforeach

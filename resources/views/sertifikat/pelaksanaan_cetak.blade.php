@@ -44,6 +44,12 @@
             border-color: #0f766e;
         }
 
+        .btn-warning {
+            background: #d97706;
+            color: #ffffff;
+            border-color: #d97706;
+        }
+
         .sheet {
             width: 1123px;
             height: 794px;
@@ -273,6 +279,9 @@
 
 <body>
     <div class="print-actions">
+        @if (!empty($editDataUrl))
+            <a class="btn btn-warning" href="{{ $editDataUrl }}">Edit Pembimbing &amp; Pimpinan</a>
+        @endif
         <a class="btn btn-primary" href="{{ $downloadUrl }}">Download PDF</a>
         <button class="btn" onclick="window.print()">Print</button>
         <a class="btn" href="{{ $backUrl ?? route('dashboard') }}">Kembali</a>

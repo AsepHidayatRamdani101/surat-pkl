@@ -96,6 +96,8 @@ Route::middleware(['auth', 'can:panitia'])->group(function () {
     Route::get('/sertifikat/admin/{siswa}/pembekalan/cetak', [SertifikatController::class, 'adminCetakPembekalan'])->name('sertifikat.admin.pembekalan.cetak');
     Route::get('/sertifikat/admin/{siswa}/pembekalan/download', [SertifikatController::class, 'adminDownloadPembekalan'])->name('sertifikat.admin.pembekalan.download');
     Route::get('/sertifikat/admin/{siswa}/pelaksanaan/cetak', [SertifikatController::class, 'adminCetakPelaksanaan'])->name('sertifikat.admin.pelaksanaan.cetak');
+    Route::get('/sertifikat/admin/{siswa}/pelaksanaan/data/edit', [SertifikatController::class, 'adminEditDataPelaksanaan'])->name('sertifikat.admin.pelaksanaan.data.edit');
+    Route::put('/sertifikat/admin/{siswa}/pelaksanaan/data', [SertifikatController::class, 'adminUpdateDataPelaksanaan'])->name('sertifikat.admin.pelaksanaan.data.update');
     Route::get('/sertifikat/admin/{siswa}/pelaksanaan/download', [SertifikatController::class, 'adminDownloadPelaksanaan'])->name('sertifikat.admin.pelaksanaan.download');
 });
 Route::post('/dashboard/pembimbing/bimbingan/{id}/update-nilai', [DashboardController::class, 'updateNilaiTugasPembimbing'])->middleware(['auth'])->name('dashboard.pembimbing.update-nilai');

@@ -1,15 +1,16 @@
 @extends('adminlte::page')
 
-@section('title', 'Data Sertifikat Pelaksanaan PKL')
+@php($adminMode = $adminMode ?? false)
+@section('title', $adminMode ? 'Edit Data Sertifikat Pelaksanaan PKL' : 'Data Sertifikat Pelaksanaan PKL')
 
 @section('content-header')
     <div class="content-header">
         <div class="container-fluid">
             <div class="d-flex align-items-center">
-                <a href="{{ route('dashboard') }}" class="btn btn-sm btn-outline-secondary mr-3">
+                <a href="{{ $adminMode ? route('sertifikat.admin.pelaksanaan.cetak', $siswa->id) : route('dashboard') }}" class="btn btn-sm btn-outline-secondary mr-3">
                     <i class="fas fa-arrow-left mr-1"></i> Kembali
                 </a>
-                <h1 class="m-0">Data Sertifikat Pelaksanaan PKL</h1>
+                <h1 class="m-0">{{ $adminMode ? 'Edit Data Sertifikat Pelaksanaan PKL' : 'Data Sertifikat Pelaksanaan PKL' }}</h1>
             </div>
         </div>
     </div>
@@ -43,6 +44,7 @@
                     <div class="card-body">
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle mr-1"></i>
+                            Siswa: <strong>{{ $siswa->nama_siswa }}</strong><br>
                             Tempat PKL: <strong>{{ $tempatPkl->perusahaan->nama_perusahaan ?? '-' }}</strong>.
                             @if ($pemilikSistem || $pembimbingSistem)
                                 Data di bawah sudah terisi dari sistem dan masih bisa Anda ubah.
@@ -51,8 +53,11 @@
                             @endif
                         </div>
 
-                        <form method="POST" action="{{ route('sertifikat.pelaksanaan.form.store') }}">
+                        <form method="POST" action="{{ $adminMode ? route('sertifikat.admin.pelaksanaan.data.update', $siswa->id) : route('sertifikat.pelaksanaan.form.store') }}">
                             @csrf
+                            @if ($adminMode)
+                                @method('PUT')
+                            @endif
 
                             <div class="form-group">
                                 <label for="nama_pemilik_instansi">Nama Pemilik Perusahaan/Instansi <span class="text-danger">*</span></label>
@@ -135,7 +140,7 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save mr-1"></i> Simpan Data
                             </button>
                         </form>

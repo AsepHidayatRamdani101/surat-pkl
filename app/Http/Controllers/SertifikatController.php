@@ -58,7 +58,7 @@ class SertifikatController extends Controller
             'namaPembimbing',
             'nipPemilik',
             'nipPembimbing'
-        ));
+        ) + ['adminMode' => false]);
     }
 
     public function siswaFormStore(Request $request)
@@ -231,8 +231,70 @@ class SertifikatController extends Controller
 
         $data['downloadUrl'] = route('sertifikat.admin.pelaksanaan.download', $siswa->id);
         $data['backUrl'] = route('sertifikat.admin.index');
+        $data['editDataUrl'] = route('sertifikat.admin.pelaksanaan.data.edit', $siswa->id);
 
         return view('sertifikat.pelaksanaan_cetak', $data);
+    }
+
+    public function adminEditDataPelaksanaan(Siswa $siswa)
+    {
+        $siswa->load('kelas.jurusan');
+        $tempatPkl = TempatPkl::with(['perusahaan', 'pembimbingPerusahaan'])
+            ->where('siswa_id', $siswa->id)
+            ->latest('id')
+            ->first();
+
+        if (!$tempatPkl) {
+            return redirect()->route('sertifikat.admin.index')
+                ->with('error', 'Data tempat PKL siswa belum tersedia.');
+        }
+
+        $pemilikSistem = $tempatPkl->perusahaan?->nama_pemilik_perusahaan;
+        $pembimbingSistem = $tempatPkl->pembimbingPerusahaan?->nama_pembimbing ?: $tempatPkl->nama_pembimbing;
+        $nipPembimbingSistem = $tempatPkl->pembimbingPerusahaan?->NIP ?: $tempatPkl->nip_pembimbing;
+        $namaPemilik = $tempatPkl->nama_pemilik_instansi ?: $pemilikSistem;
+        $namaPembimbing = $tempatPkl->nama_pembimbing_instansi ?: $pembimbingSistem;
+        $nipPemilik = $tempatPkl->nip_pemilik_instansi;
+        $nipPembimbing = $tempatPkl->nip_pembimbing_instansi ?: $nipPembimbingSistem;
+
+        return view('sertifikat.form_siswa', compact(
+            'siswa', 'tempatPkl', 'pemilikSistem', 'pembimbingSistem',
+            'nipPembimbingSistem', 'namaPemilik', 'namaPembimbing',
+            'nipPemilik', 'nipPembimbing'
+        ) + ['adminMode' => true]);
+    }
+
+    public function adminUpdateDataPelaksanaan(Request $request, Siswa $siswa)
+    {
+        $data = $request->validate([
+            'nama_pemilik_instansi' => 'required|string|max:255',
+            'nip_pemilik_instansi' => 'nullable|string|max:50',
+            'pemilik_sama_pembimbing' => 'nullable|boolean',
+            'nama_pembimbing_instansi' => 'required_without:pemilik_sama_pembimbing|nullable|string|max:255',
+            'nip_pembimbing_instansi' => 'nullable|string|max:50',
+        ]);
+
+        $tempatPkl = TempatPkl::where('siswa_id', $siswa->id)->latest('id')->first();
+        if (!$tempatPkl) {
+            return redirect()->route('sertifikat.admin.index')
+                ->with('error', 'Data tempat PKL siswa belum tersedia.');
+        }
+
+        $pemilikSama = $request->boolean('pemilik_sama_pembimbing');
+        $tempatPkl->update([
+            'nama_pemilik_instansi' => $data['nama_pemilik_instansi'],
+            'nip_pemilik_instansi' => $data['nip_pemilik_instansi'] ?: null,
+            'pemilik_sama_pembimbing' => $pemilikSama,
+            'nama_pembimbing_instansi' => $pemilikSama
+                ? $data['nama_pemilik_instansi']
+                : ($data['nama_pembimbing_instansi'] ?? null),
+            'nip_pembimbing_instansi' => $pemilikSama
+                ? ($data['nip_pemilik_instansi'] ?: null)
+                : ($data['nip_pembimbing_instansi'] ?: null),
+        ]);
+
+        return redirect()->route('sertifikat.admin.pelaksanaan.cetak', $siswa->id)
+            ->with('success', 'Data pimpinan dan pembimbing sertifikat berhasil diperbarui.');
     }
 
     public function adminDownloadPelaksanaan(Siswa $siswa)

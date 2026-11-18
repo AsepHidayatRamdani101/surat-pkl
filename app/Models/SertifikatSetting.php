@@ -247,8 +247,6 @@ class SertifikatSetting extends Model
         }
 
         $layout = array_replace_recursive($defaults, array_intersect_key($saved, $defaults));
-        $layout['signature_nip']['x'] = $layout['signature_name']['x'];
-
         return $layout;
     }
 
@@ -285,8 +283,6 @@ class SertifikatSetting extends Model
         $defaults = $this->backLayout();
 
         $layout = array_replace_recursive($defaults, array_intersect_key($saved, $defaults));
-        $layout['signature_nip']['x'] = $layout['signature_name']['x'];
-
         return $layout;
     }
 }

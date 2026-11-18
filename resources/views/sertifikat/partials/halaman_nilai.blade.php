@@ -90,7 +90,12 @@
         @php($textLayout = $backLayout[$key])
         <div style="position:absolute;z-index:2;left:{{ $textLayout['x'] }}%;top:{{ $textLayout['y'] }}%;transform:{{ $key === 'legend' ? 'none' : 'translateX(-50%)' }};white-space:{{ $key === 'legend' ? 'pre-line' : 'nowrap' }};text-align:{{ $key === 'legend' ? 'left' : 'center' }};line-height:1.35;font-size:{{ $textLayout['size'] }}px;font-family:{!! $textLayout['font'] !!};font-weight:{{ $textLayout['weight'] }};font-style:{{ $textLayout['italic'] ? 'italic' : 'normal' }};color:{{ $textLayout['color'] }};">{{ $text }}</div>
     @endforeach
-    <div style="position:absolute;z-index:1;left:12%;right:12%;top:28%;bottom:20%;">
+    @php
+        $tableLayout = $backLayout['_table'];
+        $tableRight = max(0, 100 - $tableLayout['x'] - $tableLayout['width']);
+        $tableBottom = max(0, 100 - $tableLayout['y'] - $tableLayout['height']);
+    @endphp
+    <div style="position:absolute;z-index:1;left:{{ $tableLayout['x'] }}%;right:{{ $tableRight }}%;top:{{ $tableLayout['y'] }}%;bottom:{{ $tableBottom }}%;">
         <table style="width:100%;border-collapse:collapse;background:rgba(255,255,255,.88);">
             <thead style="background:{{ $backLayout['_table']['header_color'] }};font-size:{{ $backLayout['_table']['header']['size'] }}px;font-family:{!! $backLayout['_table']['header']['font'] !!};font-weight:{{ $backLayout['_table']['header']['weight'] }};font-style:{{ $backLayout['_table']['header']['italic'] ? 'italic' : 'normal' }};color:{{ $backLayout['_table']['header']['color'] }};"><tr><th style="border:1px solid #333;padding:7px;width:8%;font-weight:inherit;">No.</th><th style="border:1px solid #333;padding:7px;text-align:left;font-weight:inherit;">{{ $aspekHeader }}</th><th style="border:1px solid #333;padding:7px;width:16%;font-weight:inherit;">Nilai (Angka)</th><th style="border:1px solid #333;padding:7px;width:24%;font-weight:inherit;">Predikat</th></tr></thead>
             <tbody style="font-size:{{ $backLayout['_table']['body']['size'] }}px;font-family:{!! $backLayout['_table']['body']['font'] !!};font-weight:{{ $backLayout['_table']['body']['weight'] }};font-style:{{ $backLayout['_table']['body']['italic'] ? 'italic' : 'normal' }};color:{{ $backLayout['_table']['body']['color'] }};">

@@ -220,6 +220,10 @@ class SertifikatSetting extends Model
         $font = $this->font_family ?: 'Georgia, "Times New Roman", serif';
         $defaults = [
             '_table' => [
+                'x' => 12,
+                'y' => 28,
+                'width' => 76,
+                'height' => 52,
                 'header_color' => '#e5e7eb',
                 'header' => ['size' => 11, 'font' => $font, 'weight' => 700, 'italic' => false, 'color' => '#1f2937'],
                 'body' => ['size' => 11, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],

@@ -209,6 +209,10 @@ class SertifikatSettingController extends Controller
                 };
                 $headerColor = $rawTable['header_color'] ?? '#e5e7eb';
                 $cleanBackLayout['_table'] = [
+                    'x' => max(0, min(90, (float) ($rawTable['x'] ?? $defaultTable['x']))),
+                    'y' => max(0, min(90, (float) ($rawTable['y'] ?? $defaultTable['y']))),
+                    'width' => max(10, min(98, (float) ($rawTable['width'] ?? $defaultTable['width']))),
+                    'height' => max(10, min(90, (float) ($rawTable['height'] ?? $defaultTable['height']))),
                     'header_color' => preg_match('/^#[0-9A-Fa-f]{6}$/', (string) $headerColor)
                         ? strtolower($headerColor)
                         : '#e5e7eb',

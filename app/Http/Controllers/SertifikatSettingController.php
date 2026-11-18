@@ -168,7 +168,12 @@ class SertifikatSettingController extends Controller
                 $item['color'] = preg_match('/^#[0-9A-Fa-f]{6}$/', (string) ($item['color'] ?? ''))
                     ? strtolower($item['color'])
                     : '#1f2937';
+                $item['text_custom'] = filter_var($item['text_custom'] ?? false, FILTER_VALIDATE_BOOLEAN);
+                if ($item['text_custom']) {
+                    $item['text'] = mb_substr(trim(strip_tags((string) ($item['text'] ?? ''))), 0, 300);
+                }
                 if ($key === 'nomor_sertifikat') {
+                    $item['text_custom'] = true;
                     $defaultNumber = $isPembekalan ? 'Nomor: SPB/{nis}/{tahun}' : 'Nomor: SPL/{nis}/{tahun}';
                     $item['text'] = mb_substr(trim(strip_tags((string) ($item['text'] ?? $defaultNumber))), 0, 150);
                     $item['text'] = $item['text'] !== '' ? $item['text'] : $defaultNumber;
@@ -191,6 +196,8 @@ class SertifikatSettingController extends Controller
                         'weight' => in_array((int) ($item['weight'] ?? 400), [300, 400, 500, 600, 700, 800], true) ? (int) ($item['weight'] ?? 400) : 400,
                         'italic' => filter_var($item['italic'] ?? false, FILTER_VALIDATE_BOOLEAN),
                         'color' => preg_match('/^#[0-9A-Fa-f]{6}$/', (string) ($item['color'] ?? '')) ? strtolower($item['color']) : '#1f2937',
+                        'text_custom' => filter_var($item['text_custom'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                        'text' => mb_substr(trim(strip_tags((string) ($item['text'] ?? ''))), 0, 300),
                     ];
                 }
                 $rawTable = is_array($backLayout['_table'] ?? null) ? $backLayout['_table'] : [];
@@ -213,6 +220,10 @@ class SertifikatSettingController extends Controller
                     'y' => max(0, min(90, (float) ($rawTable['y'] ?? $defaultTable['y']))),
                     'width' => max(10, min(98, (float) ($rawTable['width'] ?? $defaultTable['width']))),
                     'height' => max(10, min(90, (float) ($rawTable['height'] ?? $defaultTable['height']))),
+                    'labels' => collect($defaultTable['labels'])->mapWithKeys(function ($default, $key) use ($rawTable) {
+                        $value = is_array($rawTable['labels'] ?? null) ? ($rawTable['labels'][$key] ?? $default) : $default;
+                        return [$key => mb_substr(trim(strip_tags((string) $value)), 0, 100) ?: $default];
+                    })->all(),
                     'header_color' => preg_match('/^#[0-9A-Fa-f]{6}$/', (string) $headerColor)
                         ? strtolower($headerColor)
                         : '#e5e7eb',

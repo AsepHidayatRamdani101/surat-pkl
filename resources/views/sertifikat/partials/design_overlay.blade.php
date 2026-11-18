@@ -103,12 +103,16 @@
     @foreach($values as $key => $value)
         @php
             $position = $layout[$key] ?? ['x'=>10,'y'=>10,'size'=>14];
+            $displayValue = !empty($position['text_custom']) ? ($position['text'] ?? '') : $value;
+            if ($key === 'nomor_sertifikat') {
+                $displayValue = strtr($displayValue, ['{nis}' => $siswa->nis, '{tahun}' => $tanggalCetak->format('Y')]);
+            }
             $horizontalStyle = in_array($key, $centeredKeys, true)
                 ? 'left:0;width:100%;text-align:center;'
                 : (in_array($key, $signatureColumnKeys, true)
                     ? 'left:calc(' . $position['x'] . '% + ' . $canvasOffsetX . 'px);width:28%;text-align:center;'
                     : 'left:calc(' . $position['x'] . '% + ' . $canvasOffsetX . 'px);');
         @endphp
-        <div class="dynamic-element" data-key="{{ $key }}" style="{!! $horizontalStyle !!}top:{{ $position['y'] }}%;font-size:{{ $position['size'] }}px;font-family:{!! $position['font'] ?? $fontFamily ?? 'Georgia, serif' !!};font-weight:{{ $position['weight'] ?? 400 }};font-style:{{ !empty($position['italic']) ? 'italic' : 'normal' }};color:{{ $position['color'] ?? '#1f2937' }};">{{ $value }}</div>
+        <div class="dynamic-element" data-key="{{ $key }}" style="{!! $horizontalStyle !!}top:{{ $position['y'] }}%;font-size:{{ $position['size'] }}px;font-family:{!! $position['font'] ?? $fontFamily ?? 'Georgia, serif' !!};font-weight:{{ $position['weight'] ?? 400 }};font-style:{{ !empty($position['italic']) ? 'italic' : 'normal' }};color:{{ $position['color'] ?? '#1f2937' }};">{{ $displayValue }}</div>
     @endforeach
 </div>

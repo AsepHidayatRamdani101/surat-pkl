@@ -235,14 +235,14 @@
         <div class="title-block">
             <h1 class="title">SERTIFIKAT</h1>
             <p class="subtitle">Pelaksanaan Praktik Kerja Lapangan</p>
-            <p class="nomor">Nomor: SPL/{{ $siswa->nis }}/{{ $tanggalCetak->format('Y') }}</p>
+            <p class="nomor">Nomor: SPL/{{ $siswa->nisn ?? $siswa->nis }}/{{ $tanggalCetak->format('Y') }}</p>
         </div>
 
         <div class="body-block">
             <p class="diberikan">diberikan kepada</p>
             <div class="nama-siswa">{{ strtoupper($siswa->nama_siswa) }}</div>
             <p class="identitas">
-                NIS: {{ $siswa->nis }} &nbsp;|&nbsp;
+                NISN: {{ $siswa->nisn ?? $siswa->nis }} &nbsp;|&nbsp;
                 Kelas: {{ $siswa->kelas->nama_kelas ?? '-' }} &nbsp;|&nbsp;
                 Jurusan: {{ $siswa->kelas->jurusan->nama_jurusan ?? '-' }}
             </p>

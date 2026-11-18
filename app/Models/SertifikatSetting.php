@@ -226,7 +226,6 @@ class SertifikatSetting extends Model
                 'y' => 28,
                 'width' => 76,
                 'height' => 52,
-                'labels' => ['no' => 'No.', 'aspek' => 'Aspek Penilaian', 'nilai' => 'Nilai (Angka)', 'predikat' => 'Predikat', 'total' => 'Total Nilai'],
                 'header_color' => '#e5e7eb',
                 'header' => ['size' => 11, 'font' => $font, 'weight' => 700, 'italic' => false, 'color' => '#1f2937'],
                 'body' => ['size' => 11, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],

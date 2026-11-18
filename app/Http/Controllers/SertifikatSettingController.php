@@ -178,6 +178,10 @@ class SertifikatSettingController extends Controller
                     $item['text'] = mb_substr(trim(strip_tags((string) ($item['text'] ?? $defaultNumber))), 0, 150);
                     $item['text'] = $item['text'] !== '' ? $item['text'] : $defaultNumber;
                 }
+                if ($key === 'identitas') {
+                    $item['text_custom'] = false;
+                    unset($item['text']);
+                }
             }
             unset($item);
             if (!empty($validated['back_design_layout'])) {
@@ -220,10 +224,6 @@ class SertifikatSettingController extends Controller
                     'y' => max(0, min(90, (float) ($rawTable['y'] ?? $defaultTable['y']))),
                     'width' => max(10, min(98, (float) ($rawTable['width'] ?? $defaultTable['width']))),
                     'height' => max(10, min(90, (float) ($rawTable['height'] ?? $defaultTable['height']))),
-                    'labels' => collect($defaultTable['labels'])->mapWithKeys(function ($default, $key) use ($rawTable) {
-                        $value = is_array($rawTable['labels'] ?? null) ? ($rawTable['labels'][$key] ?? $default) : $default;
-                        return [$key => mb_substr(trim(strip_tags((string) $value)), 0, 100) ?: $default];
-                    })->all(),
                     'header_color' => preg_match('/^#[0-9A-Fa-f]{6}$/', (string) $headerColor)
                         ? strtolower($headerColor)
                         : '#e5e7eb',

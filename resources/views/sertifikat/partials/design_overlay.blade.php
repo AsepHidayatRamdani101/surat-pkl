@@ -32,16 +32,18 @@
         ? ['nomor_sertifikat', 'nama', 'identitas', 'pembekalan_intro', 'pembekalan_title', 'pembekalan_result']
         : ['nomor_sertifikat', 'nama', 'identitas', 'perusahaan', 'alamat_perusahaan', 'tanggal_cetak'];
     $signatureColumnKeys = ['pimpinan', 'pimpinan_nip', 'kepala_sekolah', 'kepala_nip'];
+    $nomorInduk = $siswa->nisn ?? $siswa->nis;
     $numberTemplate = $layout['nomor_sertifikat']['text']
         ?? ($isPembekalan ? 'Nomor: SPB/{nis}/{tahun}' : 'Nomor: SPL/{nis}/{tahun}');
     $certificateNumber = strtr($numberTemplate, [
-        '{nis}' => $siswa->nis,
+        '{nis}' => $nomorInduk,
+        '{nisn}' => $siswa->nisn ?? $siswa->nis,
         '{tahun}' => $tanggalCetak->format('Y'),
     ]);
     $values = $isPembekalan ? [
         'nomor_sertifikat' => $certificateNumber,
         'nama' => mb_strtoupper($siswa->nama_siswa, 'UTF-8'),
-        'identitas' => $siswa->nis . ' | ' . ($siswa->kelas->jurusan->nama_jurusan ?? '-'),
+         'identitas' => 'NISN: ' . $nomorInduk . ' | ' . ($siswa->kelas->jurusan->nama_jurusan ?? '-'),
         'pembekalan_intro' => 'atas partisipasi dan keberhasilannya dalam mengikuti kegiatan',
         'pembekalan_title' => 'PEMBEKALAN PRAKTIK KERJA LAPANGAN (PKL)',
         'pembekalan_result' => 'yang diselenggarakan oleh SMK Negeri 8 Garut',
@@ -52,7 +54,7 @@
     ] : [
         'nomor_sertifikat' => $certificateNumber,
         'nama' => mb_strtoupper($siswa->nama_siswa, 'UTF-8'),
-        'identitas' => $siswa->nis . ' | ' . ($siswa->kelas->jurusan->nama_jurusan ?? '-'),
+        'identitas' => 'NISN: ' . $nomorInduk . ' | ' . ($siswa->kelas->jurusan->nama_jurusan ?? '-'),
         'pkl_intro' => 'Telah melakukan Praktek Kerja Lapangan (PKL) di',
         'perusahaan' => mb_strtoupper($companyName, 'UTF-8'),
         'pkl_period' => $pklMulai && $pklSelesai
@@ -105,7 +107,7 @@
             $position = $layout[$key] ?? ['x'=>10,'y'=>10,'size'=>14];
             $displayValue = !empty($position['text_custom']) ? ($position['text'] ?? '') : $value;
             if ($key === 'nomor_sertifikat') {
-                $displayValue = strtr($displayValue, ['{nis}' => $siswa->nis, '{tahun}' => $tanggalCetak->format('Y')]);
+                $displayValue = strtr($displayValue, ['{nis}' => $siswa->nis, '{nisn}' => $nomorInduk, '{tahun}' => $tanggalCetak->format('Y')]);
             }
             $horizontalStyle = in_array($key, $centeredKeys, true)
                 ? 'left:0;width:100%;text-align:center;'

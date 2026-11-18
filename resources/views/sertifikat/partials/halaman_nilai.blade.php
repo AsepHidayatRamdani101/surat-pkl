@@ -39,6 +39,9 @@
             : ($nipPembimbing ?? null)),
     ];
     $aspekHeader = $isPembekalan ? 'Aspek Penilaian Kegiatan Pembekalan' : 'Aspek Penilaian Kompetensi';
+    $hasTotalNilai = $rows->contains(fn ($row) => is_numeric($row['nilai'] ?? null));
+    $totalNilai = $rows->sum(fn ($row) => is_numeric($row['nilai'] ?? null) ? (float) $row['nilai'] : 0);
+    $totalNilai = fmod($totalNilai, 1) === 0.0 ? (int) $totalNilai : round($totalNilai, 2);
 @endphp
 <style>
     .certificate-back {
@@ -90,7 +93,23 @@
     <div style="position:absolute;z-index:1;left:12%;right:12%;top:28%;bottom:20%;">
         <table style="width:100%;border-collapse:collapse;background:rgba(255,255,255,.88);">
             <thead style="background:{{ $backLayout['_table']['header_color'] }};font-size:{{ $backLayout['_table']['header']['size'] }}px;font-family:{!! $backLayout['_table']['header']['font'] !!};font-weight:{{ $backLayout['_table']['header']['weight'] }};font-style:{{ $backLayout['_table']['header']['italic'] ? 'italic' : 'normal' }};color:{{ $backLayout['_table']['header']['color'] }};"><tr><th style="border:1px solid #333;padding:7px;width:8%;font-weight:inherit;">No.</th><th style="border:1px solid #333;padding:7px;text-align:left;font-weight:inherit;">{{ $aspekHeader }}</th><th style="border:1px solid #333;padding:7px;width:16%;font-weight:inherit;">Nilai (Angka)</th><th style="border:1px solid #333;padding:7px;width:24%;font-weight:inherit;">Predikat</th></tr></thead>
-            <tbody style="font-size:{{ $backLayout['_table']['body']['size'] }}px;font-family:{!! $backLayout['_table']['body']['font'] !!};font-weight:{{ $backLayout['_table']['body']['weight'] }};font-style:{{ $backLayout['_table']['body']['italic'] ? 'italic' : 'normal' }};color:{{ $backLayout['_table']['body']['color'] }};">@forelse($rows as $i=>$row)<tr><td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $i+1 }}</td><td style="border:1px solid #333;padding:7px;text-align:left;font-weight:inherit;">{{ $row['aspek'] }}</td><td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $row['nilai'] ?? '' }}</td><td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $row['predikat'] ?? '' }}</td></tr>@empty<tr><td colspan="4" style="border:1px solid #333;padding:18px;text-align:center;font-weight:inherit;">Aspek penilaian belum diatur.</td></tr>@endforelse</tbody>
+            <tbody style="font-size:{{ $backLayout['_table']['body']['size'] }}px;font-family:{!! $backLayout['_table']['body']['font'] !!};font-weight:{{ $backLayout['_table']['body']['weight'] }};font-style:{{ $backLayout['_table']['body']['italic'] ? 'italic' : 'normal' }};color:{{ $backLayout['_table']['body']['color'] }};">
+                @forelse($rows as $i => $row)
+                    <tr>
+                        <td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $i + 1 }}</td>
+                        <td style="border:1px solid #333;padding:7px;text-align:left;font-weight:inherit;">{{ $row['aspek'] }}</td>
+                        <td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $row['nilai'] ?? '' }}</td>
+                        <td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $row['predikat'] ?? '' }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4" style="border:1px solid #333;padding:18px;text-align:center;font-weight:inherit;">Aspek penilaian belum diatur.</td></tr>
+                @endforelse
+                <tr>
+                    <td colspan="2" style="border:1px solid #333;padding:7px;text-align:center;font-weight:700;"><strong>Total Nilai</strong></td>
+                    <td style="border:1px solid #333;padding:7px;text-align:center;font-weight:400;">{{ $hasTotalNilai ? $totalNilai : '' }}</td>
+                    <td style="border:1px solid #333;padding:7px;text-align:center;font-weight:400;"></td>
+                </tr>
+            </tbody>
         </table>
     </div>
 </div>

@@ -30,7 +30,7 @@
         : null;
     $centeredKeys = $isPembekalan
         ? ['nomor_sertifikat', 'nama', 'identitas', 'pembekalan_intro', 'pembekalan_title', 'pembekalan_result']
-        : ['nama', 'identitas', 'perusahaan', 'alamat_perusahaan', 'tanggal_cetak'];
+        : ['nomor_sertifikat', 'nama', 'identitas', 'perusahaan', 'alamat_perusahaan', 'tanggal_cetak'];
     $signatureColumnKeys = ['pimpinan', 'pimpinan_nip', 'kepala_sekolah', 'kepala_nip'];
     $numberTemplate = $layout['nomor_sertifikat']['text']
         ?? ($isPembekalan ? 'Nomor: SPB/{nis}/{tahun}' : 'Nomor: SPL/{nis}/{tahun}');
@@ -101,6 +101,6 @@
                     ? 'left:calc(' . $position['x'] . '% + ' . $canvasOffsetX . 'px);width:28%;text-align:center;'
                     : 'left:calc(' . $position['x'] . '% + ' . $canvasOffsetX . 'px);');
         @endphp
-        <div class="dynamic-element" style="{!! $horizontalStyle !!}top:{{ $position['y'] }}%;font-size:{{ $position['size'] }}px;font-family:{!! $position['font'] ?? $fontFamily ?? 'Georgia, serif' !!};font-weight:{{ $position['weight'] ?? 400 }};font-style:{{ !empty($position['italic']) ? 'italic' : 'normal' }};color:{{ $position['color'] ?? '#1f2937' }};">{{ $value }}</div>
+        <div class="dynamic-element" data-key="{{ $key }}" style="{!! $horizontalStyle !!}top:{{ $position['y'] }}%;font-size:{{ $position['size'] }}px;font-family:{!! $position['font'] ?? $fontFamily ?? 'Georgia, serif' !!};font-weight:{{ $position['weight'] ?? 400 }};font-style:{{ !empty($position['italic']) ? 'italic' : 'normal' }};color:{{ $position['color'] ?? '#1f2937' }};">{{ $value }}</div>
     @endforeach
 </div>

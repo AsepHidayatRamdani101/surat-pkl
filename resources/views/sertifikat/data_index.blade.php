@@ -111,6 +111,7 @@
                                         <th>No</th>
                                         <th>NIS</th>
                                         <th>Nama Siswa</th>
+                                        <th>Nomor Telpon Siswa</th>
                                         <th>Kelas</th>
                                         <th>Perusahaan</th>
                                         <th>Pemilik / Pimpinan Perusahaan</th>
@@ -130,6 +131,7 @@
                                             <td>{{ $tempatList->firstItem() + $loop->index }}</td>
                                             <td>{{ $tempat->siswa->nis ?? '-' }}</td>
                                             <td>{{ $tempat->siswa->nama_siswa ?? '-' }}</td>
+                                            <td>{{ $tempat->siswa->no_hp_siswa ?? '-' }}</td>
                                             <td>{{ $tempat->siswa->kelas->nama_kelas ?? '-' }}</td>
                                             <td>{{ $tempat->perusahaan->nama_perusahaan ?? '-' }}</td>
                                             <td>
@@ -162,17 +164,26 @@
                                             <td class="text-center">
                                                 @if ($tempat->siswa?->no_hp_siswa)
                                                     @php
-                                                        $nomorWa = preg_replace('/\D+/', '', $tempat->siswa->no_hp_siswa);
-                                                        $nomorWa = str_starts_with($nomorWa, '0') ? '62'.substr($nomorWa, 1) : $nomorWa;
+                                                        $nomorWa = preg_replace('/\D+/', '', (string) $tempat->siswa->no_hp_siswa);
+                                                        if (str_starts_with($nomorWa, '0062')) {
+                                                            $nomorWa = substr($nomorWa, 2);
+                                                        }
+                                                        if (str_starts_with($nomorWa, '62')) {
+                                                            $nomorWa = '62' . ltrim(substr($nomorWa, 2), '0');
+                                                        } elseif (str_starts_with($nomorWa, '0')) {
+                                                            $nomorWa = '62' . substr($nomorWa, 1);
+                                                        } elseif (str_starts_with($nomorWa, '8')) {
+                                                            $nomorWa = '62' . $nomorWa;
+                                                        }
                                                         $namaPerusahaan = $tempat->perusahaan->nama_perusahaan ?? 'tempat PKL';
                                                         $pesanWa = $lengkap
                                                             ? "Halo {$tempat->siswa->nama_siswa}, data pemilik/pimpinan dan pembimbing {$namaPerusahaan} untuk Sertifikat PKL sudah terisi. Silakan periksa kembali melalui menu PKL > Data Pelaksanaan. Terima kasih."
                                                             : "Halo {$tempat->siswa->nama_siswa}, mohon segera lengkapi data pemilik/pimpinan dan pembimbing {$namaPerusahaan} untuk keperluan Sertifikat PKL melalui menu PKL > Data Pelaksanaan. Terima kasih.";
-                                                        $waWebUrl = 'https://web.whatsapp.com/send?phone='.$nomorWa.'&text='.rawurlencode($pesanWa);
+                                                        $waWebUrl = 'https://api.whatsapp.com/send?phone='.$nomorWa.'&text='.rawurlencode($pesanWa);
                                                     @endphp
                                                     <a href="{{ $waWebUrl }}" target="_blank" rel="noopener"
                                                         class="btn btn-xs btn-success"
-                                                        title="Buka WhatsApp Web untuk {{ $tempat->siswa->nama_siswa }}">
+                                                        title="Buka WhatsApp untuk {{ $tempat->siswa->nama_siswa }} ({{ $nomorWa }})">
                                                         <i class="fab fa-whatsapp mr-1"></i> WA Web
                                                     </a>
                                                 @else
@@ -184,7 +195,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="9" class="text-center text-muted">Tidak ada data tempat PKL.</td>
+                                            <td colspan="10" class="text-center text-muted">Tidak ada data tempat PKL.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>

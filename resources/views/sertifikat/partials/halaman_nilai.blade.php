@@ -99,12 +99,12 @@
     @endphp
     <div style="position:absolute;z-index:1;left:{{ $tableLayout['x'] }}%;right:{{ $tableRight }}%;top:{{ $tableLayout['y'] }}%;bottom:{{ $tableBottom }}%;">
         <table style="width:100%;border-collapse:collapse;background:rgba(255,255,255,.88);">
-            <thead style="background:{{ $backLayout['_table']['header_color'] }};font-size:{{ $backLayout['_table']['header']['size'] }}px;font-family:{!! $backLayout['_table']['header']['font'] !!};font-weight:{{ $backLayout['_table']['header']['weight'] }};font-style:{{ $backLayout['_table']['header']['italic'] ? 'italic' : 'normal' }};color:{{ $backLayout['_table']['header']['color'] }};"><tr><th style="border:1px solid #333;padding:7px;width:8%;font-weight:inherit;">No.</th><th style="border:1px solid #333;padding:7px;text-align:left;font-weight:inherit;">{{ $aspekHeader }}</th><th style="border:1px solid #333;padding:7px;width:16%;font-weight:inherit;">Nilai (Angka)</th><th style="border:1px solid #333;padding:7px;width:24%;font-weight:inherit;">Predikat</th></tr></thead>
+            <thead style="background:{{ $backLayout['_table']['header_color'] }};font-size:{{ $backLayout['_table']['header']['size'] }}px;font-family:{!! $backLayout['_table']['header']['font'] !!};font-weight:{{ $backLayout['_table']['header']['weight'] }};font-style:{{ $backLayout['_table']['header']['italic'] ? 'italic' : 'normal' }};color:{{ $backLayout['_table']['header']['color'] }};"><tr><th style="border:1px solid #333;padding:7px;width:8%;font-weight:inherit;">No.</th><th style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $aspekHeader }}</th><th style="border:1px solid #333;padding:7px;width:16%;font-weight:inherit;">Nilai (Angka)</th><th style="border:1px solid #333;padding:7px;width:24%;font-weight:inherit;">Predikat</th></tr></thead>
             <tbody style="font-size:{{ $backLayout['_table']['body']['size'] }}px;font-family:{!! $backLayout['_table']['body']['font'] !!};font-weight:{{ $backLayout['_table']['body']['weight'] }};font-style:{{ $backLayout['_table']['body']['italic'] ? 'italic' : 'normal' }};color:{{ $backLayout['_table']['body']['color'] }};">
                 @forelse($rows as $i => $row)
                     <tr>
                         <td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $i + 1 }}</td>
-                        <td style="border:1px solid #333;padding:7px;text-align:left;font-weight:inherit;">{{ $row['aspek'] }}</td>
+                        <td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $row['aspek'] }}</td>
                         <td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $row['nilai'] ?? '' }}</td>
                         <td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $row['predikat'] ?? '' }}</td>
                     </tr>

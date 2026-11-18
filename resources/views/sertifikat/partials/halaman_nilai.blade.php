@@ -87,7 +87,9 @@
         <img class="certificate-back-background" src="{{ $backgroundBackDataUri }}" alt="">
     @endif
     @foreach($backTexts as $key => $text)
-        @php($textLayout = $backLayout[$key])
+        @php
+            $textLayout = $backLayout[$key];
+        @endphp
         <div style="position:absolute;z-index:2;left:{{ $textLayout['x'] }}%;top:{{ $textLayout['y'] }}%;transform:{{ $key === 'legend' ? 'none' : 'translateX(-50%)' }};white-space:{{ $key === 'legend' ? 'pre-line' : 'nowrap' }};text-align:{{ $key === 'legend' ? 'left' : 'center' }};line-height:1.35;font-size:{{ $textLayout['size'] }}px;font-family:{!! $textLayout['font'] !!};font-weight:{{ $textLayout['weight'] }};font-style:{{ $textLayout['italic'] ? 'italic' : 'normal' }};color:{{ $textLayout['color'] }};">{{ $text }}</div>
     @endforeach
     @php

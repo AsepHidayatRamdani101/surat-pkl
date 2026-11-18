@@ -104,9 +104,9 @@
                 @forelse($rows as $i => $row)
                     <tr>
                         <td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $i + 1 }}</td>
-                        <td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $row['aspek'] }}</td>
-                        <td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $row['nilai'] ?? '' }}</td>
-                        <td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $row['predikat'] ?? '' }}</td>
+                        <td style="border:1px solid #333;padding:7px;text-align:left;font-weight:inherit;">{{ $row['aspek'] }}</td>
+                        <td style="border:1px solid #333;padding:7px;text-align:left;font-weight:inherit;">{{ $row['nilai'] ?? '' }}</td>
+                        <td style="border:1px solid #333;padding:7px;text-align:left;font-weight:inherit;">{{ $row['predikat'] ?? '' }}</td>
                     </tr>
                 @empty
                     <tr><td colspan="4" style="border:1px solid #333;padding:18px;text-align:center;font-weight:inherit;">Aspek penilaian belum diatur.</td></tr>

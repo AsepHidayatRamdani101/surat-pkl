@@ -23,11 +23,22 @@
                             </div>
                         </div>
                         <form method="GET" action="{{ route('sertifikat.admin.index') }}" class="form-inline my-1">
+                            <select name="wilayah" class="form-control form-control-sm mr-2" aria-label="Filter pembagian wilayah">
+                                <option value="">Semua Pembagian Wilayah</option>
+                                @foreach ($wilayahRows as $row)
+                                    <option value="{{ $row['key'] }}" @selected($wilayah === $row['key'])>
+                                        {{ $row['wilayah'] }} ({{ $row['jumlah'] }} perusahaan)
+                                    </option>
+                                @endforeach
+                            </select>
                             <input type="text" name="q" value="{{ $search }}" class="form-control form-control-sm mr-2"
                                 placeholder="Cari nama / NIS siswa...">
                             <button type="submit" class="btn btn-sm btn-primary">
                                 <i class="fas fa-search mr-1"></i> Cari
                             </button>
+                            @if ($search !== '' || $wilayah !== '')
+                                <a href="{{ route('sertifikat.admin.index') }}" class="btn btn-sm btn-outline-secondary ml-2">Reset</a>
+                            @endif
                         </form>
                     </div>
                     <div class="card-body">

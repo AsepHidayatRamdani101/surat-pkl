@@ -25,6 +25,9 @@
                                         <th>Wilayah</th>
                                         <th>Kecamatan / Kabupaten Kota Terkait</th>
                                         <th style="width: 180px;">Jumlah Perusahaan</th>
+                                        @can('panitia')
+                                            <th style="width: 170px;">Sertifikat</th>
+                                        @endcan
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -34,10 +37,18 @@
                                             <td>{{ $row['wilayah'] }}</td>
                                             <td>{{ $row['kecamatan'] }}</td>
                                             <td class="text-center font-weight-bold">{{ $row['jumlah'] }}</td>
+                                            @can('panitia')
+                                                <td class="text-center">
+                                                    <a href="{{ route('sertifikat.admin.index', ['wilayah' => $row['key']]) }}"
+                                                        class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-certificate mr-1"></i>Cetak Sertifikat
+                                                    </a>
+                                                </td>
+                                            @endcan
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted">Belum ada data perusahaan</td>
+                                            <td colspan="{{ auth()->user()->can('panitia') ? 5 : 4 }}" class="text-center text-muted">Belum ada data perusahaan</td>
                                         </tr>
                                     @endforelse
                                 </tbody>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Models\AbsensiPembekalan;
 use App\Models\NilaiSikapPembekalan;
+use App\Models\Pembimbing_perusahaan;
 use App\Models\Sekolah;
 use App\Models\SertifikatSidang;
 use App\Models\Siswa;
@@ -13,6 +14,7 @@ use App\Models\SertifikatAspek;
 use App\Models\SertifikatPenilaian;
 use App\Models\TempatPkl;
 use App\Models\TugasPembekalan;
+use App\Services\WilayahIndonesiaService;
 use Carbon\Carbon;
 
 trait BuildsSertifikatData
@@ -20,6 +22,29 @@ trait BuildsSertifikatData
     protected function buildSertifikatPembekalanDataForSiswa(Siswa $siswa): array
     {
         $siswa->loadMissing('kelas.jurusan');
+
+        // Identitas pembimbing DUDIKA untuk lembar daftar nilai.
+        $tempatPkl = TempatPkl::with(['perusahaan', 'pembimbingPerusahaan'])
+            ->where('siswa_id', $siswa->id)
+            ->latest('id')
+            ->first();
+        $pembimbingDudika = $tempatPkl?->pembimbingPerusahaan
+            ?: ($tempatPkl
+                ? Pembimbing_perusahaan::where('perusahaan_id', $tempatPkl->perusahaan_id)->latest('id')->first()
+                : null);
+        $namaPemilik = $tempatPkl?->nama_pemilik_instansi
+            ?: $tempatPkl?->perusahaan?->nama_pemilik_perusahaan;
+        $nipPemilik = $tempatPkl?->nip_pemilik_instansi;
+        $namaPembimbing = $tempatPkl?->pemilik_sama_pembimbing
+            ? $namaPemilik
+            : ($tempatPkl?->nama_pembimbing_instansi
+                ?: ($pembimbingDudika?->nama_pembimbing
+                    ?: $tempatPkl?->nama_pembimbing));
+        $nipPembimbing = $tempatPkl?->pemilik_sama_pembimbing
+            ? $nipPemilik
+            : ($tempatPkl?->nip_pembimbing_instansi
+                ?: ($pembimbingDudika?->NIP
+                    ?: $tempatPkl?->nip_pembimbing));
 
         // Kehadiran pembekalan: sumber sama dengan dashboard siswa (absensi_pembekalans).
         $dailyAbsensi = AbsensiPembekalan::where('siswa_id', $siswa->id)
@@ -40,6 +65,7 @@ trait BuildsSertifikatData
 
         // Nilai tugas pembekalan.
         $tugasPembekalan = TugasPembekalan::with([
+            'materi',
             'jawabanSiswa' => fn ($q) => $q->where('siswa_id', $siswa->id),
             'jawabanSiswa.nilaiTugas',
         ])->get();
@@ -69,6 +95,32 @@ trait BuildsSertifikatData
             'kurang' => 'Kurang',
             'perlu_bimbingan' => 'Perlu Bimbingan',
         ][$sikapTerbanyak] ?? null;
+        $sikapAngka = [
+            'sangat_baik' => 95,
+            'baik' => 85,
+            'cukup' => 75,
+            'kurang' => 60,
+            'perlu_bimbingan' => 50,
+        ][$sikapTerbanyak] ?? null;
+        $pembekalanRows = collect([
+            [
+                'aspek' => 'Kehadiran Kegiatan Pembekalan',
+                'nilai' => $progres,
+                'predikat' => $this->predikatNilaiPembekalan($progres),
+            ],
+        ])->concat($tugasPembekalan->map(function ($item) {
+            $nilai = $item->jawabanSiswa->first()?->nilaiTugas?->nilai;
+
+            return [
+                'aspek' => $item->materi?->topik ?: $item->judul_tugas,
+                'nilai' => $nilai,
+                'predikat' => $this->predikatNilaiPembekalan($nilai !== null ? (float) $nilai : null),
+            ];
+        }))->push([
+            'aspek' => 'Sikap Selama Pembekalan',
+            'nilai' => $sikapAngka,
+            'predikat' => $sikapLabel,
+        ]);
 
         return array_merge([
             'siswa' => $siswa,
@@ -80,7 +132,11 @@ trait BuildsSertifikatData
             'avgNilai' => $avgNilai,
             'predikatNilai' => $this->predikatNilaiPembekalan($avgNilai),
             'sikap' => $sikapLabel,
-        ], $this->sertifikatSekolahData(), $this->sertifikatDesignData($siswa));
+            'namaPembimbing' => $namaPembimbing,
+            'nipPembimbing' => $nipPembimbing,
+            'alamatPerusahaanLengkap' => app(WilayahIndonesiaService::class)
+                ->formatAlamatPerusahaan($tempatPkl?->perusahaan),
+        ], $this->sertifikatSekolahData(), $this->sertifikatDesignData($siswa, 'pembekalan', $pembekalanRows));
     }
 
     protected function buildSertifikatPelaksanaanDataForSiswa(Siswa $siswa): ?array
@@ -97,6 +153,8 @@ trait BuildsSertifikatData
         }
 
         $perusahaan = $tempatPkl->perusahaan;
+        $pembimbingDudika = $tempatPkl->pembimbingPerusahaan
+            ?: Pembimbing_perusahaan::where('perusahaan_id', $tempatPkl->perusahaan_id)->latest('id')->first();
 
         // Prioritas: input siswa, lalu data sistem (menu Perusahaan & Pembimbing Perusahaan).
         $namaPemilik = $tempatPkl->nama_pemilik_instansi
@@ -105,12 +163,12 @@ trait BuildsSertifikatData
         $namaPembimbing = $tempatPkl->pemilik_sama_pembimbing
             ? $namaPemilik
             : ($tempatPkl->nama_pembimbing_instansi
-                ?: ($tempatPkl->pembimbingPerusahaan?->nama_pembimbing
+                ?: ($pembimbingDudika?->nama_pembimbing
                     ?: ($tempatPkl->nama_pembimbing ?: null)));
         $nipPembimbing = $tempatPkl->pemilik_sama_pembimbing
             ? $nipPemilik
             : ($tempatPkl->nip_pembimbing_instansi
-                ?: ($tempatPkl->pembimbingPerusahaan?->NIP
+                ?: ($pembimbingDudika?->NIP
                     ?: ($tempatPkl->nip_pembimbing ?: null)));
 
         $tanggalMulai = $tempatPkl->tanggal_mulai ? Carbon::parse($tempatPkl->tanggal_mulai) : null;
@@ -139,6 +197,8 @@ trait BuildsSertifikatData
             'tanggalSelesai' => $tanggalSelesai,
             'durasi' => $durasi,
             'sertifikatSidang' => $sertifikatSidang,
+            'alamatPerusahaanLengkap' => app(WilayahIndonesiaService::class)
+                ->formatAlamatPerusahaan($perusahaan),
         ], $this->sertifikatSekolahData(), $this->sertifikatDesignData($siswa));
     }
 
@@ -162,6 +222,7 @@ trait BuildsSertifikatData
             'fontFamily' => $sertifikatSetting->font_family,
             'backgroundDataUri' => $sertifikatSetting->backgroundDataUri(),
             'backgroundFrontDataUri' => $sertifikatSetting->backgroundFrontDataUri(),
+            'backgroundFrontPembekalanDataUri' => $sertifikatSetting->backgroundFrontPembekalanDataUri(),
             'backgroundBackDataUri' => $sertifikatSetting->backgroundBackDataUri(),
             'customFontDataUri' => $customFont?->dataUri() ?? $sertifikatSetting->customFontDataUri(),
             'customFontName' => $customFont?->name ?? $sertifikatSetting->custom_font_name,
@@ -186,14 +247,25 @@ trait BuildsSertifikatData
         };
     }
 
-    protected function sertifikatDesignData(Siswa $siswa): array
+    protected function sertifikatDesignData(Siswa $siswa, string $type = 'pelaksanaan', $rows = null): array
     {
         $setting = SertifikatSetting::current();
+        if ($type === 'pembekalan') {
+            return [
+                'certificateType' => 'pembekalan',
+                'designLayout' => $setting->pembekalanLayout(),
+                'backDesignLayout' => $setting->pembekalanBackLayout(),
+                'assessmentRows' => collect($rows ?? []),
+            ];
+        }
+
         $jurusanId = $siswa->kelas?->jurusan_id;
         $aspeks = SertifikatAspek::where('jurusan_id', $jurusanId)->orderBy('urutan')->orderBy('id')->get();
         $nilai = SertifikatPenilaian::where('siswa_id', $siswa->id)->get()->keyBy('sertifikat_aspek_id');
         return [
+            'certificateType' => 'pelaksanaan',
             'designLayout' => $setting->layout(),
+            'backDesignLayout' => $setting->backLayout(),
             'assessmentRows' => $aspeks->map(fn ($aspek) => [
                 'aspek' => $aspek->nama_aspek,
                 'nilai' => $nilai->get($aspek->id)?->nilai,

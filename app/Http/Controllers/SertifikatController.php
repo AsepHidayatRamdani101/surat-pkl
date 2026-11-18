@@ -10,6 +10,7 @@ use App\Models\Siswa;
 use App\Models\TempatPkl;
 use App\Models\SertifikatAspek;
 use App\Models\SertifikatPenilaian;
+use App\Services\PembagianWilayahService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -137,9 +138,13 @@ class SertifikatController extends Controller
 
     // ===== Admin: menu cetak sertifikat =====
 
-    public function adminIndex(Request $request)
+    public function adminIndex(Request $request, PembagianWilayahService $pembagianWilayah)
     {
         $search = trim((string) $request->query('q', ''));
+        $wilayah = trim((string) $request->query('wilayah', ''));
+        $wilayahRows = $pembagianWilayah->rekap();
+        $wilayahTerpilih = $wilayahRows->firstWhere('key', $wilayah);
+        $perusahaanIds = $wilayahTerpilih['perusahaan_ids'] ?? [];
 
         $siswaList = Siswa::with(['kelas.jurusan', 'suratIzin.perusahaan'])
             ->when($search !== '', function ($query) use ($search) {
@@ -148,11 +153,14 @@ class SertifikatController extends Controller
                         ->orWhere('nis', 'like', "%{$search}%");
                 });
             })
+            ->when($wilayah !== '', function ($query) use ($perusahaanIds) {
+                $query->whereHas('suratIzin', fn ($q) => $q->whereIn('perusahaan_id', $perusahaanIds));
+            })
             ->orderBy('nama_siswa')
             ->paginate(25)
             ->withQueryString();
 
-        return view('sertifikat.admin_index', compact('siswaList', 'search'));
+        return view('sertifikat.admin_index', compact('siswaList', 'search', 'wilayah', 'wilayahRows'));
     }
 
     public function editPenilaian(Siswa $siswa)

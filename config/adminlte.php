@@ -110,7 +110,7 @@ return [
     */
 
     'preloader' => [
-        'enabled' => true,
+        'enabled' => false,
         'mode' => 'fullscreen',
         'img' => [
             'path' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
@@ -438,6 +438,8 @@ return [
             'can'  => 'panitia',
             'submenu' => [
                 ['text' => 'Cetak Sertifikat', 'url' => 'sertifikat/admin', 'icon' => 'fas fa-print'],
+                ['text' => 'Pengaturan Pelaksanaan', 'url' => 'sertifikat/pengaturan', 'icon' => 'fas fa-sliders-h'],
+                ['text' => 'Pengaturan Pembekalan', 'url' => 'sertifikat/pengaturan/pembekalan', 'icon' => 'fas fa-chalkboard-teacher'],
             ],
         ],
         // Menu untuk Kepala Program

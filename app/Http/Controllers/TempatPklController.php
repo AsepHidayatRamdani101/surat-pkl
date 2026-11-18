@@ -46,7 +46,8 @@ class TempatPklController extends Controller
                                 data-perusahaan="' . $row->perusahaan_id . '"
                                 data-siswa="' . $row->siswa_id . '"
                                 data-tanggal-mulai="' . $row->tanggal_mulai . '"
-                                data-tanggal-selesai="' . $row->tanggal_selesai . '"><i class="fas fa-pen"></i></button>
+                                data-tanggal-selesai="' . $row->tanggal_selesai . '"
+                                data-status-pkl="' . e($row->status_pkl) . '"><i class="fas fa-pen"></i></button>
                             <button type="button" class="btn btn-outline-success btn-sm btnUpdateKesediaan" title="Upload Surat Kesediaan"
                                 data-id="' . $row->id . '"><i class="fas fa-upload"></i></button>
                             <button type="button" class="btn btn-outline-danger btn-sm btn-hapus" title="Hapus"
@@ -88,6 +89,7 @@ class TempatPklController extends Controller
             'Nama Pemilik (PIC)',
             'No. Telpon Pemilik (No. Telp PIC)',
             'Tanggal Daftar',
+            'Status PKL/Magang',
         ];
         $col = 'A';
         foreach ($headers as $header) {
@@ -110,10 +112,11 @@ class TempatPklController extends Controller
             $sheet->setCellValue('F' . $row, $item->perusahaan->nama_pemilik_perusahaan ?? '-');
             $sheet->setCellValueExplicit('G' . $row, $item->perusahaan->telepon_pemilik_perusahaan ?? '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('H' . $row, $item->created_at?->format('Y-m-d') ?? '-');
+            $sheet->setCellValue('I' . $row, $item->status_pkl ?? 'PKL');
             $row++;
         }
 
-        $this->applyExcelTableFormatting($sheet, 'H', $row - 1);
+        $this->applyExcelTableFormatting($sheet, 'I', $row - 1);
 
         // Simpan dan download
         $fileName = 'data_tempat_pkl_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
@@ -256,6 +259,7 @@ class TempatPklController extends Controller
             'siswa_id.*' => 'required|exists:siswa,id',
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+            'status_pkl' => 'required|in:PKL,Magang',
             'created_by' => 'required',
 
         ]);
@@ -296,8 +300,9 @@ class TempatPklController extends Controller
                 'perusahaan_id' => $request->perusahaan_id,
                 'siswa_id' => $siswaId,
                 'tanggal_mulai' => $request->tanggal_mulai,
-                'tanggal_selesai' => $request->tanggal_selesai,
-                'created_by' => $request->created_by,
+                    'tanggal_selesai' => $request->tanggal_selesai,
+                    'status_pkl' => $request->status_pkl,
+                    'created_by' => $request->created_by,
                 'surat_izin_path' => $filePath
             ]);
         }
@@ -346,6 +351,7 @@ class TempatPklController extends Controller
             'siswa_id' => 'required',
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+            'status_pkl' => 'required|in:PKL,Magang',
         ]);
 
         $siswaId = (int) $request->siswa_id[0];
@@ -365,6 +371,7 @@ class TempatPklController extends Controller
             'siswa_id' => $siswaId,
             'tanggal_mulai' => $request->tanggal_mulai,
             'tanggal_selesai' => $request->tanggal_selesai,
+            'status_pkl' => $request->status_pkl,
         ]);
 
         // echo $request->perusahaan_id;

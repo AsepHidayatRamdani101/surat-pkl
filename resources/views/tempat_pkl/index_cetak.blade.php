@@ -91,6 +91,13 @@
                                         </select>
                                     </div>
                                     <div class="mb-2">
+                                        <label for="status_pkl" class="form-label">Status PKL atau Magang</label>
+                                        <select name="status_pkl" id="status_pkl" class="form-control" required>
+                                            <option value="PKL">PKL</option>
+                                            <option value="Magang">Magang</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-2">
                                         <label for="tanggal_mulai" class="form-label">Tanggal Mulai</label>
                                         <input type="date" name="tanggal_mulai" id="tanggal_mulai" class="form-control">
                                     </div>

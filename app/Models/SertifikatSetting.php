@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 class SertifikatSetting extends Model
 {
     protected $fillable = [
-        'background_path', 'background_front_path', 'background_back_path',
+        'background_path', 'background_front_path', 'background_front_pembekalan_path', 'background_back_path',
         'font_family', 'custom_font_path', 'custom_font_name',
         'design_layout',
     ];
@@ -41,6 +41,12 @@ class SertifikatSetting extends Model
     {
         return $this->fileDataUri($this->background_front_path ?: $this->background_path)
             ?: $this->publicImageDataUri('depan.jpg');
+    }
+
+    public function backgroundFrontPembekalanDataUri(): ?string
+    {
+        return $this->fileDataUri($this->background_front_pembekalan_path)
+            ?: $this->backgroundFrontDataUri();
     }
 
     public function backgroundBackDataUri(): ?string
@@ -79,11 +85,14 @@ class SertifikatSetting extends Model
         );
         $defaults = [
             '_canvas' => ['offset_x' => -75],
+            'nomor_sertifikat' => ['x' => 0, 'y' => 34, 'size' => 13, 'font' => $this->font_family, 'weight' => 400, 'italic' => false, 'color' => '#1f2937', 'text' => 'Nomor: SPL/{nis}/{tahun}'],
             'nama' => ['x' => 25, 'y' => 40, 'size' => 34, 'font' => $this->font_family, 'weight' => 700, 'italic' => false, 'color' => '#1f2937'],
             'identitas' => $identitas,
             'pkl_intro' => ['x' => 30, 'y' => 53, 'size' => 14, 'font' => $this->font_family, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
             'perusahaan' => ['x' => 30, 'y' => 61, 'size' => 17, 'font' => $this->font_family, 'weight' => 600, 'italic' => false, 'color' => '#1f2937'],
-            'pkl_period' => ['x' => 25, 'y' => 66, 'size' => 13, 'font' => $this->font_family, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
+            'pkl_period' => ['x' => 25, 'y' => 63, 'size' => 13, 'font' => $this->font_family, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
+            'alamat_perusahaan' => ['x' => 0, 'y' => 66, 'size' => 12, 'font' => $this->font_family, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
+            'tanggal_cetak' => ['x' => 0, 'y' => 70, 'size' => 12, 'font' => $this->font_family, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
             'pimpinan_title' => ['x' => $pimpinan['x'], 'y' => max(0, $pimpinan['y'] - 16), 'size' => 12, 'font' => $this->font_family, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
             'kepala_title' => ['x' => $kepalaSekolah['x'], 'y' => max(0, $kepalaSekolah['y'] - 16), 'size' => 12, 'font' => $this->font_family, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
             'kepala_sekolah' => ['x' => 62, 'y' => 82, 'size' => 13, 'font' => $this->font_family, 'weight' => 600, 'italic' => false, 'color' => '#1f2937'],
@@ -93,10 +102,74 @@ class SertifikatSetting extends Model
         ];
 
         $layout = array_replace_recursive($defaults, $saved);
-        unset($layout['nis'], $layout['jurusan']);
+        unset($layout['nis'], $layout['jurusan'], $layout['_back'], $layout['_pembekalan'], $layout['_pembekalan_back']);
         $layout['nama']['x'] = 0;
+        $layout['nomor_sertifikat']['x'] = 0;
         $layout['perusahaan']['x'] = 0;
+        $layout['alamat_perusahaan']['x'] = 0;
+        $layout['tanggal_cetak']['x'] = 0;
 
         return $layout;
+    }
+
+    public function backLayout(): array
+    {
+        $saved = $this->design_layout['_back'] ?? [];
+        $saved = is_array($saved) ? $saved : [];
+        $font = $this->font_family ?: 'Georgia, "Times New Roman", serif';
+        $defaults = [
+            '_table' => [
+                'header_color' => '#e5e7eb',
+                'header' => ['size' => 11, 'font' => $font, 'weight' => 700, 'italic' => false, 'color' => '#1f2937'],
+                'body' => ['size' => 11, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
+            ],
+            'title' => ['x' => 50, 'y' => 18, 'size' => 20, 'font' => $font, 'weight' => 700, 'italic' => false, 'color' => '#1f2937'],
+            'legend' => ['x' => 12, 'y' => 72, 'size' => 10, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
+            'date' => ['x' => 72, 'y' => 74, 'size' => 10, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
+            'signature_title' => ['x' => 72, 'y' => 78, 'size' => 10, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
+            'signature_name' => ['x' => 72, 'y' => 88, 'size' => 10, 'font' => $font, 'weight' => 600, 'italic' => false, 'color' => '#1f2937'],
+            'signature_nip' => ['x' => 72, 'y' => 92, 'size' => 10, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
+        ];
+
+        // Konversi pengaturan lama agar posisi yang pernah disimpan tetap mendekati tampilan sebelumnya.
+        if (isset($saved['content_top']) && !isset($saved['title'])) {
+            $defaults['title']['y'] = (float) $saved['content_top'];
+        }
+        if (isset($saved['title_size']) && !isset($saved['title'])) {
+            $defaults['title']['size'] = (float) $saved['title_size'];
+        }
+
+        return array_replace_recursive($defaults, array_intersect_key($saved, $defaults));
+    }
+
+    public function pembekalanLayout(): array
+    {
+        $saved = $this->design_layout['_pembekalan'] ?? [];
+        $saved = is_array($saved) ? $saved : [];
+        $font = $this->font_family ?: 'Georgia, "Times New Roman", serif';
+        $defaults = [
+            '_canvas' => ['offset_x' => -75],
+            'nomor_sertifikat' => ['x' => 0, 'y' => 34, 'size' => 13, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937', 'text' => 'Nomor: SPB/{nis}/{tahun}'],
+            'nama' => ['x' => 0, 'y' => 42, 'size' => 34, 'font' => $font, 'weight' => 700, 'italic' => false, 'color' => '#1f2937'],
+            'identitas' => ['x' => 0, 'y' => 51, 'size' => 15, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
+            'pembekalan_intro' => ['x' => 0, 'y' => 56, 'size' => 13, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
+            'pembekalan_title' => ['x' => 0, 'y' => 60, 'size' => 17, 'font' => $font, 'weight' => 700, 'italic' => false, 'color' => '#1f2937'],
+            'pembekalan_result' => ['x' => 0, 'y' => 65, 'size' => 12, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
+            'tanggal_cetak' => ['x' => 66, 'y' => 70, 'size' => 12, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
+            'kepala_title' => ['x' => 66, 'y' => 74, 'size' => 12, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
+            'kepala_sekolah' => ['x' => 66, 'y' => 86, 'size' => 13, 'font' => $font, 'weight' => 600, 'italic' => false, 'color' => '#1f2937'],
+            'kepala_nip' => ['x' => 66, 'y' => 89, 'size' => 11, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
+        ];
+
+        return array_replace_recursive($defaults, array_intersect_key($saved, $defaults));
+    }
+
+    public function pembekalanBackLayout(): array
+    {
+        $saved = $this->design_layout['_pembekalan_back'] ?? [];
+        $saved = is_array($saved) ? $saved : [];
+        $defaults = $this->backLayout();
+
+        return array_replace_recursive($defaults, array_intersect_key($saved, $defaults));
     }
 }

@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\FormatsExcelSheets;
 use App\Models\Perusahaan;
+use App\Services\PembagianWilayahService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Yajra\DataTables\Facades\DataTables;
@@ -304,42 +304,9 @@ class PerusahaanController extends Controller
         ]);
     }
 
-    public function rekapWilayah()
+    public function rekapWilayah(PembagianWilayahService $pembagianWilayah)
     {
-        $rows = Cache::remember('perusahaan:rekap-wilayah:v5', now()->addHours(12), function () {
-            $perusahaanList = Perusahaan::select('id', 'nama_perusahaan', 'provinsi_id', 'kabupaten_kota_id', 'kecamatan_id')->get();
-            $grouped = [];
-
-            foreach ($perusahaanList as $perusahaan) {
-                $kecamatanName = $this->resolveKecamatanName($perusahaan->kecamatan_id);
-
-                $normalized = $kecamatanName ? Str::upper(trim($kecamatanName)) : null;
-                $isSelaawiGroup = $normalized && in_array($normalized, ['SELAAWI', 'BALUBUR LIMBANGAN', 'BLUBUR LIMBANGAN', 'CIBUGEL','CIBIUK'], true);
-
-                if ($isSelaawiGroup) {
-                    $groupKey = 'wilayah-selaawi';
-                    $label = 'Wilayah Selaawi';
-                    $kecamatanDisplay = 'Kec. Selaawi, Kec. Blubur Limbangan, Kec. Cibugel, Kec. Cibiuk';
-                } else {
-                    $kabupatenKotaName = $this->resolveKabupatenKotaName($perusahaan->provinsi_id, $perusahaan->kabupaten_kota_id) ?? 'Kabupaten/Kota Tidak Diketahui';
-                    $groupKey = 'kab-' . ($perusahaan->kabupaten_kota_id ?: Str::slug($kabupatenKotaName));
-                    $label = 'Kabupaten/Kota ' . $kabupatenKotaName;
-                    $kecamatanDisplay = 'Kabupaten/Kota ' . $kabupatenKotaName;
-                }
-
-                if (! isset($grouped[$groupKey])) {
-                    $grouped[$groupKey] = [
-                        'wilayah' => $label,
-                        'kecamatan' => $kecamatanDisplay,
-                        'jumlah' => 0,
-                    ];
-                }
-
-                $grouped[$groupKey]['jumlah']++;
-            }
-
-            return collect($grouped)->values()->sortBy('wilayah')->values();
-        });
+        $rows = $pembagianWilayah->rekap();
 
         return view('perusahaan.rekap_wilayah', compact('rows'));
     }
@@ -552,6 +519,8 @@ class PerusahaanController extends Controller
 
     private function forgetRekapWilayahCache(): void
     {
+        Cache::forget('perusahaan:rekap-wilayah:v7');
+        Cache::forget('perusahaan:rekap-wilayah:v6');
         Cache::forget('perusahaan:rekap-wilayah:v5');
         Cache::forget('perusahaan:rekap-wilayah:v4');
         Cache::forget('perusahaan:rekap-wilayah:v3');

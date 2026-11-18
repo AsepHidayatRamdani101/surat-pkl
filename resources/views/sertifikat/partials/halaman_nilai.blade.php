@@ -1,17 +1,90 @@
-@php($rows = collect($assessmentRows ?? []))
-<div class="certificate-back" style="page-break-before:always;position:relative;width:297mm;height:210mm;margin:0;background:url('{{ $backgroundBackDataUri ?? '' }}') center/cover no-repeat;font-family:{{ $fontFamily ?? 'Georgia, serif' }};overflow:hidden;">
-    <div style="position:absolute;left:12%;right:12%;top:18%;bottom:12%;">
-        <h2 style="text-align:center;margin:0 0 14px;font-size:20pt;">DAFTAR NILAI</h2>
-        <div style="font-size:10pt;margin-bottom:12px;"><strong>Nama:</strong> {{ $siswa->nama_siswa }} &nbsp;&nbsp; <strong>NIS:</strong> {{ $siswa->nis }} &nbsp;&nbsp; <strong>Jurusan:</strong> {{ $siswa->kelas->jurusan->nama_jurusan ?? '-' }}</div>
-        <table style="width:100%;border-collapse:collapse;background:rgba(255,255,255,.88);font-size:11pt;">
-            <thead><tr><th style="border:1px solid #333;padding:7px;width:8%;">No.</th><th style="border:1px solid #333;padding:7px;">Aspek Penilaian</th><th style="border:1px solid #333;padding:7px;width:16%;">Nilai</th><th style="border:1px solid #333;padding:7px;width:24%;">Predikat</th></tr></thead>
-            <tbody>@forelse($rows as $i=>$row)<tr><td style="border:1px solid #333;padding:7px;text-align:center;">{{ $i+1 }}</td><td style="border:1px solid #333;padding:7px;">{{ $row['aspek'] }}</td><td style="border:1px solid #333;padding:7px;text-align:center;">{{ $row['nilai'] ?? '-' }}</td><td style="border:1px solid #333;padding:7px;text-align:center;">{{ $row['predikat'] ?? '-' }}</td></tr>@empty<tr><td colspan="4" style="border:1px solid #333;padding:18px;text-align:center;">Aspek penilaian belum diatur.</td></tr>@endforelse</tbody>
+@php
+    $rows = collect($assessmentRows ?? []);
+    $isPembekalan = ($certificateType ?? 'pelaksanaan') === 'pembekalan';
+    $personTitleCase = fn (string $value) => collect(preg_split('/(\s+)/u', $value, -1, PREG_SPLIT_DELIM_CAPTURE))
+        ->map(fn (string $part) => substr_count($part, '.') >= 2 ? $part : mb_convert_case($part, MB_CASE_TITLE, 'UTF-8'))
+        ->implode('');
+    $defaultBackText = ['font' => $fontFamily ?? 'Georgia, serif', 'weight' => 400, 'italic' => false, 'color' => '#1f2937'];
+    $backLayout = array_replace_recursive([
+        '_table' => [
+            'header_color' => '#e5e7eb',
+            'header' => array_merge($defaultBackText, ['size' => 11, 'weight' => 700]),
+            'body' => array_merge($defaultBackText, ['size' => 11, 'weight' => 400]),
+        ],
+        'title' => array_merge($defaultBackText, ['x' => 50, 'y' => 18, 'size' => 20, 'weight' => 700]),
+        'legend' => array_merge($defaultBackText, ['x' => 12, 'y' => 72, 'size' => 10]),
+        'date' => array_merge($defaultBackText, ['x' => 72, 'y' => 74, 'size' => 10]),
+        'signature_title' => array_merge($defaultBackText, ['x' => 72, 'y' => 78, 'size' => 10]),
+        'signature_name' => array_merge($defaultBackText, ['x' => 72, 'y' => 88, 'size' => 10, 'weight' => 600]),
+        'signature_nip' => array_merge($defaultBackText, ['x' => 72, 'y' => 92, 'size' => 10]),
+    ], $backDesignLayout ?? []);
+    $backTexts = [
+        'title' => $isPembekalan
+            ? 'NILAI PEMBEKALAN PRAKTIK KERJA LAPANGAN (PKL)'
+            : 'NILAI PRAKTIK KERJA LAPANGAN (PKL)',
+        'legend' => "Keterangan :\nA - Baik Sekali 86 - 100\nB - Baik 70 - 85\nC - Cukup 60 - 69\nD - Kurang 50 - 59\nE - Kurang Sekali < 49",
+        'date' => 'Garut, ' . $tanggalCetak->translatedFormat('d F Y'),
+        'signature_title' => $isPembekalan ? 'Kepala SMK Negeri 8 Garut' : 'Pembimbing DUDIKA',
+        'signature_name' => $isPembekalan
+            ? ($kepalaSekolah ?? '-')
+            : $personTitleCase(($namaPembimbing ?? null) ?: '-'),
+        'signature_nip' => 'NIP. ' . ($isPembekalan
+            ? ($nipKepalaSekolah ?? '-')
+            : (($nipPembimbing ?? null) ?: '-')),
+    ];
+    $aspekHeader = $isPembekalan ? 'Aspek Penilaian Kegiatan Pembekalan' : 'Aspek Penilaian Kompetensi';
+@endphp
+<style>
+    .certificate-back {
+        page-break-before: always;
+        position: relative;
+        width: 297mm;
+        height: 210mm;
+        margin: 0 auto;
+        font-family: {{ $fontFamily ?? 'Georgia, serif' }};
+        overflow: hidden;
+        background: #fff;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .certificate-back-background {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: fill;
+        z-index: 0;
+        pointer-events: none;
+    }
+    @media screen {
+        .certificate-back {
+            width: 1123px;
+            height: 794px;
+            margin: 24px auto 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+        }
+    }
+    @media print {
+        .certificate-back {
+            width: 297mm;
+            height: 210mm;
+            margin: 0;
+            box-shadow: none;
+        }
+    }
+</style>
+<div class="certificate-back">
+    @if(!empty($backgroundBackDataUri))
+        <img class="certificate-back-background" src="{{ $backgroundBackDataUri }}" alt="">
+    @endif
+    @foreach($backTexts as $key => $text)
+        @php($textLayout = $backLayout[$key])
+        <div style="position:absolute;z-index:2;left:{{ $textLayout['x'] }}%;top:{{ $textLayout['y'] }}%;transform:{{ $key === 'legend' ? 'none' : 'translateX(-50%)' }};white-space:{{ $key === 'legend' ? 'pre-line' : 'nowrap' }};text-align:{{ $key === 'legend' ? 'left' : 'center' }};line-height:1.35;font-size:{{ $textLayout['size'] }}px;font-family:{!! $textLayout['font'] !!};font-weight:{{ $textLayout['weight'] }};font-style:{{ $textLayout['italic'] ? 'italic' : 'normal' }};color:{{ $textLayout['color'] }};">{{ $text }}</div>
+    @endforeach
+    <div style="position:absolute;z-index:1;left:12%;right:12%;top:28%;bottom:20%;">
+        <table style="width:100%;border-collapse:collapse;background:rgba(255,255,255,.88);">
+            <thead style="background:{{ $backLayout['_table']['header_color'] }};font-size:{{ $backLayout['_table']['header']['size'] }}px;font-family:{!! $backLayout['_table']['header']['font'] !!};font-weight:{{ $backLayout['_table']['header']['weight'] }};font-style:{{ $backLayout['_table']['header']['italic'] ? 'italic' : 'normal' }};color:{{ $backLayout['_table']['header']['color'] }};"><tr><th style="border:1px solid #333;padding:7px;width:8%;font-weight:inherit;">No.</th><th style="border:1px solid #333;padding:7px;text-align:left;font-weight:inherit;">{{ $aspekHeader }}</th><th style="border:1px solid #333;padding:7px;width:16%;font-weight:inherit;">Nilai (Angka)</th><th style="border:1px solid #333;padding:7px;width:24%;font-weight:inherit;">Predikat</th></tr></thead>
+            <tbody style="font-size:{{ $backLayout['_table']['body']['size'] }}px;font-family:{!! $backLayout['_table']['body']['font'] !!};font-weight:{{ $backLayout['_table']['body']['weight'] }};font-style:{{ $backLayout['_table']['body']['italic'] ? 'italic' : 'normal' }};color:{{ $backLayout['_table']['body']['color'] }};">@forelse($rows as $i=>$row)<tr><td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $i+1 }}</td><td style="border:1px solid #333;padding:7px;text-align:left;font-weight:inherit;">{{ $row['aspek'] }}</td><td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $row['nilai'] ?? '' }}</td><td style="border:1px solid #333;padding:7px;text-align:center;font-weight:inherit;">{{ $row['predikat'] ?? '' }}</td></tr>@empty<tr><td colspan="4" style="border:1px solid #333;padding:18px;text-align:center;font-weight:inherit;">Aspek penilaian belum diatur.</td></tr>@endforelse</tbody>
         </table>
-    </div>
-    <div style="position:absolute;right:12%;bottom:5%;width:32%;text-align:center;font-size:10pt;line-height:1.35;">
-        <div>Pembimbing DUDIKA</div>
-        <div style="height:42px;"></div>
-        <div style="font-weight:600;">{{ $namaPembimbing ?? '____________________' }}</div>
-        <div>NIP. {{ $nipPembimbing ?? '-' }}</div>
     </div>
 </div>

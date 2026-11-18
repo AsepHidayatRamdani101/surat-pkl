@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Http\Controllers\Concerns\BuildsSertifikatData;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\AbsensiPembekalan;
@@ -30,6 +31,8 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class DashboardController extends Controller
 {
+    use BuildsSertifikatData;
+
     public function index(Request $request)
     {
         $user = auth()->user();
@@ -651,6 +654,8 @@ class DashboardController extends Controller
         if (!$siswa) {
             return redirect()->route('dashboard')->with('error', 'Data siswa tidak ditemukan.');
         }
+
+        return $this->buildSertifikatPembekalanDataForSiswa($siswa);
 
         // Kehadiran pembekalan: sumber sama dengan dashboard siswa (absensi_pembekalans).
         $dailyAbsensi = AbsensiPembekalan::where('siswa_id', $siswa->id)

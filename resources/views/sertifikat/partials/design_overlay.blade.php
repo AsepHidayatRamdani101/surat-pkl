@@ -1,7 +1,10 @@
 @php
     $layout = $designLayout ?? [];
+    $isPembekalan = ($certificateType ?? 'pelaksanaan') === 'pembekalan';
     $canvasOffsetX = $layout['_canvas']['offset_x'] ?? -75;
     $companyName = isset($perusahaan) ? $perusahaan->nama_perusahaan : ($siswa->suratIzin?->perusahaan?->nama_perusahaan ?? '-');
+    $companyAddress = $alamatPerusahaanLengkap
+        ?? (isset($perusahaan) ? $perusahaan->alamat : ($siswa->suratIzin?->perusahaan?->alamat ?? '-'));
     $leaderName = $namaPemilik
         ?? $siswa->suratIzin?->nama_pemilik_instansi
         ?? $siswa->suratIzin?->perusahaan?->nama_pemilik_perusahaan
@@ -12,21 +15,47 @@
     $pklBulan = $pklMulai && $pklSelesai
         ? (($pklSelesai->year - $pklMulai->year) * 12 + $pklSelesai->month - $pklMulai->month + 1)
         : null;
+    $personTitleCase = fn (string $value) => collect(preg_split('/(\s+)/u', $value, -1, PREG_SPLIT_DELIM_CAPTURE))
+        ->map(fn (string $part) => substr_count($part, '.') >= 2 ? $part : mb_convert_case($part, MB_CASE_TITLE, 'UTF-8'))
+        ->implode('');
     $signaturePath = !empty($ttdPath) ? public_path($ttdPath) : null;
     $signatureSrc = $signaturePath && is_file($signaturePath)
         ? 'data:image/png;base64,' . base64_encode(file_get_contents($signaturePath))
         : null;
-    $values = [
-        'nama' => strtoupper($siswa->nama_siswa),
+    $centeredKeys = $isPembekalan
+        ? ['nomor_sertifikat', 'nama', 'identitas', 'pembekalan_intro', 'pembekalan_title', 'pembekalan_result']
+        : ['nama', 'identitas', 'perusahaan', 'alamat_perusahaan', 'tanggal_cetak'];
+    $numberTemplate = $layout['nomor_sertifikat']['text']
+        ?? ($isPembekalan ? 'Nomor: SPB/{nis}/{tahun}' : 'Nomor: SPL/{nis}/{tahun}');
+    $certificateNumber = strtr($numberTemplate, [
+        '{nis}' => $siswa->nis,
+        '{tahun}' => $tanggalCetak->format('Y'),
+    ]);
+    $values = $isPembekalan ? [
+        'nomor_sertifikat' => $certificateNumber,
+        'nama' => mb_strtoupper($siswa->nama_siswa, 'UTF-8'),
+        'identitas' => $siswa->nis . ' | ' . ($siswa->kelas->jurusan->nama_jurusan ?? '-'),
+        'pembekalan_intro' => 'atas partisipasi dan keberhasilannya dalam mengikuti kegiatan',
+        'pembekalan_title' => 'PEMBEKALAN PRAKTIK KERJA LAPANGAN (PKL)',
+        'pembekalan_result' => 'yang diselenggarakan oleh SMK Negeri 8 Garut',
+        'tanggal_cetak' => 'Garut, ' . $tanggalCetak->translatedFormat('d F Y'),
+        'kepala_title' => 'Kepala SMK Negeri 8 Garut',
+        'kepala_sekolah' => $kepalaSekolah ?? 'Kepala Sekolah',
+        'kepala_nip' => 'NIP. ' . ($nipKepalaSekolah ?? '-'),
+    ] : [
+        'nomor_sertifikat' => $certificateNumber,
+        'nama' => mb_strtoupper($siswa->nama_siswa, 'UTF-8'),
         'identitas' => $siswa->nis . ' | ' . ($siswa->kelas->jurusan->nama_jurusan ?? '-'),
         'pkl_intro' => 'Telah melakukan Praktek Kerja Lapangan (PKL) di',
-        'perusahaan' => $companyName,
+        'perusahaan' => mb_strtoupper($companyName, 'UTF-8'),
         'pkl_period' => $pklMulai && $pklSelesai
             ? 'selama ' . $pklBulan . ' bulan terhitung pada tanggal ' . $pklMulai->translatedFormat('d F Y') . ' - ' . $pklSelesai->translatedFormat('d F Y')
             : 'selama - bulan terhitung pada tanggal -',
+        'alamat_perusahaan' => mb_convert_case($companyAddress, MB_CASE_TITLE, 'UTF-8'),
+        'tanggal_cetak' => 'Garut, ' . $tanggalCetak->translatedFormat('d F Y'),
         'pimpinan_title' => 'Pimpinan / Pembimbing DUDIKA',
         'kepala_title' => 'Kepala SMK Negeri 8 Garut',
-        'pimpinan' => $leaderName,
+        'pimpinan' => $personTitleCase($leaderName),
         'pimpinan_nip' => 'NIP. ' . ($nipPemilik ?? '-'),
         'kepala_sekolah' => $kepalaSekolah ?? 'Kepala Sekolah',
         'kepala_nip' => 'NIP. ' . ($nipKepalaSekolah ?? '-'),
@@ -38,11 +67,20 @@
     @endforeach
     /* Desain lama dinonaktifkan agar tidak bertumpuk dengan template/editor baru. */
     body > .frame, body > .content, .sheet > .frame { display:none !important; }
-    .sheet { width:1123px !important; height:794px !important; padding:0 !important; position:relative !important; overflow:hidden !important; background-image:url('{{ $backgroundFrontDataUri ?? '' }}') !important; background-size:100% 100% !important; background-position:0 0 !important; background-repeat:no-repeat !important; }
+    .sheet { width:1123px !important; height:794px !important; padding:0 !important; position:relative !important; overflow:hidden !important; background:none !important; }
+    .certificate-background-image { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; z-index:0; pointer-events:none; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     .certificate-design-overlay { position:absolute; inset:0; z-index:20; pointer-events:none; font-family:{{ $fontFamily ?? 'Georgia, serif' }}; }
     .certificate-design-overlay .dynamic-element { position:absolute; white-space:nowrap; font-weight:600; }
     @media print { .sheet { width:297mm !important; height:210mm !important; margin:0 !important; } }
 </style>
+@php
+    $frontCertificateBackground = $isPembekalan
+        ? ($backgroundFrontPembekalanDataUri ?? $backgroundFrontDataUri ?? null)
+        : ($backgroundFrontDataUri ?? null);
+@endphp
+@if(!empty($frontCertificateBackground))
+    <img class="certificate-background-image" src="{{ $frontCertificateBackground }}" alt="">
+@endif
 <div class="certificate-design-overlay">
     @if($signatureSrc && isset($layout['kepala_sekolah']))
         <img src="{{ $signatureSrc }}" alt="" style="position:absolute;left:{{ $layout['kepala_sekolah']['x'] }}%;top:{{ max(0, $layout['kepala_sekolah']['y'] - 10) }}%;width:95px;max-height:65px;object-fit:contain;">
@@ -50,7 +88,7 @@
     @foreach($values as $key => $value)
         @php
             $position = $layout[$key] ?? ['x'=>10,'y'=>10,'size'=>14];
-            $horizontalStyle = in_array($key, ['nama', 'identitas', 'perusahaan'], true)
+            $horizontalStyle = in_array($key, $centeredKeys, true)
                 ? 'left:0;width:100%;text-align:center;'
                 : 'left:calc(' . $position['x'] . '% + ' . $canvasOffsetX . 'px);';
         @endphp

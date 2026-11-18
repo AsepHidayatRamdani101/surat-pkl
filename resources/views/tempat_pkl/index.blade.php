@@ -31,6 +31,7 @@
                             <th>Perusahaan</th>
                             <th>Tgl Mulai</th>
                             <th>Tgl Selesai</th>
+                            <th>Status PKL/Magang</th>
                             <th>Status</th>
                             <th class="text-center">Aksi</th>
                         </tr>
@@ -175,6 +176,16 @@
 
                             <div class="row">
                                 <div class="col-md-6 mb-2">
+                                    <label for="status_pkl">Status PKL atau Magang</label>
+                                    <select name="status_pkl" id="status_pkl" class="form-control" required>
+                                        <option value="PKL">PKL</option>
+                                        <option value="Magang">Magang</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
                                     <label for="file_upload">Upload File</label>
                                     <input type="file" name="file_upload" id="file_upload" class="form-control">
                                 </div>
@@ -272,6 +283,11 @@
                         name: 'tanggal_selesai'
                     },
                     {
+                        data: 'status_pkl',
+                        name: 'status_pkl',
+                        defaultContent: 'PKL'
+                    },
+                    {
                         data: 'siswa.status',
                         name: 'siswa.status',
                         defaultContent: '-'
@@ -303,6 +319,7 @@
                 $('#id').val('');
                 $('#siswa_id').val(null).trigger('change');
                 $('#perusahaan_id').val('');
+                $('#status_pkl').val('PKL');
                 $('#tampilkan_file').html('');
                 $('#modalFormLabel').text('Tambah Data Tempat PKL');
                 $('#tambahan').hide();
@@ -323,6 +340,7 @@
                             .tanggal_mulai).toISOString().slice(0, 10) : '');
                         $('#tanggal_selesai').val(data.tanggal_selesai ? new Date(data
                             .tanggal_selesai).toISOString().slice(0, 10) : '');
+                        $('#status_pkl').val(data.status_pkl || 'PKL');
 
                         if (data.surat_izin_path) {
                             $('#tampilkan_file').html(
@@ -349,6 +367,7 @@
                 formData.append('alamat_perusahaan', $('#alamat_perusahaan').val() || '');
                 formData.append('tanggal_mulai', $('#tanggal_mulai').val() || '');
                 formData.append('tanggal_selesai', $('#tanggal_selesai').val() || '');
+                formData.append('status_pkl', $('#status_pkl').val() || 'PKL');
                 formData.append('created_by', '{{ auth()->id() }}');
 
                 const selectedSiswa = $('#siswa_id').val() || [];

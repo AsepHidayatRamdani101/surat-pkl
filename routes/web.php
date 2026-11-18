@@ -82,6 +82,9 @@ Route::middleware(['auth'])->group(function () {
 // Cetak sertifikat PKL (admin/panitia)
 Route::middleware(['auth', 'can:panitia'])->group(function () {
     Route::get('/sertifikat/pengaturan', [SertifikatSettingController::class, 'edit'])->name('sertifikat.setting.edit');
+    Route::get('/sertifikat/pengaturan/pembekalan', [SertifikatSettingController::class, 'edit'])
+        ->defaults('template', 'pembekalan')
+        ->name('sertifikat.setting.pembekalan.edit');
     Route::put('/sertifikat/pengaturan', [SertifikatSettingController::class, 'update'])->name('sertifikat.setting.update');
     Route::delete('/sertifikat/pengaturan/background', [SertifikatSettingController::class, 'removeBackground'])->name('sertifikat.setting.remove-background');
     Route::delete('/sertifikat/pengaturan/font/{font}', [SertifikatSettingController::class, 'removeFont'])->name('sertifikat.setting.remove-font');

@@ -279,15 +279,23 @@ trait BuildsSertifikatData
         $jurusanId = $siswa->kelas?->jurusan_id;
         $aspeks = SertifikatAspek::where('jurusan_id', $jurusanId)->orderBy('urutan')->orderBy('id')->get();
         $nilai = SertifikatPenilaian::where('siswa_id', $siswa->id)->get()->keyBy('sertifikat_aspek_id');
+        $sertifikatSidang = SertifikatSidang::where('siswa_id', $siswa->id)->first();
+
+        $assessmentRows = $aspeks->map(fn ($aspek) => [
+            'aspek' => $aspek->nama_aspek,
+            'nilai' => $nilai->get($aspek->id)?->nilai,
+            'predikat' => $nilai->get($aspek->id)?->predikat,
+        ])->push([
+            'aspek' => 'Sidang PKL',
+            'nilai' => $sertifikatSidang?->nilai_akhir,
+            'predikat' => $sertifikatSidang?->predikat,
+        ]);
+
         return [
             'certificateType' => 'pelaksanaan',
             'designLayout' => $setting->layout(),
             'backDesignLayout' => $setting->backLayout(),
-            'assessmentRows' => $aspeks->map(fn ($aspek) => [
-                'aspek' => $aspek->nama_aspek,
-                'nilai' => $nilai->get($aspek->id)?->nilai,
-                'predikat' => $nilai->get($aspek->id)?->predikat,
-            ]),
+            'assessmentRows' => $assessmentRows,
         ];
     }
 

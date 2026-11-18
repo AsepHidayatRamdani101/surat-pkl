@@ -2,6 +2,115 @@
 
 @section('title', 'Data Sertifikat PKL')
 
+@push('css')
+    <style>
+        .sertifikat-data-card .card-header {
+            gap: 1rem;
+        }
+
+        .sertifikat-data-card .card-header > .d-flex:first-child {
+            min-width: 280px;
+        }
+
+        .sertifikat-data-card .sertifikat-toolbar {
+            gap: .5rem;
+        }
+
+        .sertifikat-data-card .dataTables_wrapper {
+            width: 100%;
+        }
+
+        .sertifikat-data-card .dataTables_wrapper .dataTables_filter input {
+            min-width: 250px;
+            margin-left: .5rem;
+        }
+
+        .sertifikat-data-card .dataTables_wrapper .dataTables_length select {
+            min-width: 70px;
+        }
+
+        .sertifikat-data-card .table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #sertifikatDataTable {
+            min-width: 1420px;
+            margin-bottom: 0 !important;
+        }
+
+        #sertifikatDataTable th {
+            padding: .7rem .65rem;
+            white-space: nowrap;
+            vertical-align: middle;
+            font-size: .86rem;
+        }
+
+        #sertifikatDataTable td {
+            padding: .65rem;
+            vertical-align: top;
+            line-height: 1.35;
+            font-size: .88rem;
+        }
+
+        #sertifikatDataTable th:nth-child(1),
+        #sertifikatDataTable td:nth-child(1) { width: 52px; text-align: center; }
+        #sertifikatDataTable th:nth-child(2),
+        #sertifikatDataTable td:nth-child(2) { width: 135px; white-space: nowrap; }
+        #sertifikatDataTable th:nth-child(3),
+        #sertifikatDataTable td:nth-child(3) { min-width: 190px; }
+        #sertifikatDataTable th:nth-child(4),
+        #sertifikatDataTable td:nth-child(4) { width: 155px; white-space: nowrap; }
+        #sertifikatDataTable th:nth-child(5),
+        #sertifikatDataTable td:nth-child(5) { width: 125px; white-space: nowrap; }
+        #sertifikatDataTable th:nth-child(6),
+        #sertifikatDataTable td:nth-child(6) { min-width: 190px; }
+        #sertifikatDataTable th:nth-child(7),
+        #sertifikatDataTable td:nth-child(7),
+        #sertifikatDataTable th:nth-child(8),
+        #sertifikatDataTable td:nth-child(8) { min-width: 210px; }
+        #sertifikatDataTable th:nth-child(9),
+        #sertifikatDataTable td:nth-child(9) { width: 125px; text-align: center; white-space: nowrap; }
+        #sertifikatDataTable th:nth-child(10),
+        #sertifikatDataTable td:nth-child(10) { width: 105px; text-align: center; white-space: nowrap; }
+
+        #sertifikatDataTable .badge {
+            font-weight: 600;
+            padding: .45em .6em;
+        }
+
+        #sertifikatDataTable .btn-xs {
+            padding: .25rem .45rem;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 767.98px) {
+            .sertifikat-data-card .card-header {
+                align-items: flex-start !important;
+            }
+
+            .sertifikat-data-card .card-header > .d-flex {
+                width: 100%;
+            }
+
+            .sertifikat-data-card .sertifikat-toolbar {
+                justify-content: flex-start !important;
+            }
+
+            .sertifikat-data-card .dataTables_wrapper .dataTables_filter,
+            .sertifikat-data-card .dataTables_wrapper .dataTables_length {
+                text-align: left;
+                margin-bottom: .5rem;
+            }
+
+            .sertifikat-data-card .dataTables_wrapper .dataTables_filter input {
+                width: calc(100vw - 80px);
+                min-width: 0;
+            }
+        }
+    </style>
+@endpush
+
 @section('content')
     <div class="container-fluid pt-4">
         @if (session('success'))
@@ -68,7 +177,7 @@
 
         <div class="row">
             <div class="col-md-12">
-                <div class="card app-card">
+                <div class="card app-card sertifikat-data-card">
                     <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
                         <div class="d-flex align-items-center my-1">
                             <span class="card-title-icon"><i class="fas fa-certificate"></i></span>
@@ -77,19 +186,14 @@
                                 <small>Pengisian data pemilik &amp; pembimbing perusahaan oleh siswa (satu perusahaan boleh berbeda pembimbing per siswa)</small>
                             </div>
                         </div>
-                        <div class="d-flex align-items-center flex-wrap my-1">
-                            <form method="GET" action="{{ route('sertifikat.data.index') }}" class="form-inline mr-2">
-                                <select name="status" class="form-control form-control-sm mr-2">
+                        <div class="d-flex align-items-center flex-wrap my-1 sertifikat-toolbar">
+                            <div class="form-inline">
+                                    <select name="status" class="form-control form-control-sm mr-2">
                                     <option value="">Semua Status</option>
                                     <option value="sudah" {{ $statusFilter === 'sudah' ? 'selected' : '' }}>Sudah Mengisi</option>
                                     <option value="belum" {{ $statusFilter === 'belum' ? 'selected' : '' }}>Belum Mengisi</option>
                                 </select>
-                                <input type="text" name="q" value="{{ $search }}" class="form-control form-control-sm mr-2"
-                                    placeholder="Cari nama / NIS / perusahaan...">
-                                <button type="submit" class="btn btn-sm btn-primary">
-                                    <i class="fas fa-search mr-1"></i> Cari
-                                </button>
-                            </form>
+                                </div>
                             @if ($siswaBelum > 0)
                                 <form method="POST" action="{{ route('sertifikat.data.kirim-wa-massal') }}"
                                     class="d-inline" id="formKirimWaMassal">
@@ -104,8 +208,8 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover" style="width: 100%;">
+                        <div class="table-scroll">
+                            <table id="sertifikatDataTable" class="table table-striped table-hover" style="width: 100%;">
                                 <thead>
                                     <tr>
                                         <th>No</th>
@@ -120,91 +224,10 @@
                                         <th class="text-center">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    @forelse ($tempatList as $tempat)
-                                        @php
-                                            $pemilikTerisi = filled($tempat->nama_pemilik_instansi);
-                                            $pembimbingTerisi = filled($tempat->nama_pembimbing_instansi);
-                                            $lengkap = $pemilikTerisi && $pembimbingTerisi;
-                                        @endphp
-                                        <tr>
-                                            <td>{{ $tempatList->firstItem() + $loop->index }}</td>
-                                            <td>{{ $tempat->siswa->nis ?? '-' }}</td>
-                                            <td>{{ $tempat->siswa->nama_siswa ?? '-' }}</td>
-                                            <td>{{ $tempat->siswa->no_hp_siswa ?? '-' }}</td>
-                                            <td>{{ $tempat->siswa->kelas->nama_kelas ?? '-' }}</td>
-                                            <td>{{ $tempat->perusahaan->nama_perusahaan ?? '-' }}</td>
-                                            <td>
-                                                @if ($pemilikTerisi)
-                                                    {{ $tempat->nama_pemilik_instansi }}
-                                                    @if ($tempat->nip_pemilik_instansi)
-                                                        <br><small class="text-muted">NIP: {{ $tempat->nip_pemilik_instansi }}</small>
-                                                    @endif
-                                                @else
-                                                    <span class="badge badge-danger">Belum diisi</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if ($pembimbingTerisi)
-                                                    {{ $tempat->nama_pembimbing_instansi }}
-                                                    @if ($tempat->nip_pembimbing_instansi)
-                                                        <br><small class="text-muted">NIP: {{ $tempat->nip_pembimbing_instansi }}</small>
-                                                    @endif
-                                                @else
-                                                    <span class="badge badge-danger">Belum diisi</span>
-                                                @endif
-                                            </td>
-                                            <td class="text-center">
-                                                @if ($lengkap)
-                                                    <span class="badge badge-success">Sudah Mengisi</span>
-                                                @else
-                                                    <span class="badge badge-warning">Belum Lengkap</span>
-                                                @endif
-                                            </td>
-                                            <td class="text-center">
-                                                @if ($tempat->siswa?->no_hp_siswa)
-                                                    @php
-                                                        $nomorWa = preg_replace('/\D+/', '', (string) $tempat->siswa->no_hp_siswa);
-                                                        if (str_starts_with($nomorWa, '0062')) {
-                                                            $nomorWa = substr($nomorWa, 2);
-                                                        }
-                                                        if (str_starts_with($nomorWa, '62')) {
-                                                            $nomorWa = '62' . ltrim(substr($nomorWa, 2), '0');
-                                                        } elseif (str_starts_with($nomorWa, '0')) {
-                                                            $nomorWa = '62' . substr($nomorWa, 1);
-                                                        } elseif (str_starts_with($nomorWa, '8')) {
-                                                            $nomorWa = '62' . $nomorWa;
-                                                        }
-                                                        $namaPerusahaan = $tempat->perusahaan->nama_perusahaan ?? 'tempat PKL';
-                                                        $pesanWa = $lengkap
-                                                            ? "Halo {$tempat->siswa->nama_siswa}, data pemilik/pimpinan dan pembimbing {$namaPerusahaan} untuk Sertifikat PKL sudah terisi. Silakan periksa kembali melalui menu PKL > Data Pelaksanaan. Terima kasih."
-                                                            : "Halo {$tempat->siswa->nama_siswa}, mohon segera lengkapi data pemilik/pimpinan dan pembimbing {$namaPerusahaan} untuk keperluan Sertifikat PKL melalui menu PKL > Data Pelaksanaan. Terima kasih.";
-                                                        $waWebUrl = 'https://api.whatsapp.com/send?phone='.$nomorWa.'&text='.rawurlencode($pesanWa);
-                                                    @endphp
-                                                    <a href="{{ $waWebUrl }}" target="_blank" rel="noopener"
-                                                        class="btn btn-xs btn-success"
-                                                        title="Buka WhatsApp untuk {{ $tempat->siswa->nama_siswa }} ({{ $nomorWa }})">
-                                                        <i class="fab fa-whatsapp mr-1"></i> WA Web
-                                                    </a>
-                                                @else
-                                                    <span class="badge badge-secondary" title="Nomor HP siswa tidak tersedia">
-                                                        <i class="fas fa-phone-slash mr-1"></i> No HP kosong
-                                                    </span>
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="10" class="text-center text-muted">Tidak ada data tempat PKL.</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
+                                <tbody></tbody>
                             </table>
                         </div>
 
-                        <div class="d-flex justify-content-end">
-                            {{ $tempatList->links('pagination::bootstrap-4') }}
-                        </div>
                     </div>
                 </div>
             </div>
@@ -213,12 +236,39 @@
 @endsection
 
 @section('js')
+    @include('partials.table_scripts')
     <script>
-        document.querySelectorAll('.form-kirim-wa').forEach(function (form) {
-            form.addEventListener('submit', function (e) {
-                if (!confirm('Kirim pesan WhatsApp pengingat pengisian data ke siswa ini?')) {
-                    e.preventDefault();
+        $(function () {
+            const table = $('#sertifikatDataTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: @json(route('sertifikat.data.index')),
+                    data: function (data) {
+                        data.status = $('select[name="status"]').val();
+                    }
+                },
+                order: [[2, 'asc']],
+                columns: [
+                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                    { data: 'siswa_nis', name: 'siswa.nis' },
+                    { data: 'siswa_nama', name: 'siswa.nama_siswa' },
+                    { data: 'siswa_telepon', name: 'siswa.no_hp_siswa' },
+                    { data: 'kelas', name: 'siswa.kelas.nama_kelas', orderable: false },
+                    { data: 'perusahaan_nama', name: 'perusahaan.nama_perusahaan' },
+                    { data: 'pemilik', name: 'nama_pemilik_instansi', orderable: false },
+                    { data: 'pembimbing_perusahaan', name: 'nama_pembimbing_instansi', orderable: false },
+                    { data: 'status_html', name: 'nama_pemilik_instansi', orderable: false, searchable: false, className: 'text-center' },
+                    { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-center' }
+                ],
+                language: {
+                    emptyTable: 'Tidak ada data tempat PKL.',
+                    zeroRecords: 'Data tidak ditemukan.'
                 }
+            });
+
+            $('select[name="status"]').on('change', function () {
+                table.ajax.reload();
             });
         });
 

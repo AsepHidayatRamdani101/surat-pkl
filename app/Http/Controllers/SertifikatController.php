@@ -13,8 +13,8 @@ use App\Models\SertifikatPenilaian;
 use App\Services\PembagianWilayahService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Http;
+use Yajra\DataTables\Facades\DataTables;
 
 class SertifikatController extends Controller
 {
@@ -255,16 +255,100 @@ class SertifikatController extends Controller
     {
         $pembimbingId = $this->resolvePembimbingMonitoringId();
 
-        $search = trim((string) $request->query('q', ''));
-        $statusFilter = $request->query('status', '');
-
-        $all = TempatPkl::with(['siswa.kelas', 'perusahaan', 'pembimbing', 'pembimbingPerusahaan'])
+        $baseQuery = TempatPkl::query()
             ->when($pembimbingId, fn ($q) => $q->where('pembimbing_id', $pembimbingId))
             ->whereHas('siswa')
-            ->orderByDesc('id')
-            ->get()
-            ->unique('siswa_id')
-            ->values();
+            ->whereIn('tempat_pkl.id', function ($query) use ($pembimbingId) {
+                $query->selectRaw('MAX(tempat_pkl.id)')
+                    ->from('tempat_pkl')
+                    ->whereNotNull('siswa_id')
+                    ->when($pembimbingId, fn ($q) => $q->where('pembimbing_id', $pembimbingId))
+                    ->groupBy('siswa_id');
+            });
+
+        // DataTables meminta JSON pada request AJAX; browser hanya menerima data
+        // sesuai halaman yang sedang dibuka.
+        if ($request->ajax()) {
+            $query = (clone $baseQuery)->with(['siswa.kelas', 'perusahaan']);
+            $statusFilter = (string) $request->input('status', '');
+
+            if ($statusFilter === 'sudah') {
+                $query->whereNotNull('nama_pemilik_instansi')->where('nama_pemilik_instansi', '<>', '')
+                    ->whereNotNull('nama_pembimbing_instansi')->where('nama_pembimbing_instansi', '<>', '');
+            } elseif ($statusFilter === 'belum') {
+                $query->where(function ($q) {
+                    $q->whereNull('nama_pemilik_instansi')->orWhere('nama_pemilik_instansi', '')
+                        ->orWhereNull('nama_pembimbing_instansi')->orWhere('nama_pembimbing_instansi', '');
+                });
+            }
+
+            $normalizePhone = static function ($phone) {
+                $number = preg_replace('/\D+/', '', (string) $phone);
+                if (str_starts_with($number, '0062')) {
+                    $number = substr($number, 2);
+                }
+                if (str_starts_with($number, '62')) {
+                    return '62' . ltrim(substr($number, 2), '0');
+                }
+                if (str_starts_with($number, '0')) {
+                    return '62' . substr($number, 1);
+                }
+                return str_starts_with($number, '8') ? '62' . $number : $number;
+            };
+
+            $isComplete = static fn ($row) => filled($row->nama_pemilik_instansi)
+                && filled($row->nama_pembimbing_instansi);
+
+            return DataTables::eloquent($query)
+                ->addIndexColumn()
+                ->filterColumn('siswa.nama_siswa', function ($query, $keyword) {
+                    $query->whereHas('siswa', fn ($q) => $q->where('nama_siswa', 'like', "%{$keyword}%"));
+                })
+                ->filterColumn('siswa.nis', function ($query, $keyword) {
+                    $query->whereHas('siswa', fn ($q) => $q->where('nis', 'like', "%{$keyword}%"));
+                })
+                ->filterColumn('perusahaan.nama_perusahaan', function ($query, $keyword) {
+                    $query->whereHas('perusahaan', fn ($q) => $q->where('nama_perusahaan', 'like', "%{$keyword}%"));
+                })
+                ->addColumn('siswa_nis', fn ($row) => $row->siswa?->nis ?? '-')
+                ->addColumn('siswa_nama', fn ($row) => $row->siswa?->nama_siswa ?? '-')
+                ->addColumn('siswa_telepon', fn ($row) => $row->siswa?->no_hp_siswa ?? '-')
+                ->addColumn('kelas', fn ($row) => $row->siswa?->kelas?->nama_kelas ?? '-')
+                ->addColumn('perusahaan_nama', fn ($row) => $row->perusahaan?->nama_perusahaan ?? '-')
+                ->addColumn('pemilik', function ($row) {
+                    if (blank($row->nama_pemilik_instansi)) {
+                        return '<span class="badge badge-danger">Belum diisi</span>';
+                    }
+                    return e($row->nama_pemilik_instansi)
+                        . ($row->nip_pemilik_instansi ? '<br><small class="text-muted">NIP: ' . e($row->nip_pemilik_instansi) . '</small>' : '');
+                })
+                ->addColumn('pembimbing_perusahaan', function ($row) {
+                    if (blank($row->nama_pembimbing_instansi)) {
+                        return '<span class="badge badge-danger">Belum diisi</span>';
+                    }
+                    return e($row->nama_pembimbing_instansi)
+                        . ($row->nip_pembimbing_instansi ? '<br><small class="text-muted">NIP: ' . e($row->nip_pembimbing_instansi) . '</small>' : '');
+                })
+                ->addColumn('status_html', fn ($row) => $isComplete($row)
+                    ? '<span class="badge badge-success">Sudah Mengisi</span>'
+                    : '<span class="badge badge-warning">Belum Lengkap</span>')
+                ->addColumn('aksi', function ($row) use ($normalizePhone, $isComplete) {
+                    $phone = $normalizePhone($row->siswa?->no_hp_siswa);
+                    if ($phone === '') {
+                        return '<span class="badge badge-secondary"><i class="fas fa-phone-slash mr-1"></i> No HP kosong</span>';
+                    }
+                    $company = $row->perusahaan?->nama_perusahaan ?? 'tempat PKL';
+                    $message = $isComplete($row)
+                        ? "Halo {$row->siswa->nama_siswa}, data pemilik/pimpinan dan pembimbing {$company} untuk Sertifikat PKL sudah terisi. Silakan periksa kembali melalui menu PKL > Data Pelaksanaan. Terima kasih."
+                        : "Halo {$row->siswa->nama_siswa}, mohon segera lengkapi data pemilik/pimpinan dan pembimbing {$company} untuk keperluan Sertifikat PKL melalui menu PKL > Data Pelaksanaan. Terima kasih.";
+                    $url = 'https://api.whatsapp.com/send?phone=' . $phone . '&text=' . rawurlencode($message);
+                    return '<a href="' . e($url) . '" target="_blank" rel="noopener" class="btn btn-xs btn-success" title="Buka WhatsApp (' . e($phone) . ')"><i class="fab fa-whatsapp mr-1"></i> WA Web</a>';
+                })
+                ->rawColumns(['pemilik', 'pembimbing_perusahaan', 'status_html', 'aksi'])
+                ->toJson();
+        }
+
+        $all = (clone $baseQuery)->get(['id', 'perusahaan_id', 'nama_pemilik_instansi', 'nama_pembimbing_instansi']);
 
         $isTerisi = fn ($t) => filled($t->nama_pemilik_instansi) && filled($t->nama_pembimbing_instansi);
 
@@ -275,38 +359,9 @@ class SertifikatController extends Controller
         $perusahaanTerisi = $byPerusahaan->filter(fn ($rows) => $rows->every($isTerisi))->count();
         $perusahaanBelum = $byPerusahaan->count() - $perusahaanTerisi;
 
-        $rows = $all;
-
-        if ($search !== '') {
-            $needle = mb_strtolower($search);
-            $rows = $rows->filter(function ($t) use ($needle) {
-                return str_contains(mb_strtolower($t->siswa->nama_siswa ?? ''), $needle)
-                    || str_contains(mb_strtolower($t->siswa->nis ?? ''), $needle)
-                    || str_contains(mb_strtolower($t->perusahaan->nama_perusahaan ?? ''), $needle);
-            });
-        }
-
-        if ($statusFilter === 'sudah') {
-            $rows = $rows->filter($isTerisi);
-        } elseif ($statusFilter === 'belum') {
-            $rows = $rows->reject($isTerisi);
-        }
-
-        $rows = $rows->sortBy(fn ($t) => mb_strtolower($t->siswa->nama_siswa ?? ''))->values();
-
-        $perPage = 25;
-        $page = LengthAwarePaginator::resolveCurrentPage();
-        $tempatList = new LengthAwarePaginator(
-            $rows->forPage($page, $perPage)->values(),
-            $rows->count(),
-            $perPage,
-            $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
+        $statusFilter = (string) $request->query('status', '');
 
         return view('sertifikat.data_index', compact(
-            'tempatList',
-            'search',
             'statusFilter',
             'siswaSudah',
             'siswaBelum',

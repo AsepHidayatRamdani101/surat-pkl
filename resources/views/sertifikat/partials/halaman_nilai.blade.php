@@ -38,7 +38,7 @@
             ? ($nipKepalaSekolah ?? null)
             : ($nipPembimbing ?? null)),
     ];
-    $aspekHeader = $isPembekalan ? 'Aspek Penilaian Kegiatan Pembekalan' : 'Aspek Penilaian Kompetensi';
+    $aspekHeader = $isPembekalan ? 'Aspek Penilaian Kegiatan Pembekalan' : 'Aspek Penilaian';
     $hasTotalNilai = $rows->contains(fn ($row) => is_numeric($row['nilai'] ?? null));
     $totalNilai = $rows->sum(fn ($row) => is_numeric($row['nilai'] ?? null) ? (float) $row['nilai'] : 0);
     $totalNilai = fmod($totalNilai, 1) === 0.0 ? (int) $totalNilai : round($totalNilai, 2);

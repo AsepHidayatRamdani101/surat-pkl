@@ -309,7 +309,7 @@
                     <p class="diberikan">diberikan kepada</p>
                     <div class="nama-siswa">{{ strtoupper($siswa->nama_siswa) }}</div>
                     <p class="identitas">
-                        NISN: {{ $siswa->nisn ?? $siswa->nis }} &nbsp;|&nbsp;
+                        NIS: {{ $siswa->nisn ?? $siswa->nis }} &nbsp;|&nbsp;
                         Kelas: {{ $siswa->kelas->nama_kelas ?? '-' }} &nbsp;|&nbsp;
                         Jurusan: {{ $siswa->kelas->jurusan->nama_jurusan ?? '-' }}
                     </p>

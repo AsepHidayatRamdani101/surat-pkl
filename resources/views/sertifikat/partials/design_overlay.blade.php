@@ -43,7 +43,7 @@
     $values = $isPembekalan ? [
         'nomor_sertifikat' => $certificateNumber,
         'nama' => mb_strtoupper($siswa->nama_siswa, 'UTF-8'),
-         'identitas' => 'NISN: ' . $nomorInduk . ' | ' . ($siswa->kelas->jurusan->nama_jurusan ?? '-'),
+         'identitas' => $nomorInduk . ' | ' . ($siswa->kelas->jurusan->nama_jurusan ?? '-'),
         'pembekalan_intro' => 'atas partisipasi dan keberhasilannya dalam mengikuti kegiatan',
         'pembekalan_title' => 'PEMBEKALAN PRAKTIK KERJA LAPANGAN (PKL)',
         'pembekalan_result' => 'yang diselenggarakan oleh SMK Negeri 8 Garut',
@@ -54,7 +54,7 @@
     ] : [
         'nomor_sertifikat' => $certificateNumber,
         'nama' => mb_strtoupper($siswa->nama_siswa, 'UTF-8'),
-        'identitas' => 'NISN: ' . $nomorInduk . ' | ' . ($siswa->kelas->jurusan->nama_jurusan ?? '-'),
+        'identitas' => $nomorInduk . ' | ' . ($siswa->kelas->jurusan->nama_jurusan ?? '-'),
         'pkl_intro' => 'Telah melakukan Praktek Kerja Lapangan (PKL) di',
         'perusahaan' => mb_strtoupper($companyName, 'UTF-8'),
         'pkl_period' => $pklMulai && $pklSelesai

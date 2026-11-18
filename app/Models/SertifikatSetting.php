@@ -234,8 +234,8 @@ class SertifikatSetting extends Model
             'legend' => ['x' => 12, 'y' => 72, 'size' => 10, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
             'date' => ['x' => 72, 'y' => 74, 'size' => 10, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
             'signature_title' => ['x' => 72, 'y' => 78, 'size' => 10, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
-            'signature_name' => ['x' => 72, 'y' => 88, 'size' => 10, 'font' => $font, 'weight' => 600, 'italic' => false, 'color' => '#1f2937'],
-            'signature_nip' => ['x' => 72, 'y' => 92, 'size' => 10, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
+            'signature_name' => ['x' => 72, 'y' => 84, 'size' => 10, 'font' => $font, 'weight' => 600, 'italic' => false, 'color' => '#1f2937'],
+            'signature_nip' => ['x' => 72, 'y' => 91, 'size' => 10, 'font' => $font, 'weight' => 400, 'italic' => false, 'color' => '#1f2937'],
         ];
 
         // Konversi pengaturan lama agar posisi yang pernah disimpan tetap mendekati tampilan sebelumnya.

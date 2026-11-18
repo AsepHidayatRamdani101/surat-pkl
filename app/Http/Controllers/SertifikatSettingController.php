@@ -85,10 +85,12 @@ class SertifikatSettingController extends Controller
                 : 'NILAI PRAKTIK KERJA LAPANGAN (PKL)',
             'date' => 'Garut, ' . now()->locale('id')->translatedFormat('d F Y'),
             'signature_title' => $activeTemplate === 'pembekalan' ? 'Kepala SMK Negeri 8 Garut' : 'Pembimbing DUDIKA',
-            'signature_name' => $activeTemplate === 'pembekalan' ? ($sampleSekolah?->nama_kepala_sekolah ?? 'KEPALA SEKOLAH') : 'NAMA PEMBIMBING',
-            'signature_nip' => $this->formatNip($activeTemplate === 'pembekalan'
-                ? $sampleSekolah?->nip_kepala_sekolah
-                : $sampleTempat?->nip_pembimbing_instansi),
+            'signature_name' => $activeTemplate === 'pembekalan'
+                ? ($sampleSekolah?->nama_kepala_sekolah ?? 'KEPALA SEKOLAH')
+                : 'AHMAD RAMADANI',
+            'signature_nip' => $activeTemplate === 'pembekalan'
+                ? $this->formatNip($sampleSekolah?->nip_kepala_sekolah)
+                : 'NIP. 242518421002',
         ];
 
         return view('sertifikat.setting', compact(

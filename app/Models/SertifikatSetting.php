@@ -204,6 +204,8 @@ class SertifikatSetting extends Model
         unset($layout['nis'], $layout['jurusan'], $layout['_back'], $layout['_pembekalan'], $layout['_pembekalan_back']);
         $layout['nama']['x'] = 0;
         $layout['nomor_sertifikat']['x'] = 0;
+        // Nomor sertifikat harus tetap terbaca di atas background sertifikat.
+        $layout['nomor_sertifikat']['color'] = '#ffffff';
         $layout['perusahaan']['x'] = 0;
         $layout['alamat_perusahaan']['x'] = 0;
         $layout['tanggal_cetak']['x'] = 0;
@@ -270,6 +272,7 @@ class SertifikatSetting extends Model
         ];
 
         $layout = array_replace_recursive($defaults, array_intersect_key($saved, $defaults));
+        $layout['nomor_sertifikat']['color'] = '#ffffff';
         $layout['kepala_nip']['x'] = $layout['kepala_sekolah']['x'];
 
         return $layout;

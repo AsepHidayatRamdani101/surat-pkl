@@ -78,7 +78,15 @@
     .certificate-background-image { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; z-index:0; pointer-events:none; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     .certificate-design-overlay { position:absolute; inset:0; z-index:20; pointer-events:none; font-family:{{ $fontFamily ?? 'Georgia, serif' }}; }
     .certificate-design-overlay .dynamic-element { position:absolute; white-space:nowrap; font-weight:600; }
-    @media print { .sheet { width:297mm !important; height:210mm !important; margin:0 !important; } }
+    .sheet > .frame .nomor { display:none !important; }
+    @media print {
+        .sheet { width:297mm !important; height:210mm !important; margin:0 !important; }
+        .certificate-design-overlay [data-key="nomor_sertifikat"] {
+            color:#ffffff !important;
+            -webkit-print-color-adjust:exact !important;
+            print-color-adjust:exact !important;
+        }
+    }
 </style>
 @php
     $frontCertificateBackground = $isPembekalan

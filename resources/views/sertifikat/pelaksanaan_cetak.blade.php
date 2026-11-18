@@ -155,7 +155,7 @@
 
         .nomor {
             font-size: 12px;
-            color: #6b7280;
+            color: #ffffff;
             margin: 6px 0 0;
         }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AbsensiSelfieSetting;
+use App\Models\MenuKegiatanSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 
@@ -32,7 +33,27 @@ class SystemSettingController extends Controller
             ],
         ];
 
-        return view('setting.system', compact('info', 'absensiSetting'));
+        $menuKegiatan = collect(['pembekalan', 'pkl', 'bimbingan', 'sidang'])
+            ->mapWithKeys(fn ($kode) => [$kode => MenuKegiatanSetting::isActive($kode)]);
+
+        return view('setting.system', compact('info', 'absensiSetting', 'menuKegiatan'));
+    }
+
+    public function updateMenuKegiatan(Request $request)
+    {
+        $data = $request->validate([
+            'menu' => ['required', 'array'],
+            'menu.*' => ['nullable', 'boolean'],
+        ]);
+
+        foreach (['pembekalan', 'pkl', 'bimbingan', 'sidang'] as $kode) {
+            MenuKegiatanSetting::updateOrCreate(
+                ['kode' => $kode],
+                ['aktif' => (bool) ($data['menu'][$kode] ?? false)]
+            );
+        }
+
+        return back()->with('success', 'Status menu kegiatan berhasil diperbarui.');
     }
 
     public function updateAbsensiWaktu(Request $request)

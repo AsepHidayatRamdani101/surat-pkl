@@ -9,12 +9,17 @@ class Kelas extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nama_kelas', 'jurusan_id', 'tingkat', 'jumlah_rombel'];
+    protected $fillable = ['nama_kelas', 'jurusan_id', 'tingkat', 'jumlah_rombel', 'wali_kelas_id'];
     protected $table = 'kelas';
 
     public function jurusan()
     {
         return $this->belongsTo(Jurusan::class);
+    }
+
+    public function waliKelas()
+    {
+        return $this->belongsTo(Pembimbing::class, 'wali_kelas_id');
     }
 
     public function siswa()

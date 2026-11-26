@@ -668,7 +668,7 @@ class NilaiSikapPembekalanController extends Controller
             throw new UnauthorizedException('Silakan login terlebih dahulu.');
         }
 
-        if (Gate::forUser($authUser)->allows('panitia')) {
+        if (Gate::forUser($authUser)->allows('panitia') || Gate::forUser($authUser)->allows('pimpinan')) {
             return null;
         }
 

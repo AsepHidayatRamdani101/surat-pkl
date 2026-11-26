@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Jurusan;
 use App\Models\User;
+use App\Support\RoleRegistry;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
@@ -21,6 +22,8 @@ class UserManagementController extends Controller
         if ($roles->isEmpty()) {
             $roles = collect(['panitia', 'kepala_program']);
         }
+
+        $roles = $roles->merge(RoleRegistry::keys())->unique()->sort()->values();
 
         return view('user_management.index', compact('roles', 'jurusan'));
     }

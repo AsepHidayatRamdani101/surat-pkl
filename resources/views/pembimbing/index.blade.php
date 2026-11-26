@@ -88,104 +88,175 @@
                         </div>
                         <div class="modal-body">
                             <input type="hidden" name="id" id="id">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="nama">Nama</label>
-                                        <input type="text" name="nama" id="nama" class="form-control" required>
+
+                            <div class="form-section">
+                                <div class="form-section-title"><i class="fas fa-id-card"></i> Data Pembimbing</div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="nama">Nama</label>
+                                            <input type="text" name="nama" id="nama" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="nip">NIP</label>
+                                            <input type="text" name="nip" id="nip" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="jabatan_pembimbing">Jabatan</label>
+                                            <select name="jabatan_pembimbing" id="jabatan_pembimbing" class="form-control"
+                                                required>
+                                                <option value="Guru" selected>Guru</option>
+                                                <option value="WAKASEK Kurikulum">WAKASEK Kurikulum</option>
+                                                <option value="WAKASEK HUMAS HUBIN">WAKASEK HUMAS HUBIN</option>
+                                                <option value="WAKASEK Sarana Prasarana">WAKASEK Sarana Prasarana</option>
+                                                <option value="WAKASEK Kesiswaan">WAKASEK Kesiswaan</option>
+                                                <option value="WAKASEK Bina Program">WAKASEK Bina Program</option>
+                                                <option value="Kepala Program TKR">Kepala Program TKR</option>
+                                                <option value="Kepala Program TKJ">Kepala Program TKJ</option>
+                                                <option value="Kepala Program DKV">Kepala Program DKV</option>
+                                                <option value="Kepala Program MPLB">Kepala Program MPLB</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="jenis_kelamin">Jenis Kelamin</label>
+                                            <select name="jenis_kelamin" id="jenis_kelamin" class="form-control" required>
+                                                <option value="">Pilih Jenis Kelamin</option>
+                                                <option value="Laki-laki">Laki-laki</option>
+                                                <option value="Perempuan">Perempuan</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-0">
+                                            <label for="no_hp_pembimbing">No HP</label>
+                                            <input type="text" name="no_hp_pembimbing" id="no_hp_pembimbing"
+                                                class="form-control" required>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="nip">NIP</label>
-                                        <input type="text" name="nip" id="nip" class="form-control" required>
+                            </div>
+
+                            <div class="form-section">
+                                <div class="form-section-title"><i class="fas fa-chalkboard-teacher"></i> Penugasan Mengajar</div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="jenis_guru">Jenis Guru</label>
+                                            <select name="jenis_guru" id="jenis_guru" class="form-control" required>
+                                                <option value="">Pilih Jenis Guru</option>
+                                                <option value="adaptif_normatif">Adaptif Normatif</option>
+                                                <option value="guru_produktif">Guru Produktif</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group" id="jurusanWrapper">
+                                            <label for="jurusan_id">Jurusan</label>
+                                            <select name="jurusan_id" id="jurusan_id" class="form-control">
+                                                <option value="">Pilih Jurusan</option>
+                                                @foreach ($jurusan as $item)
+                                                    <option value="{{ $item->id }}">{{ $item->nama_jurusan }}</option>
+                                                @endforeach
+                                            </select>
+                                            <small class="text-muted" id="jurusanHint">Guru adaptif normatif mengajar di
+                                                semua jurusan.</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="jumlah_siswa">Jumlah Siswa</label>
+                                            <input type="number" name="jumlah_siswa" id="jumlah_siswa"
+                                                class="form-control" min="0" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="jumlah_jam">Jumlah Jam</label>
+                                            <input type="number" name="jumlah_jam" id="jumlah_jam" class="form-control"
+                                                min="0" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-group mb-0" id="kelasWrapper">
+                                            <label>Kelas yang Diajar</label>
+                                            <div class="kelas-box">
+                                                <div id="kelasSummary" class="kelas-badges">
+                                                    <span class="text-muted">Belum ada kelas dipilih.</span>
+                                                </div>
+                                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                                    id="btnPilihKelas">
+                                                    <i class="fas fa-th-list mr-1"></i> Pilih Kelas
+                                                </button>
+                                            </div>
+                                            <div id="kelasHiddenInputs"></div>
+                                            <small class="text-muted d-block mt-1">Pilih satu atau beberapa kelas, atau
+                                                "Semua Kelas".</small>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="jabatan_pembimbing">Jabatan</label>
-                                        <select name="jabatan_pembimbing" id="jabatan_pembimbing" class="form-control"
-                                            required>
-                                            <option value="Guru" selected>Guru</option>
-                                            <option value="WAKASEK Kurikulum">WAKASEK Kurikulum</option>
-                                            <option value="WAKASEK HUMAS HUBIN">WAKASEK HUMAS HUBIN</option>
-                                            <option value="WAKASEK Sarana Prasarana">WAKASEK Sarana Prasarana</option>
-                                            <option value="WAKASEK Kesiswaan">WAKASEK Kesiswaan</option>
-                                            <option value="WAKASEK Bina Program">WAKASEK Bina Program</option>
-                                            <option value="Kepala Program TKR">Kepala Program TKR</option>
-                                            <option value="Kepala Program TKJ">Kepala Program TKJ</option>
-                                            <option value="Kepala Program DKV">Kepala Program DKV</option>
-                                            <option value="Kepala Program MPLB">Kepala Program MPLB</option>
-                                        </select>
+                            </div>
+
+                            <div class="form-section mb-0">
+                                <div class="form-section-title"><i class="fas fa-user-tag"></i> Peran Tambahan</div>
+                                <p class="text-muted small mb-2">Pembimbing dengan peran tambahan dapat berganti peran
+                                    lewat menu "Peran" di bagian atas.</p>
+
+                                <div class="role-card" id="wakaCard">
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" class="custom-control-input" name="is_waka" id="is_waka"
+                                            value="1">
+                                        <label class="custom-control-label" for="is_waka">
+                                            <strong>Waka</strong>
+                                            <small class="d-block text-muted">Melihat data lintas jurusan sesuai
+                                                bidangnya.</small>
+                                        </label>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="jenis_kelamin">Jenis Kelamin</label>
-                                        <select name="jenis_kelamin" id="jenis_kelamin" class="form-control" required>
-                                            <option value="">Pilih Jenis Kelamin</option>
-                                            <option value="Laki-laki">Laki-laki</option>
-                                            <option value="Perempuan">Perempuan</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="jenis_guru">Jenis Guru</label>
-                                        <select name="jenis_guru" id="jenis_guru" class="form-control" required>
-                                            <option value="">Pilih Jenis Guru</option>
-                                            <option value="adaptif_normatif">Adaptif Normatif</option>
-                                            <option value="guru_produktif">Guru Produktif</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group" id="jurusanWrapper">
-                                        <label for="jurusan_id">Jurusan</label>
-                                        <select name="jurusan_id" id="jurusan_id" class="form-control">
-                                            <option value="">Pilih Jurusan</option>
-                                            @foreach ($jurusan as $item)
-                                                <option value="{{ $item->id }}">{{ $item->nama_jurusan }}</option>
+                                    <div id="wakaWrapper" class="role-card-body" style="display: none;">
+                                        <label for="waka_role" class="small mb-1">Bidang Waka</label>
+                                        <select name="waka_role" id="waka_role" class="form-control">
+                                            <option value="">Pilih bidang waka</option>
+                                            @foreach (\App\Support\RoleRegistry::wakaRoles() as $key => $label)
+                                                <option value="{{ $key }}">{{ $label }}</option>
                                             @endforeach
                                         </select>
-                                        <small class="text-muted" id="jurusanHint">Guru adaptif normatif mengajar di semua
-                                            jurusan.</small>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="jumlah_siswa">Jumlah Siswa</label>
-                                        <input type="number" name="jumlah_siswa" id="jumlah_siswa" class="form-control"
-                                            min="0" required>
+
+                                <div class="role-card" id="waliKelasCard">
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" class="custom-control-input" name="is_wali_kelas"
+                                            id="is_wali_kelas" value="1">
+                                        <label class="custom-control-label" for="is_wali_kelas">
+                                            <strong>Wali Kelas</strong>
+                                            <small class="d-block text-muted">Melihat dan mengekspor nilai siswa dari
+                                                kelas yang diampu.</small>
+                                        </label>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="jumlah_jam">Jumlah Jam</label>
-                                        <input type="number" name="jumlah_jam" id="jumlah_jam" class="form-control"
-                                            min="0" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group" id="kelasWrapper">
-                                        <label>Kelas</label>
-                                        <div class="d-flex align-items-center flex-wrap gap-2">
-                                            <button type="button" class="btn btn-outline-primary btn-sm"
-                                                id="btnPilihKelas">
-                                                Pilih Kelas
-                                            </button>
-                                            <span id="kelasSummary" class="text-muted">Belum ada kelas dipilih.</span>
+                                    <div id="waliKelasWrapper" class="role-card-body" style="display: none;">
+                                        <div class="d-flex align-items-center flex-wrap mb-2">
+                                            <div class="input-group input-group-sm kelas-search mr-2">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                                </div>
+                                                <input type="text" id="waliKelasSearch" class="form-control"
+                                                    placeholder="Cari kelas..." autocomplete="off">
+                                            </div>
+                                            <span class="badge badge-primary px-2 py-1 mr-2" id="waliKelasCount">0 kelas
+                                                dipilih</span>
+                                            <button type="button" class="btn btn-link btn-sm p-0"
+                                                id="btnWaliKelasClear">Kosongkan</button>
                                         </div>
-                                        <div id="kelasHiddenInputs"></div>
-                                        <small class="text-muted d-block mt-1">Pilih satu atau beberapa kelas, atau pilih
-                                            "Semua Kelas".</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group mb-0">
-                                        <label for="no_hp_pembimbing">No HP</label>
-                                        <input type="text" name="no_hp_pembimbing" id="no_hp_pembimbing"
-                                            class="form-control" required>
+                                        <div id="waliKelasGrid" class="kelas-grid"></div>
+                                        <div id="waliKelasEmpty" class="text-muted small text-center py-2"
+                                            style="display: none;">Kelas tidak ditemukan.</div>
+                                        <small class="text-muted d-block mt-2">Kelas yang sudah punya wali ditandai
+                                            dengan nama walinya dan akan dipindahkan ke pembimbing ini bila dipilih.</small>
                                     </div>
                                 </div>
                             </div>
@@ -272,14 +343,155 @@
         .select2-container--default .select2-selection--multiple .select2-selection__rendered {
             padding: 2px 8px;
         }
+
+        #modalForm .modal-body {
+            background: #f4f6f9;
+            max-height: calc(100vh - 210px);
+            overflow-y: auto;
         }
 
-        #kelasWrapper .select2-selection__choice {
-            white-space: normal;
+        .form-section {
+            background: #fff;
+            border: 1px solid #e3e6ea;
+            border-radius: .5rem;
+            padding: 1rem 1rem .75rem;
+            margin-bottom: 1rem;
         }
 
-        #kelasSummary {
-            min-height: 24px;
+        .form-section-title {
+            font-weight: 600;
+            color: #343a40;
+            margin-bottom: .85rem;
+            padding-bottom: .5rem;
+            border-bottom: 1px solid #eef0f2;
+        }
+
+        .form-section-title i {
+            color: #007bff;
+            width: 1.4rem;
+        }
+
+        .kelas-box {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: .75rem;
+            border: 1px dashed #ced4da;
+            border-radius: .35rem;
+            padding: .5rem .75rem;
+            background: #fafbfc;
+        }
+
+        .kelas-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .25rem;
+            min-height: 31px;
+            align-items: center;
+            flex: 1;
+        }
+
+        .kelas-badges .badge {
+            font-size: .8rem;
+            font-weight: 500;
+        }
+
+        .role-card {
+            border: 1px solid #dee2e6;
+            border-radius: .5rem;
+            padding: .75rem 1rem;
+            margin-bottom: .75rem;
+            background: #fff;
+            transition: border-color .15s, box-shadow .15s;
+        }
+
+        .role-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .role-card.is-active {
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, .12);
+        }
+
+        .role-card .custom-control-label {
+            cursor: pointer;
+        }
+
+        .role-card-body {
+            margin-top: .75rem;
+            padding-top: .75rem;
+            border-top: 1px solid #eef0f2;
+        }
+
+        .kelas-search {
+            max-width: 220px;
+        }
+
+        .kelas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: .5rem;
+            max-height: 230px;
+            overflow-y: auto;
+            padding: .15rem;
+        }
+
+        .kelas-chip {
+            position: relative;
+            display: block;
+            margin: 0;
+            padding: .4rem .6rem;
+            border: 1px solid #ced4da;
+            border-radius: .4rem;
+            background: #fff;
+            cursor: pointer;
+            line-height: 1.25;
+            user-select: none;
+            transition: background .12s, border-color .12s;
+        }
+
+        .kelas-chip:hover {
+            border-color: #80bdff;
+            background: #f1f8ff;
+        }
+
+        .kelas-chip input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .kelas-chip.checked {
+            border-color: #007bff;
+            background: #e7f1ff;
+            color: #004a99;
+        }
+
+        .kelas-chip.checked::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            top: .4rem;
+            right: .5rem;
+            font-size: .7rem;
+        }
+
+        .kelas-chip .kelas-nama {
+            display: block;
+            font-weight: 600;
+            padding-right: 1rem;
+        }
+
+        .kelas-chip .kelas-wali {
+            display: block;
+            font-size: .72rem;
+            color: #6c757d;
+        }
+
+        .kelas-chip.milik-lain .kelas-wali {
+            color: #b36b00;
         }
 
         .pembimbing-table-wrap,
@@ -450,12 +662,31 @@
                         return found ? found.text : value;
                     }) : [];
 
-                $('#kelasSummary').text(selectedLabels.length ? selectedLabels.join(', ') :
-                    'Belum ada kelas dipilih.');
+                renderKelasSummary(selectedLabels);
                 const hiddenInputs = selectedKelasIds.map(function(value) {
                     return '<input type="hidden" name="kelas_ids[]" value="' + value + '">';
                 });
                 $('#kelasHiddenInputs').html(hiddenInputs.join(''));
+            }
+
+            function renderKelasSummary(labels) {
+                const maxTampil = 12;
+
+                if (!labels.length) {
+                    $('#kelasSummary').html('<span class="text-muted">Belum ada kelas dipilih.</span>');
+                    return;
+                }
+
+                const badges = labels.slice(0, maxTampil).map(function(label) {
+                    return $('<span class="badge badge-primary px-2 py-1">').text(label)[0].outerHTML;
+                });
+
+                if (labels.length > maxTampil) {
+                    badges.push('<span class="badge badge-light border px-2 py-1">+' + (labels.length - maxTampil) +
+                        ' lainnya</span>');
+                }
+
+                $('#kelasSummary').html(badges.join(''));
             }
 
 
@@ -557,11 +788,97 @@
                 });
             });
 
+            // Saran bidang waka dari jabatan WAKASEK (bisa diubah manual).
+            const wakaSaran = @json(\App\Support\RoleRegistry::JABATAN_WAKA);
+
+            function toggleWakaField() {
+                const aktif = $('#is_waka').is(':checked');
+
+                $('#wakaWrapper').toggle(aktif);
+                $('#wakaCard').toggleClass('is-active', aktif);
+                $('#waka_role').prop('required', aktif);
+            }
+
+            $('#is_waka').on('change', function() {
+                if ($(this).is(':checked') && !$('#waka_role').val()) {
+                    $('#waka_role').val(wakaSaran[$('#jabatan_pembimbing').val()] || '');
+                }
+                toggleWakaField();
+            });
+
+            // Peran wali kelas: pilih kelas yang diampu lewat grid. Kelas milik pembimbing lain diberi
+            // keterangan dan akan dipindahkan ke pembimbing ini saat disimpan.
+            const waliKelasOptions = @json($waliKelasOptions);
+
+            function renderWaliKelas(selectedIds) {
+                const editId = String($('#id').val() || '');
+                const selected = new Set((selectedIds || []).map(String));
+                const html = waliKelasOptions.map(function(option) {
+                    const milikLain = option.wali_id && option.wali_id !== editId;
+                    const checked = selected.has(option.id);
+                    const wali = milikLain ? 'Wali: ' + option.wali_nama : 'Belum ada wali';
+
+                    return '<label class="kelas-chip' + (checked ? ' checked' : '') + (milikLain ? ' milik-lain' : '') +
+                        '" data-nama="' + $('<div>').text(option.text.toLowerCase()).html() + '">' +
+                        '<input type="checkbox" name="wali_kelas_ids[]" value="' + option.id + '"' +
+                        (checked ? ' checked' : '') + '>' +
+                        '<span class="kelas-nama">' + $('<div>').text(option.text).html() + '</span>' +
+                        '<span class="kelas-wali">' + $('<div>').text(wali).html() + '</span></label>';
+                });
+
+                $('#waliKelasGrid').html(html.join(''));
+                $('#waliKelasSearch').val('');
+                $('#waliKelasEmpty').hide();
+                updateWaliKelasCount();
+            }
+
+            function updateWaliKelasCount() {
+                const total = $('#waliKelasGrid input:checked').length;
+                $('#waliKelasCount').text(total + ' kelas dipilih');
+            }
+
+            $('#waliKelasGrid').on('change', 'input', function() {
+                $(this).closest('.kelas-chip').toggleClass('checked', this.checked);
+                updateWaliKelasCount();
+            });
+
+            $('#waliKelasSearch').on('input', function() {
+                const keyword = $(this).val().trim().toLowerCase();
+                let tampil = 0;
+
+                $('#waliKelasGrid .kelas-chip').each(function() {
+                    const cocok = !keyword || String($(this).data('nama')).includes(keyword);
+                    $(this).toggle(cocok);
+                    tampil += cocok ? 1 : 0;
+                });
+
+                $('#waliKelasEmpty').toggle(tampil === 0);
+            });
+
+            $('#btnWaliKelasClear').click(function() {
+                $('#waliKelasGrid input').prop('checked', false);
+                $('#waliKelasGrid .kelas-chip').removeClass('checked');
+                updateWaliKelasCount();
+            });
+
+            function toggleWaliKelasField() {
+                const aktif = $('#is_wali_kelas').is(':checked');
+
+                $('#waliKelasWrapper').toggle(aktif);
+                $('#waliKelasCard').toggleClass('is-active', aktif);
+            }
+
+            $('#is_wali_kelas').on('change', toggleWaliKelasField);
+
             $('#btnTambah').click(function() {
                 $('#modalForm').modal('show');
                 $('#modalFormLabel').html('Tambah Data Pembimbing');
                 $('#formPembimbing').trigger('reset');
                 $('#jabatan_pembimbing').val('Guru');
+                $('#waka_role').val('');
+                toggleWakaField();
+                renderWaliKelas([]);
+                toggleWaliKelasField();
                 selectedKelasIds = [];
                 renderKelasPicker();
                 toggleJurusanField();
@@ -646,8 +963,7 @@
                         return found ? found.text : value;
                     }) : [];
 
-                $('#kelasSummary').text(selectedLabels.length ? selectedLabels.join(', ') :
-                    'Belum ada kelas dipilih.');
+                renderKelasSummary(selectedLabels);
 
                 const hiddenInputs = selectedKelasIds.map(function(value) {
                     return '<input type="hidden" name="kelas_ids[]" value="' + value + '">';
@@ -687,6 +1003,14 @@
                 $('#nip').val(data.nip);
                 $('#id').val(data.id);
                 $('#jabatan_pembimbing').val(data.jabatan);
+                $('#waka_role').val(data.wakaRole || '');
+                $('#is_waka').prop('checked', !!data.wakaRole);
+                toggleWakaField();
+                const waliKelasIds = Array.isArray(data.waliKelasIds) ? data.waliKelasIds : (data.waliKelasIds ?
+                    JSON.parse(data.waliKelasIds) : []);
+                $('#is_wali_kelas').prop('checked', waliKelasIds.length > 0);
+                renderWaliKelas(waliKelasIds);
+                toggleWaliKelasField();
                 $('#jenis_kelamin').val(normalizeJenisKelamin(data.jenis));
                 $('#jenis_guru').val(data.jenisGuru);
                 $('#jurusan_id').val(data.jurusanId);
@@ -741,6 +1065,23 @@
                 payload.nama_pembimbing = $('#nama').val();
                 payload.nip_pembimbing = $('#nip').val();
                 payload.jabatan_pembimbing = $('#jabatan_pembimbing').val();
+                payload.is_waka = $('#is_waka').is(':checked') ? 1 : 0;
+                payload.is_wali_kelas = $('#is_wali_kelas').is(':checked') ? 1 : 0;
+                payload.wali_kelas_ids = payload.is_wali_kelas ?
+                    $('#waliKelasGrid input:checked').map(function() {
+                        return this.value;
+                    }).get() : [];
+                delete payload['wali_kelas_ids[]'];
+                payload.waka_role = payload.is_waka ? $('#waka_role').val() : '';
+
+                if (payload.is_waka && !payload.waka_role) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Pilih bidang waka',
+                        text: 'Peran Waka dicentang, tetapi bidang waka belum dipilih.'
+                    });
+                    return;
+                }
                 payload.jenis_kelamin = $('#jenis_kelamin').val();
                 payload.jenis_guru = $('#jenis_guru').val();
                 payload.jurusan_id = $('#jurusan_id').val();

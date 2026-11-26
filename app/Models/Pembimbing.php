@@ -15,6 +15,7 @@ class Pembimbing extends Model
         'nama_pembimbing',
         'jenis_kelamin',
         'jabatan_pembimbing',
+        'waka_role',
         'nip_pembimbing',
         'no_hp_pembimbing',
         'jumlah_jam',
@@ -31,6 +32,11 @@ class Pembimbing extends Model
     public function jurusan()
     {
         return $this->belongsTo(Jurusan::class, 'jurusan_id');
+    }
+
+    public function kelasWali()
+    {
+        return $this->hasMany(Kelas::class, 'wali_kelas_id');
     }
 
     public function tempatPkl()

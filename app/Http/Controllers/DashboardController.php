@@ -8,6 +8,7 @@ use App\Models\AbsensiPembekalan;
 use App\Models\Bimbingan;
 use App\Models\CekKelengkapanSiswa;
 use App\Models\JawabanTugasSiswa;
+use App\Models\JadwalSidang;
 use App\Models\KelompokBimbingan;
 use App\Models\Materi;
 use App\Models\NilaiSikapPembekalan;
@@ -21,6 +22,8 @@ use App\Models\TugasPembekalan;
 use App\Models\Siswa;
 use App\Models\SuratIzinOrtu;
 use App\Models\TempatPkl;
+use App\Support\PimpinanDashboardData;
+use App\Support\RoleRegistry;
 use App\Support\WorksheetPromptExtractor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +46,17 @@ class DashboardController extends Controller
 
         if ($user->role === 'siswa') {
             return $this->renderSiswaDashboard('overview');
+        }
+
+        if ($user->role === 'wali_kelas') {
+            return redirect()->route('wali-kelas.nilai');
+        }
+
+        if (RoleRegistry::has($user->role)) {
+            return view('dashboard_pimpinan', array_merge(
+                ['role' => $user->role, 'roleLabel' => RoleRegistry::label($user->role)],
+                app(PimpinanDashboardData::class)->build($user->role)
+            ));
         }
 
         if ($user->role === 'pembimbing') {
@@ -313,6 +327,8 @@ class DashboardController extends Controller
         $pembimbingPerusahaan = null;
         $absensiPembekalan = collect();
         $bimbingan = collect();
+        $jadwalPembekalan = collect();
+        $jadwalSidang = collect();
         $nilaiSikapPembekalan = collect();
         $summary = [
             'total_sesi' => 0,
@@ -385,6 +401,20 @@ class DashboardController extends Controller
                 ->where('siswa_id', $siswa->id)
                 ->orderByDesc('tanggal_bimbingan')
                 ->orderByDesc('id')
+                ->get();
+
+            $jadwalPembekalan = JadwalSidang::with(['pembimbing', 'ruangan'])
+                ->where('siswa_id', $siswa->id)
+                ->where('jenis', 'bimbingan')
+                ->orderBy('tanggal')
+                ->orderBy('jam_mulai')
+                ->get();
+
+            $jadwalSidang = JadwalSidang::with(['pembimbing', 'ruangan'])
+                ->where('siswa_id', $siswa->id)
+                ->where('jenis', 'sidang')
+                ->orderBy('tanggal')
+                ->orderBy('jam_mulai')
                 ->get();
 
             $nilaiSikapPembekalan = NilaiSikapPembekalan::with([
@@ -497,7 +527,9 @@ class DashboardController extends Controller
             'summary',
             'chartLabels',
             'chartProgres',
-            'activeSection'
+            'activeSection',
+            'jadwalPembekalan',
+            'jadwalSidang'
         ));
     }
 

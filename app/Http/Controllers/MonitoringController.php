@@ -32,15 +32,15 @@ class MonitoringController extends Controller
         if ($request->ajax()) {
             $pembimbingAuthId = $this->getAuthorizedPembimbingId();
 
-            if (auth()->user()->role == 'panitia') {
-                $grouped = TempatPkl::with(['siswa', 'perusahaan', 'pembimbing'])
+            if (auth()->user()->role == 'panitia' || \App\Support\RoleRegistry::has(auth()->user()->role)) {
+                $grouped = TempatPkl::with(['siswa.kelas', 'perusahaan', 'pembimbing'])
                     ->get();
             } elseif (!empty($pembimbingAuthId)) {
                 $grouped = TempatPkl::with(['siswa.kelas', 'perusahaan', 'pembimbing'])
                     ->where('pembimbing_id', $pembimbingAuthId)
                     ->get();
             } else {
-                $grouped = TempatPkl::with(['siswa', 'perusahaan', 'pembimbing'])
+                $grouped = TempatPkl::with(['siswa.kelas', 'perusahaan', 'pembimbing'])
                     ->whereHas('siswa.kelas.jurusan', function ($query) {
                         $query->where('id', auth()->user()->jurusan_id);
                     })
@@ -140,7 +140,7 @@ class MonitoringController extends Controller
     {
         $query = Pembimbing::query();
 
-        if (auth()->user()->role === 'panitia' || !auth()->user()?->jurusan_id) {
+        if (auth()->user()->role === 'panitia' || \App\Support\RoleRegistry::has(auth()->user()->role) || !auth()->user()?->jurusan_id) {
             return $query;
         }
 

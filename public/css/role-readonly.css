@@ -1,0 +1,14 @@
+/* Role pimpinan (read-only): sembunyikan kontrol ubah data. Penjagaan sebenarnya ada di middleware ReadOnlyForPimpinan. */
+body.role-readonly .btn-aksi,
+body.role-readonly [id^="btnTambah"],
+body.role-readonly [id^="btnImport"],
+body.role-readonly [id^="btnHapus"],
+body.role-readonly #btnAturBimbinganMassal,
+body.role-readonly .btn-edit,
+body.role-readonly .btn-hapus,
+body.role-readonly .btnEdit,
+body.role-readonly .btnHapus,
+body.role-readonly .row-check,
+body.role-readonly #checkAll {
+    display: none !important;
+}

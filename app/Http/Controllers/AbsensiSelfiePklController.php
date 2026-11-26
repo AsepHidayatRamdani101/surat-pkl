@@ -45,12 +45,13 @@ class AbsensiSelfiePklController extends Controller
             ]);
         }
 
-        abort_unless(in_array($user->role, ['panitia', 'pembimbing'], true), 403);
+        $isPimpinan = \App\Support\RoleRegistry::has($user->role);
+        abort_unless(in_array($user->role, ['panitia', 'pembimbing'], true) || $isPimpinan, 403);
 
         return view('absensi_selfie.rekap', [
             'title' => 'Data Absen Selfie PKL Siswa',
-            'isPanitia' => $user->role === 'panitia',
-            'pembimbingOptions' => $user->role === 'panitia'
+            'isPanitia' => $user->role === 'panitia' || $isPimpinan,
+            'pembimbingOptions' => ($user->role === 'panitia' || $isPimpinan)
                 ? Pembimbing::orderBy('nama_pembimbing')->get()
                 : collect(),
         ]);
@@ -84,7 +85,7 @@ class AbsensiSelfiePklController extends Controller
 
     public function monitoring(Request $request)
     {
-        abort_unless(in_array(auth()->user()->role, ['panitia', 'pembimbing'], true), 403);
+        abort_unless(in_array(auth()->user()->role, ['panitia', 'pembimbing'], true) || \App\Support\RoleRegistry::has(auth()->user()->role), 403);
 
         $tanggal = ($request->filled('tanggal')
             ? Carbon::parse($request->input('tanggal'))
@@ -137,7 +138,7 @@ class AbsensiSelfiePklController extends Controller
 
     public function monitoringDetail(Request $request)
     {
-        abort_unless(in_array(auth()->user()->role, ['panitia', 'pembimbing'], true), 403);
+        abort_unless(in_array(auth()->user()->role, ['panitia', 'pembimbing'], true) || \App\Support\RoleRegistry::has(auth()->user()->role), 403);
 
         $data = $request->validate([
             'kategori' => ['required', Rule::in(['kehadiran', 'absensi', 'resume'])],

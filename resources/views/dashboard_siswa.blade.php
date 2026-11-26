@@ -57,6 +57,7 @@
                                 <small class="text-muted">{{ $currentDescription }}</small>
                             </div>
                             <div class="dashboard-anchor-nav">
+                                <a href="{{ route('sidang.jadwal') }}" class="btn btn-sm btn-outline-danger mb-1">Jadwal Bimbingan & Sidang</a>
                                 <a href="{{ route('dashboard.siswa.absensi') }}"
                                     class="btn btn-sm btn-outline-primary mb-1">Absensi</a>
                                 <a href="{{ route('dashboard.siswa.materi') }}"
@@ -73,7 +74,47 @@
                         </div>
                     </div>
                 </div>
-            @endif
+
+                <div class="row">
+                    <div class="col-lg-6 mb-3">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0"><i class="fas fa-comments mr-1 text-info"></i>Jadwal Bimbingan Sebelum Sidang</h5>
+                            </div>
+                            <div class="card-body">
+                                @forelse ($jadwalPembekalan as $jadwal)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <strong>{{ $jadwal->tanggal?->locale('id')->translatedFormat('d F Y') }}</strong>
+                                        <span class="ml-2">{{ substr($jadwal->jam_mulai, 0, 5) }} - {{ substr($jadwal->jam_selesai, 0, 5) }}</span><br>
+                                        <small class="text-muted">Pembimbing: {{ $jadwal->pembimbing->nama_pembimbing ?? '-' }} · Tempat: {{ $jadwal->ruangan->nama_ruangan ?? 'Ditentukan pembimbing' }}</small>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">Belum ada jadwal bimbingan.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 mb-3">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0"><i class="fas fa-gavel mr-1 text-primary"></i>Jadwal Sidang</h5>
+                            </div>
+                            <div class="card-body">
+                                @forelse ($jadwalSidang as $jadwal)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <strong>{{ $jadwal->tanggal?->locale('id')->translatedFormat('d F Y') }}</strong>
+                                        <span class="ml-2">{{ substr($jadwal->jam_mulai, 0, 5) }} - {{ substr($jadwal->jam_selesai, 0, 5) }}</span><br>
+                                        <small class="text-muted">Ruangan: {{ $jadwal->ruangan->nama_ruangan ?? '-' }} · Pembimbing: {{ $jadwal->pembimbing->nama_pembimbing ?? '-' }}</small>
+                                        <span class="badge badge-success ml-1">Terkunci</span>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">Belum ada jadwal sidang.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                @endif
 
             @if ($showOverview)
                 <div class="row dashboard-identity-row">

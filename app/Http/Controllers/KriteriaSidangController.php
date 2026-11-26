@@ -10,7 +10,7 @@ class KriteriaSidangController extends Controller
 {
     public function index()
     {
-        abort_unless(auth()->user()->role === 'panitia', 403);
+        abort_unless(auth()->user()->role === 'panitia' || \App\Support\RoleRegistry::has(auth()->user()->role), 403);
 
         $totalBobot = (int) KriteriaSidang::sum('bobot');
 
@@ -19,7 +19,7 @@ class KriteriaSidangController extends Controller
 
     public function data()
     {
-        abort_unless(in_array(auth()->user()->role, ['panitia', 'pembimbing'], true), 403);
+        abort_unless(in_array(auth()->user()->role, ['panitia', 'pembimbing'], true) || \App\Support\RoleRegistry::has(auth()->user()->role), 403);
 
         $kriteria = KriteriaSidang::with('rubriks')
             ->orderBy('urutan')

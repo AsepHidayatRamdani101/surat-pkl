@@ -74,7 +74,7 @@ class SidangController extends Controller
 
     public function penilaian()
     {
-        abort_unless(in_array(auth()->user()->role, ['panitia', 'pembimbing'], true), 403);
+        abort_unless(in_array(auth()->user()->role, ['panitia', 'pembimbing'], true) || \App\Support\RoleRegistry::has(auth()->user()->role), 403);
 
         $kriteria = KriteriaSidang::with('rubriks')->orderBy('urutan')->orderBy('id')->get();
 
@@ -86,7 +86,7 @@ class SidangController extends Controller
 
     public function penilaianData()
     {
-        abort_unless(in_array(auth()->user()->role, ['panitia', 'pembimbing'], true), 403);
+        abort_unless(in_array(auth()->user()->role, ['panitia', 'pembimbing'], true) || \App\Support\RoleRegistry::has(auth()->user()->role), 403);
 
         $siswaQuery = Siswa::with('kelas')->orderBy('nama_siswa');
 

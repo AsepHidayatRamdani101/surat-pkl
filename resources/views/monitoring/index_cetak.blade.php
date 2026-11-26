@@ -6,7 +6,12 @@
     <div class="container pt-4">
         <div class="card">
             <div class="card-header">
-                <h4>Data Monitoring PKL</h4>
+                    <div class="d-flex align-items-center">
+                        <h4 class="mb-0">Data Monitoring PKL</h4>
+                        <a href="{{ route('monitoring.index') }}" class="btn btn-outline-secondary btn-sm ml-3">
+                            <i class="fas fa-list mr-1"></i> Data Monitoring
+                        </a>
+                    </div>
                 <div class="row">
                     <div class="col-md-4">
 

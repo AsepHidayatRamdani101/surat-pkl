@@ -115,6 +115,33 @@
             </form>
         </div>
 
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-toggle-on mr-2 text-primary"></i>Aktivasi Menu Kegiatan</h6>
+                <small class="text-muted">Aktif/nonaktifkan menu kegiatan sesuai periode pelaksanaan PKL.</small>
+            </div>
+            <form method="POST" action="{{ route('setting.menu-kegiatan') }}">
+                @csrf
+                <div class="card-body">
+                    <div class="row">
+                        @foreach (['pembekalan' => 'Pembekalan', 'pkl' => 'PKL', 'bimbingan' => 'Bimbingan', 'sidang' => 'Sidang'] as $kode => $label)
+                            <div class="col-md-3 mb-2">
+                                <div class="custom-control custom-switch">
+                                    <input type="hidden" name="menu[{{ $kode }}]" value="0">
+                                    <input type="checkbox" class="custom-control-input" id="menu_{{ $kode }}"
+                                        name="menu[{{ $kode }}]" value="1" @checked($menuKegiatan[$kode] ?? true)>
+                                    <label class="custom-control-label" for="menu_{{ $kode }}">Menu {{ $label }}</label>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="card-footer bg-white text-right">
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save mr-1"></i>Simpan Menu Kegiatan</button>
+                </div>
+            </form>
+        </div>
+
         {{-- Clear All --}}
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">

@@ -16,6 +16,8 @@ class JadwalSidang extends Model
         'pembimbing_id',
         'ruangan_sidang_id',
         'jenis',
+        'terkunci',
+        'jeda_menit',
         'tanggal',
         'jam_mulai',
         'jam_selesai',
@@ -24,6 +26,8 @@ class JadwalSidang extends Model
 
     protected $casts = [
         'tanggal' => 'date:Y-m-d',
+        'terkunci' => 'boolean',
+        'jeda_menit' => 'integer',
     ];
 
     public function siswa()

@@ -93,17 +93,29 @@
             </div>
         </div>
 
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                {{ session('success') }}
+            </div>
+        @endif
+
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-white d-flex align-items-center">
+            <div class="card-header bg-white d-flex align-items-center flex-wrap">
                 <div>
                     <h5 class="mb-0">Daftar Jawaban Siswa</h5>
                     @if ($isFiltered)
-                        <small class="text-muted">{{ $rows->count() }} data</small>
+                        <small class="text-muted">
+                            {{ $rows->count() }} data
+                            @if ($canInputNilai)
+                                &middot; {{ $rows->where('status', 'proses')->count() }} menunggu nilai
+                            @endif
+                        </small>
                     @endif
                 </div>
-                @if ($canInputNilai)
-                    <button type="submit" form="bulkNilaiForm" class="btn btn-sm btn-primary ml-auto">
-                        Simpan Nilai
+                @if ($canInputNilai && $isFiltered && $rows->filter(fn($r) => $r->jawaban_id && $r->submitted_at)->isNotEmpty())
+                    <button type="button" class="btn btn-sm btn-primary ml-auto" id="btnMulaiNilai">
+                        <i class="fas fa-bolt mr-1"></i>Mulai Menilai
                     </button>
                 @endif
             </div>
@@ -114,12 +126,6 @@
                         Gunakan filter di atas lalu klik <strong>Filter</strong> untuk menampilkan data.
                     </div>
                 @else
-                    @if ($canInputNilai)
-                        <form method="POST" action="{{ route('pembekalan.jawaban-siswa.nilai.bulk-store') }}"
-                            id="bulkNilaiForm">
-                            @csrf
-                        </form>
-                    @endif
                     <table id="jawabanTable" class="table table-bordered table-striped table-sm">
                         <thead>
                             <tr>
@@ -128,14 +134,15 @@
                                 <th style="width: 200px;">Materi</th>
                                 <th style="width: 170px;">Tugas</th>
                                 <th style="width: 90px;">Status</th>
-                                <th style="width: 120px;">Nilai</th>
-                                <th style="width: 160px;">Aksi</th>
+                                <th style="width: 80px;">Nilai</th>
+                                <th style="width: 100px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($rows as $item)
-                                <tr>
-                                    <td>
+                                <tr data-id="{{ $item->jawaban_id }}">
+                                    <td
+                                        data-order="{{ $item->submitted_at ? \Carbon\Carbon::parse($item->submitted_at)->format('YmdHis') : 0 }}">
                                         @if ($item->submitted_at)
                                             {{ \Carbon\Carbon::parse($item->submitted_at)->format('d-m-Y H:i') }}
                                         @else
@@ -165,12 +172,14 @@
                                             <span class="badge badge-secondary">Belum</span>
                                         @endif
                                     </td>
-                                    <td>{{ $item->nilaiTugas?->nilai ?? '-' }}</td>
+                                    <td class="font-weight-bold text-center">{{ $item->nilaiTugas?->nilai !== null ? rtrim(rtrim(number_format((float) $item->nilaiTugas->nilai, 2, '.', ''), '0'), '.') : '-' }}</td>
                                     <td>
                                         @if ($item->jawaban_id)
-                                            <button type="button" class="btn btn-xs btn-info" data-toggle="modal"
-                                                data-target="#modalJawaban{{ $item->jawaban_id }}">
-                                                Lihat Jawaban
+                                            @php($bisaNilai = $canInputNilai && $item->submitted_at)
+                                            <button type="button"
+                                                class="btn btn-xs {{ $bisaNilai ? 'btn-primary' : 'btn-info' }} btn-buka"
+                                                data-id="{{ $item->jawaban_id }}">
+                                                <i class="fas {{ $bisaNilai ? 'fa-pen' : 'fa-eye' }} mr-1"></i>{{ $bisaNilai ? 'Nilai' : 'Lihat' }}
                                             </button>
                                         @else
                                             <span class="text-muted small">-</span>
@@ -187,128 +196,127 @@
         </div>
     </div>
 
-    {{-- Modals di luar overflow container agar tidak terblokir iOS Safari --}}
     @if ($isFiltered)
-        @foreach ($rows->filter(fn($r) => $r->jawaban_id) as $item)
-            <div class="modal fade" id="modalJawaban{{ $item->jawaban_id }}" tabindex="-1" role="dialog"
-                aria-labelledby="modalJawabanLabel{{ $item->jawaban_id }}" aria-hidden="true">
-                <div class="modal-dialog modal-lg" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalJawabanLabel{{ $item->jawaban_id }}">Detail
-                                Jawaban
-                                Siswa
-                            </h5>
+        <div class="modal fade" id="modalNilai" tabindex="-1" role="dialog" aria-labelledby="nTitle" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header py-2">
+                        <div>
+                            <h5 class="modal-title mb-0" id="nTitle">Detail Jawaban Siswa</h5>
+                            <div class="small text-muted" id="nMeta"></div>
+                        </div>
+                        <div class="ml-auto d-flex align-items-center">
+                            <span class="small text-muted mr-2" id="nCounter"></span>
+                            <div class="btn-group btn-group-sm mr-2">
+                                <button type="button" class="btn btn-outline-secondary" id="btnPrev"
+                                    title="Siswa sebelumnya"><i class="fas fa-chevron-left"></i></button>
+                                <button type="button" class="btn btn-outline-secondary" id="btnNext"
+                                    title="Siswa berikutnya"><i class="fas fa-chevron-right"></i></button>
+                            </div>
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
-                        <div class="modal-body">
-                            <div class="mb-2">
-                                <strong>Siswa:</strong> {{ $item->siswa->nama_siswa ?? '-' }}
+                    </div>
+
+                    <div class="modal-body nilai-body p-0">
+                        <div class="row no-gutters h-100">
+                            <div class="col-lg-5 nilai-col border-right">
+                                <ul class="nav nav-tabs px-2 pt-2" role="tablist">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" id="tabSoalLink" data-toggle="tab" href="#paneSoal"
+                                            role="tab">Soal</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="tabFileLink" data-toggle="tab" href="#paneFile"
+                                            role="tab">File Soal <span class="badge badge-light" id="nFileCount"></span></a>
+                                    </li>
+                                </ul>
+                                <div class="tab-content p-3">
+                                    <div class="tab-pane fade show active" id="paneSoal" role="tabpanel">
+                                        <div id="nSoal"></div>
+                                    </div>
+                                    <div class="tab-pane fade" id="paneFile" role="tabpanel">
+                                        <div id="nFiles"></div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="form-group">
-                                <label class="mb-1"><strong>File Soal Upload</strong></label>
-                                @if (is_array($item->tugasPembekalan?->soal_files) && count($item->tugasPembekalan->soal_files) > 0)
-                                    <div class="soal-file-list mb-0">
-                                        @foreach ($item->tugasPembekalan->soal_files as $idx => $path)
-                                            @php
-                                                $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-                                                $fileUrl = asset('storage/' . $path);
-                                                $fileName = basename($path);
-                                                $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'webp']);
-                                                $isPdf = $extension === 'pdf';
-                                            @endphp
-                                            <div class="soal-file-item">
-                                                <div
-                                                    class="d-flex flex-wrap align-items-center justify-content-between mb-2">
-                                                    <div>
-                                                        <strong>File {{ $idx + 1 }}</strong>
-                                                        <div class="text-muted small">{{ $fileName }}
-                                                        </div>
-                                                    </div>
-                                                    <a href="{{ $fileUrl }}" target="_blank"
-                                                        class="btn btn-xs btn-outline-primary mt-2 mt-sm-0">
-                                                        <i class="fas fa-external-link-alt mr-1"></i>Buka File
-                                                    </a>
-                                                </div>
-
-                                                @if ($isImage)
-                                                    <img data-src="{{ $fileUrl }}"
-                                                        alt="File soal {{ $idx + 1 }}" loading="lazy"
-                                                        class="soal-file-preview-img">
-                                                @elseif ($isPdf)
-                                                    <iframe
-                                                        data-src="{{ $fileUrl }}#toolbar=0&navpanes=0&scrollbar=1"
-                                                        class="soal-file-preview-pdf"
-                                                        title="Preview File {{ $idx + 1 }}"></iframe>
-                                                @else
-                                                    <div class="text-muted small">Preview tidak tersedia untuk
-                                                        format ini.</div>
-                                                @endif
-                                            </div>
-                                        @endforeach
+                            <div class="col-lg-7 nilai-col">
+                                <div class="p-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h6 class="mb-0 font-weight-bold">Jawaban Siswa</h6>
+                                        <span class="ml-2 small text-muted" id="nSubmit"></span>
+                                        <span class="ml-auto" id="nStatus"></span>
                                     </div>
-                                @else
-                                    <div class="text-muted">Tidak ada file soal upload.</div>
-                                @endif
+                                    <div class="jawaban-rendered" id="nJawaban"></div>
+                                </div>
                             </div>
-
-                            <div class="form-group">
-                                <label class="mb-1"><strong>Butir Soal Hasil Parsing</strong></label>
-                                @if (is_array($item->tugasPembekalan?->soal_parsed_prompts) && count($item->tugasPembekalan->soal_parsed_prompts) > 0)
-                                    <ol class="pl-3 mb-0">
-                                        @foreach ($item->tugasPembekalan->soal_parsed_prompts as $parsed)
-                                            <li class="mb-1">{{ $parsed }}</li>
-                                        @endforeach
-                                    </ol>
-                                @else
-                                    <div class="text-muted">Belum ada hasil parsing tersimpan.</div>
-                                @endif
-                            </div>
-
-                            <div class="form-group">
-                                <label class="mb-1"><strong>Jawaban Siswa</strong></label>
-                                @if (!empty(trim((string) $item->jawaban_text)))
-                                    <div class="jawaban-rendered border rounded p-2 bg-light">
-                                        {!! $item->jawaban_text !!}
-                                    </div>
-                                @else
-                                    <div class="text-muted">-</div>
-                                @endif
-                            </div>
-
-                            @if ($canInputNilai)
-                                <hr>
-                                @if ($item->submitted_at)
-                                    <div class="form-row">
-                                        <div class="col-md-4 mb-2">
-                                            <label class="mb-1">Nilai (0 - 100)</label>
-                                            <input type="number" name="nilai[{{ $item->jawaban_id }}]"
-                                                form="bulkNilaiForm" class="form-control form-control-sm" min="0"
-                                                max="100" step="0.01"
-                                                value="{{ $item->nilaiTugas?->nilai ?? '' }}">
-                                        </div>
-                                        <div class="col-md-8 mb-2">
-                                            <label class="mb-1">Catatan Penilaian</label>
-                                            <input type="text" name="catatan[{{ $item->jawaban_id }}]"
-                                                form="bulkNilaiForm" class="form-control form-control-sm"
-                                                value="{{ $item->nilaiTugas?->catatan ?? '' }}"
-                                                placeholder="Catatan untuk siswa (opsional)">
-                                        </div>
-                                    </div>
-                                @else
-                                    <div class="alert alert-secondary py-2 mb-0">
-                                        Jawaban belum disubmit, nilai belum bisa diinput.
-                                    </div>
-                                @endif
-                            @endif
                         </div>
+                    </div>
+
+                    <div class="modal-footer nilai-footer d-block">
+                        @if ($canInputNilai)
+                            <div id="panelNilai">
+                                <div class="form-row align-items-end">
+                                    <div class="col-lg-5 mb-2">
+                                        <label class="mb-1 small font-weight-bold" for="inNilai">Nilai (0 - 100)</label>
+                                        <div class="d-flex align-items-center flex-wrap">
+                                            <input type="number" id="inNilai" class="form-control nilai-input mr-2"
+                                                min="0" max="100" step="0.01" inputmode="decimal"
+                                                autocomplete="off">
+                                            <div class="btn-group btn-group-sm flex-wrap" id="quickNilai">
+                                                @foreach ([50, 60, 70, 75, 80, 85, 90, 100] as $q)
+                                                    <button type="button" class="btn btn-outline-primary"
+                                                        data-nilai="{{ $q }}">{{ $q }}</button>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-7 mb-2">
+                                        <label class="mb-1 small font-weight-bold" for="inCatatan">Catatan Penilaian
+                                            <span class="text-muted font-weight-normal">(opsional)</span></label>
+                                        <input type="text" id="inCatatan" class="form-control form-control-sm"
+                                            maxlength="1000" placeholder="Catatan untuk siswa" autocomplete="off">
+                                        <div class="mt-1" id="quickCatatan">
+                                            @foreach (['Bagus, pertahankan', 'Sudah sesuai', 'Jawaban kurang lengkap', 'Perlu diperdalam', 'Terlalu singkat', 'Kurang sesuai soal'] as $c)
+                                                <button type="button" class="btn btn-xs btn-light border mr-1 mb-1"
+                                                    data-catatan="{{ $c }}">{{ $c }}</button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center flex-wrap">
+                                    <span class="small mr-3" id="nMsg"></span>
+                                    <span class="small text-muted d-none d-md-inline">Tekan <kbd>Enter</kbd> untuk simpan
+                                        &amp; lanjut</span>
+                                    <div class="ml-auto">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="btnSave">
+                                            <i class="fas fa-save mr-1"></i>Simpan
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-sm" id="btnSaveNext">
+                                            Simpan &amp; Berikutnya <i class="fas fa-arrow-right ml-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-secondary py-2 mb-0 d-none" id="panelBelumSubmit">
+                                Jawaban belum disubmit, nilai belum bisa diinput.
+                            </div>
+                        @else
+                            <div class="d-flex align-items-center">
+                                <span class="mr-2">Nilai:</span>
+                                <strong id="nNilaiView">-</strong>
+                                <span class="ml-3 text-muted" id="nCatatanView"></span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
-        @endforeach
+        </div>
+
+        <script type="application/json" id="detailData">{!! json_encode($detail, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}</script>
+        <script type="application/json" id="soalData">{!! json_encode($soalMap, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}</script>
     @endif
 @endsection
 
@@ -316,40 +324,126 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
     <style>
+        #modalNilai .modal-dialog {
+            max-width: min(1280px, 96vw);
+        }
+
+        .nilai-body {
+            height: calc(100vh - 290px);
+            min-height: 320px;
+            overflow: hidden;
+        }
+
+        .nilai-col {
+            height: 100%;
+            overflow-y: auto;
+            background: #fff;
+        }
+
+        .nilai-col:first-child {
+            background: #f8f9fb;
+        }
+
+        .nilai-footer {
+            background: #f8f9fb;
+            border-top: 2px solid #dee2e6;
+        }
+
+        .nilai-input {
+            width: 120px;
+            font-size: 1.6rem;
+            font-weight: 700;
+            text-align: center;
+            height: calc(2.9rem + 2px);
+        }
+
         .jawaban-rendered {
-            max-height: 360px;
-            overflow: auto;
+            font-size: 15px;
+            line-height: 1.65;
+            color: #1f2937;
+            word-break: break-word;
+        }
+
+        .jawaban-rendered > div:first-child {
+            margin-top: 0;
+        }
+
+        .jawaban-rendered p,
+        .jawaban-rendered .jw-line,
+        .jawaban-rendered blockquote {
+            margin: 0 0 .5rem;
+        }
+
+        .jawaban-rendered .jw-heading {
+            font-weight: 700;
+            margin: .75rem 0 .35rem;
+        }
+
+        .jawaban-rendered .jw-plain {
+            white-space: pre-wrap;
+        }
+
+        .jawaban-rendered blockquote {
+            border-left: 3px solid #cbd5e1;
+            padding-left: .75rem;
+            color: #475569;
+        }
+
+        .jawaban-rendered ul,
+        .jawaban-rendered ol {
+            padding-left: 1.4rem;
+            margin: 0 0 .5rem;
+        }
+
+        .jawaban-rendered li {
+            margin-bottom: .35rem;
         }
 
         .jawaban-rendered table {
             width: 100%;
             border-collapse: collapse;
+            margin: .5rem 0 .85rem;
+            font-size: 14px;
         }
 
         .jawaban-rendered th,
         .jawaban-rendered td {
-            border: 1px solid #d1d5db;
-            padding: 6px;
+            border: 1px solid #cbd5e1;
+            padding: 6px 8px;
             vertical-align: top;
         }
 
-        .jawaban-rendered p {
-            margin-bottom: .5rem;
+        .jawaban-rendered th {
+            background: #f1f5f9;
         }
 
-        .jawaban-rendered small {
-            color: #6b7280;
+        .soal-item {
+            display: flex;
+            gap: .6rem;
+            margin-bottom: .6rem;
         }
 
-        .jawaban-rendered ul,
-        .jawaban-rendered ol {
-            padding-left: 1.2rem;
-            margin-bottom: .5rem;
+        .soal-no {
+            flex: 0 0 1.6rem;
+            height: 1.6rem;
+            border-radius: 50%;
+            background: #007bff;
+            color: #fff;
+            font-size: .8rem;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.6rem;
         }
 
-        .soal-file-list {
-            display: grid;
-            gap: .85rem;
+        .soal-blob {
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.6;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: .65rem .75rem;
+            margin-bottom: .6rem;
         }
 
         .soal-file-item {
@@ -357,12 +451,13 @@
             border: 1px solid #e5e7eb;
             border-radius: 10px;
             padding: .75rem;
+            margin-bottom: .85rem;
         }
 
         .soal-file-preview-img {
             display: block;
             width: 100%;
-            max-height: 360px;
+            max-height: 420px;
             object-fit: contain;
             border-radius: 8px;
             border: 1px solid #e5e7eb;
@@ -371,10 +466,24 @@
 
         .soal-file-preview-pdf {
             width: 100%;
-            height: 360px;
+            height: 62vh;
+            min-height: 320px;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
             background: #fff;
+        }
+
+        @media (max-width: 991.98px) {
+            .nilai-body {
+                height: auto;
+                max-height: calc(100vh - 330px);
+                overflow-y: auto;
+            }
+
+            .nilai-col {
+                height: auto;
+                overflow: visible;
+            }
         }
     </style>
 @endsection
@@ -393,52 +502,396 @@
             if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
                 window.location.replace('{{ route('pembekalan.jawaban-siswa') }}');
             }
+
+            window.NILAI_CFG = {
+                canInput: @json((bool) $canInputNilai),
+                saveUrl: @json(url('pembekalan/jawaban-siswa')),
+                token: @json(csrf_token())
+            };
         </script>
-    @endif
 
-    @if ($isFiltered)
-        <script>
-            $(function() {
-                if (!$.fn.DataTable) {
-                    console.error('DataTables library gagal dimuat.');
-                    return;
-                }
-
-                if ($.fn.DataTable.isDataTable('#jawabanTable')) {
-                    $('#jawabanTable').DataTable().destroy();
-                }
-
-                $('#jawabanTable').DataTable({
-                    pageLength: 10,
-                    lengthChange: true,
-                    ordering: true,
-                    searching: true,
-                    responsive: true,
-                    autoWidth: false,
-                    order: [
-                        [0, 'desc']
-                    ],
-                    language: {
-                        url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json',
-                        emptyTable: 'Belum ada jawaban tugas siswa.'
+        @verbatim
+            <script>
+                $(function() {
+                    if (!$.fn.DataTable) {
+                        console.error('DataTables library gagal dimuat.');
+                        return;
                     }
-                });
 
-                // Move modals to <body> so iOS Safari stacking contexts don't bleed through the backdrop
-                document.querySelectorAll('.modal[id^="modalJawaban"]').forEach(function(el) {
-                    document.body.appendChild(el);
-                });
+                    const CFG = window.NILAI_CFG;
+                    const DATA = JSON.parse(document.getElementById('detailData').textContent);
+                    const SOAL = JSON.parse(document.getElementById('soalData').textContent);
+                    const $modal = $('#modalNilai');
+                    let current = null;
+                    let order = [];
+                    let soalKey = null;
+                    let filesKey = null;
+                    let saving = false;
 
-                // Load iframe/img assets only when the modal is first opened
-                $(document).on('show.bs.modal', '.modal', function() {
-                    $(this).find('iframe[data-src]').each(function() {
-                        $(this).attr('src', $(this).data('src')).removeAttr('data-src');
+                    if ($.fn.DataTable.isDataTable('#jawabanTable')) {
+                        $('#jawabanTable').DataTable().destroy();
+                    }
+
+                    const table = $('#jawabanTable').DataTable({
+                        pageLength: 10,
+                        lengthChange: true,
+                        ordering: true,
+                        searching: true,
+                        responsive: true,
+                        autoWidth: false,
+                        order: [
+                            [0, 'desc']
+                        ],
+                        language: {
+                            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json',
+                            emptyTable: 'Belum ada jawaban tugas siswa.'
+                        }
                     });
-                    $(this).find('img[data-src]').each(function() {
-                        $(this).attr('src', $(this).data('src')).removeAttr('data-src');
+
+                    $modal.appendTo(document.body);
+
+                    function isSubmitted(id) {
+                        return !!(DATA[id] && DATA[id].submitted);
+                    }
+
+                    // Urutan siswa mengikuti urutan dan pencarian tabel yang sedang tampil.
+                    function visibleIds() {
+                        return table.rows({
+                                order: 'current',
+                                search: 'applied'
+                            }).nodes().toArray()
+                            .map(function(tr) {
+                                return Number(tr.getAttribute('data-id'));
+                            })
+                            .filter(function(id) {
+                                return CFG.canInput ? isSubmitted(id) : !!DATA[id];
+                            });
+                    }
+
+                    function statusBadge(status) {
+                        if (status === 'selesai') {
+                            return '<span class="badge badge-success">Selesai</span>';
+                        }
+                        if (status === 'proses') {
+                            return '<span class="badge badge-warning text-white">Proses</span>';
+                        }
+                        return '<span class="badge badge-secondary">Belum</span>';
+                    }
+
+                    function openFor(id) {
+                        order = visibleIds();
+                        if (order.indexOf(id) === -1) {
+                            order.push(id);
+                        }
+                        show(id);
+                        $modal.modal('show');
+                    }
+
+                    function isDirty() {
+                        if (!CFG.canInput || current === null || !isSubmitted(current)) {
+                            return false;
+                        }
+                        const d = DATA[current];
+                        return String($('#inNilai').val()).trim() !== String(d.nilai) ||
+                            String($('#inCatatan').val()) !== String(d.catatan);
+                    }
+
+                    function go(delta) {
+                        const i = order.indexOf(current) + delta;
+                        if (i < 0 || i >= order.length) {
+                            return;
+                        }
+                        if (isDirty() && !window.confirm('Nilai/catatan belum disimpan. Pindah tanpa menyimpan?')) {
+                            return;
+                        }
+                        show(order[i]);
+                    }
+
+                    function buildSoal(tid) {
+                        const s = SOAL[tid] || {};
+                        const $box = $('#nSoal').empty();
+                        const essay = s.essay || [];
+                        const prompts = s.prompts || [];
+
+                        essay.forEach(function(t, i) {
+                            $box.append(
+                                $('<div class="soal-item">')
+                                .append($('<span class="soal-no">').text(i + 1))
+                                .append($('<div>').text(t))
+                            );
+                        });
+
+                        prompts.forEach(function(t) {
+                            if (essay.length) {
+                                return;
+                            }
+                            $box.append($('<div class="soal-blob">').text(t));
+                        });
+
+                        if (!essay.length && !prompts.length) {
+                            $box.append(
+                                '<div class="text-muted">Belum ada teks soal tersimpan. Lihat tab <strong>File Soal</strong>.</div>'
+                            );
+                        }
+                        $('#nFileCount').text((s.files || []).length || '');
+                    }
+
+                    function buildFiles(tid) {
+                        const s = SOAL[tid] || {};
+                        const files = s.files || [];
+                        const $box = $('#nFiles').empty();
+
+                        if (!files.length) {
+                            $box.append('<div class="text-muted">Tidak ada file soal.</div>');
+                            return;
+                        }
+
+                        files.forEach(function(f, i) {
+                            const $item = $('<div class="soal-file-item">');
+                            const $head = $('<div class="d-flex flex-wrap align-items-center justify-content-between mb-2">');
+                            const $title = $('<div>')
+                                .append($('<strong>').text('File ' + (i + 1)))
+                                .append($('<div class="text-muted small">').text(f.name));
+                            const $btns = $('<div>');
+
+                            if (f.exists) {
+                                $btns.append($('<a class="btn btn-xs btn-outline-primary mr-1" target="_blank" rel="noopener">')
+                                    .attr('href', f.url).html('<i class="fas fa-external-link-alt mr-1"></i>Buka'));
+                                $btns.append($('<a class="btn btn-xs btn-outline-secondary" download>')
+                                    .attr('href', f.url).html('<i class="fas fa-download mr-1"></i>Unduh'));
+                            }
+                            $head.append($title).append($btns);
+                            $item.append($head);
+
+                            if (!f.exists) {
+                                $item.append(
+                                    '<div class="alert alert-warning small mb-0">File tidak ditemukan di server. ' +
+                                    'Minta panitia mengunggah ulang file soal pada menu Tugas Pembekalan.</div>'
+                                );
+                            } else if (f.ext === 'pdf') {
+                                $item.append($('<iframe class="soal-file-preview-pdf">')
+                                    .attr('src', f.url + '#view=FitH').attr('title', 'File soal ' + (i + 1)));
+                                $item.append(
+                                    '<div class="small text-muted mt-1">PDF tidak tampil? Klik <strong>Buka</strong> atau <strong>Unduh</strong>.</div>'
+                                );
+                            } else if (['jpg', 'jpeg', 'png', 'webp'].indexOf(f.ext) !== -1) {
+                                $item.append($('<img class="soal-file-preview-img" loading="lazy">')
+                                    .attr('src', f.url).attr('alt', 'File soal ' + (i + 1)));
+                            } else {
+                                $item.append('<div class="text-muted small">Preview tidak tersedia untuk format ini.</div>');
+                            }
+
+                            $box.append($item);
+                        });
+                    }
+
+                    function ensureFiles() {
+                        if (filesKey !== soalKey && $('#tabFileLink').hasClass('active')) {
+                            buildFiles(soalKey);
+                            filesKey = soalKey;
+                        }
+                    }
+
+                    function setMsg(text, cls) {
+                        $('#nMsg').attr('class', 'small mr-3 ' + (cls || '')).text(text || '');
+                    }
+
+                    function show(id) {
+                        current = id;
+                        const d = DATA[id];
+                        const pos = order.indexOf(id);
+
+                        $('#nMeta').text([d.siswa, d.kelas, d.materi + ' - ' + d.tugas].filter(Boolean).join(' · '));
+                        $('#nSubmit').text(d.submitted ? 'Dikirim ' + d.submitted : '');
+                        $('#nStatus').html(statusBadge(d.status));
+                        $('#nCounter').text((pos + 1) + ' / ' + order.length);
+                        $('#btnPrev').prop('disabled', pos <= 0);
+                        $('#btnNext').prop('disabled', pos === -1 || pos >= order.length - 1);
+
+                        $('#nJawaban').html(d.html || '<div class="text-muted">Siswa belum menulis jawaban.</div>');
+                        $('.nilai-col').scrollTop(0);
+
+                        if (soalKey !== d.tugas_id) {
+                            soalKey = d.tugas_id;
+                            buildSoal(d.tugas_id);
+                            filesKey = null;
+                        }
+                        ensureFiles();
+
+                        if (CFG.canInput) {
+                            const ok = !!d.submitted;
+                            $('#panelNilai').toggleClass('d-none', !ok);
+                            $('#panelBelumSubmit').toggleClass('d-none', ok);
+                            $('#inNilai').val(d.nilai);
+                            $('#inCatatan').val(d.catatan);
+                            syncQuick();
+                            setMsg(d.status === 'selesai' ? 'Sudah dinilai. Anda bisa mengubahnya.' : '', 'text-muted');
+                            if (ok) {
+                                setTimeout(function() {
+                                    $('#inNilai').trigger('focus').trigger('select');
+                                }, 150);
+                            }
+                        } else {
+                            $('#nNilaiView').text(d.nilai === '' ? '-' : d.nilai);
+                            $('#nCatatanView').text(d.catatan);
+                        }
+                    }
+
+                    function syncQuick() {
+                        const v = String($('#inNilai').val()).trim();
+                        $('#quickNilai button').each(function() {
+                            const on = v !== '' && Number(v) === Number($(this).data('nilai'));
+                            $(this).toggleClass('active', on);
+                        });
+                    }
+
+                    function updateRow(id) {
+                        const d = DATA[id];
+                        const tr = table.rows().nodes().toArray().find(function(n) {
+                            return Number(n.getAttribute('data-id')) === id;
+                        });
+                        if (!tr) {
+                            return;
+                        }
+                        table.cell(tr, 4).data(statusBadge(d.status));
+                        table.cell(tr, 5).data(d.nilai === '' ? '-' : d.nilai);
+                    }
+
+                    function errorText(xhr) {
+                        const j = xhr.responseJSON || {};
+                        if (xhr.status === 419) {
+                            return 'Sesi habis. Muat ulang halaman lalu coba lagi.';
+                        }
+                        if (j.errors) {
+                            return Object.values(j.errors)[0][0];
+                        }
+                        return j.message || 'Gagal menyimpan (kode ' + xhr.status + ').';
+                    }
+
+                    function save(next) {
+                        if (saving || current === null || !isSubmitted(current)) {
+                            return;
+                        }
+                        const d = DATA[current];
+                        const raw = String($('#inNilai').val()).trim().replace(',', '.');
+                        const num = Number(raw);
+
+                        if (raw === '' || isNaN(num) || num < 0 || num > 100) {
+                            setMsg('Nilai harus berupa angka 0 - 100.', 'text-danger');
+                            $('#inNilai').trigger('focus');
+                            return;
+                        }
+
+                        saving = true;
+                        $('#btnSave, #btnSaveNext').prop('disabled', true);
+                        setMsg('Menyimpan...', 'text-muted');
+
+                        $.ajax({
+                            url: CFG.saveUrl + '/' + d.id + '/nilai',
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            data: {
+                                _token: CFG.token,
+                                nilai: raw,
+                                catatan: $('#inCatatan').val()
+                            }
+                        }).done(function(res) {
+                            d.nilai = res.nilai;
+                            d.catatan = res.catatan || '';
+                            d.status = 'selesai';
+                            updateRow(d.id);
+                            $('#nStatus').html(statusBadge('selesai'));
+
+                            if (!next) {
+                                setMsg('Tersimpan.', 'text-success');
+                                return;
+                            }
+
+                            const pos = order.indexOf(d.id);
+                            const target = order.slice(pos + 1).find(function(i) {
+                                return DATA[i].status !== 'selesai';
+                            });
+
+                            if (target !== undefined) {
+                                show(target);
+                                setMsg('Nilai ' + d.siswa + ' tersimpan.', 'text-success');
+                            } else {
+                                setMsg('Tersimpan. Tidak ada lagi jawaban yang belum dinilai di bawah ini.', 'text-success');
+                            }
+                        }).fail(function(xhr) {
+                            setMsg(errorText(xhr), 'text-danger');
+                        }).always(function() {
+                            saving = false;
+                            $('#btnSave, #btnSaveNext').prop('disabled', false);
+                        });
+                    }
+
+                    $(document).on('click', '.btn-buka', function() {
+                        openFor(Number($(this).data('id')));
+                    });
+
+                    $('#btnMulaiNilai').on('click', function() {
+                        const ids = visibleIds();
+                        const first = ids.find(function(i) {
+                            return DATA[i].status !== 'selesai';
+                        });
+                        if (first === undefined && !ids.length) {
+                            return;
+                        }
+                        openFor(first !== undefined ? first : ids[0]);
+                    });
+
+                    $('#btnPrev').on('click', function() {
+                        go(-1);
+                    });
+                    $('#btnNext').on('click', function() {
+                        go(1);
+                    });
+                    $('#btnSave').on('click', function() {
+                        save(false);
+                    });
+                    $('#btnSaveNext').on('click', function() {
+                        save(true);
+                    });
+
+                    $('#quickNilai').on('click', 'button', function() {
+                        $('#inNilai').val($(this).data('nilai')).trigger('focus');
+                        syncQuick();
+                    });
+
+                    $('#quickCatatan').on('click', 'button', function() {
+                        const cur = String($('#inCatatan').val()).trim();
+                        const add = String($(this).data('catatan'));
+                        const joined = cur === '' ? add : cur.replace(/[.\s]+$/, '') + '. ' + add;
+                        $('#inCatatan').val(joined.slice(0, 1000)).trigger('focus');
+                    });
+
+                    $('#inNilai').on('input', syncQuick);
+                    $('#inNilai, #inCatatan').on('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            save(true);
+                        }
+                    });
+
+                    $('#tabFileLink').on('shown.bs.tab', ensureFiles);
+
+                    $modal.on('hide.bs.modal', function(e) {
+                        if (isDirty() && !window.confirm('Nilai/catatan belum disimpan. Tutup tanpa menyimpan?')) {
+                            e.preventDefault();
+                        }
+                    });
+
+                    $modal.on('hidden.bs.modal', function() {
+                        $('#nFiles').empty();
+                        filesKey = null;
+                        current = null;
                     });
                 });
-            });
-        </script>
+            </script>
+        @endverbatim
     @endif
 @endsection

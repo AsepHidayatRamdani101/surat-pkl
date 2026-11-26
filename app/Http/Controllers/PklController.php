@@ -9,6 +9,7 @@ use App\Models\Pembimbing;
 use App\Models\ResumePklBulanan;
 use App\Models\Siswa;
 use App\Models\UploadAbsensiJurnalPkl;
+use App\Support\RoleRegistry;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -18,6 +19,8 @@ use Illuminate\Validation\Rule;
 class PklController extends Controller
 {
     private const PKL_INTERVAL_DAYS = 30;
+
+    private const PIMPINAN_MODULES = ['resume', 'upload-absensi-jurnal'];
 
     private const MODULES = [
         'setting-absensi' => ['title' => 'Setting Absen PKL', 'roles' => ['panitia'], 'type' => 'setting'],
@@ -37,11 +40,11 @@ class PklController extends Controller
             'title' => $definition['title'],
             'module' => $module,
             'type' => $definition['type'],
-            'isPanitia' => auth()->user()->role === 'panitia',
+            'isPanitia' => $this->canSeeAll(),
             'isSiswa' => auth()->user()->role === 'siswa',
             'isPembimbing' => auth()->user()->role === 'pembimbing',
             'siswaOptions' => $definition['type'] !== 'setting' ? $this->siswaOptions($pembimbingId) : collect(),
-            'pembimbingOptions' => auth()->user()->role === 'panitia' ? Pembimbing::orderBy('nama_pembimbing')->get() : collect(),
+            'pembimbingOptions' => $this->canSeeAll() ? Pembimbing::orderBy('nama_pembimbing')->get() : collect(),
             'setting' => $definition['type'] === 'setting' ? AbsensiControl::first() : null,
         ]);
     }
@@ -53,7 +56,7 @@ class PklController extends Controller
             return response()->json(AbsensiControl::first());
         }
 
-        if ($definition['type'] === 'resume' && in_array(auth()->user()->role, ['pembimbing', 'panitia'], true)) {
+        if ($definition['type'] === 'resume' && (auth()->user()->role === 'pembimbing' || $this->canSeeAll())) {
             return $this->resumeBimbingan($request);
         }
 
@@ -113,7 +116,7 @@ class PklController extends Controller
 
     public function jurnalRekap(Request $request)
     {
-        abort_unless(in_array(auth()->user()->role, ['pembimbing', 'panitia'], true), 403);
+        abort_unless(auth()->user()->role === 'pembimbing' || $this->canSeeAll(), 403);
 
         $requested = $request->input('periode_mulai');
         $periodeMulai = $requested
@@ -221,7 +224,7 @@ class PklController extends Controller
             return $this->pembimbingId();
         }
 
-        if (auth()->user()->role === 'panitia' && $request->filled('pembimbing_id')) {
+        if ($this->canSeeAll() && $request->filled('pembimbing_id')) {
             return (int) $request->validate(['pembimbing_id' => ['exists:pembimbings,id']])['pembimbing_id'];
         }
 
@@ -450,6 +453,13 @@ class PklController extends Controller
         });
     }
 
+    private function canSeeAll(): bool
+    {
+        $role = auth()->user()->role;
+
+        return $role === 'panitia' || RoleRegistry::has($role);
+    }
+
     private function pembimbingId(): ?int
     {
         if (auth()->user()->role !== 'pembimbing') {
@@ -472,7 +482,10 @@ class PklController extends Controller
     private function definition(string $module): array
     {
         $definition = self::MODULES[$module] ?? abort(404);
-        abort_unless(in_array(auth()->user()->role, $definition['roles'], true), 403);
+        $role = auth()->user()->role;
+        $allowed = in_array($role, $definition['roles'], true)
+            || (RoleRegistry::has($role) && in_array($module, self::PIMPINAN_MODULES, true));
+        abort_unless($allowed, 403);
         return $definition;
     }
 }

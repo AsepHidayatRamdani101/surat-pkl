@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\RuanganSidang;
+use App\Support\RoleRegistry;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -10,14 +11,14 @@ class RuanganSidangController extends Controller
 {
     public function index()
     {
-        abort_unless(auth()->user()->role === 'panitia', 403);
+        abort_unless($this->canView(), 403);
 
         return view('sidang.ruangan.index');
     }
 
     public function data()
     {
-        abort_unless(auth()->user()->role === 'panitia', 403);
+        abort_unless($this->canView(), 403);
 
         $query = RuanganSidang::query()->orderBy('nama_ruangan');
 
@@ -44,9 +45,19 @@ class RuanganSidangController extends Controller
             ->make(true);
     }
 
+    private function canView(): bool
+    {
+        return RoleRegistry::has(auth()->user()->role) || $this->canManage();
+    }
+
+    private function canManage(): bool
+    {
+        return in_array(auth()->user()->role, ['panitia', 'waka_sarpras'], true);
+    }
+
     public function store(Request $request)
     {
-        abort_unless(auth()->user()->role === 'panitia', 403);
+        abort_unless($this->canManage(), 403);
 
         $data = $request->validate([
             'nama_ruangan' => 'required|string|max:255',
@@ -62,7 +73,7 @@ class RuanganSidangController extends Controller
 
     public function update(Request $request, $id)
     {
-        abort_unless(auth()->user()->role === 'panitia', 403);
+        abort_unless($this->canManage(), 403);
 
         $data = $request->validate([
             'nama_ruangan' => 'required|string|max:255',
@@ -78,7 +89,7 @@ class RuanganSidangController extends Controller
 
     public function destroy($id)
     {
-        abort_unless(auth()->user()->role === 'panitia', 403);
+        abort_unless($this->canManage(), 403);
 
         RuanganSidang::findOrFail($id)->delete();
 

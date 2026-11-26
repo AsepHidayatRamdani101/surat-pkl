@@ -28,9 +28,7 @@ class NilaiTugasPembekalanController extends Controller
         }
 
         $isAuthorized = $jawabanTugasSiswa->siswa()
-            ->whereHas('kelompokBimbingan', function ($query) use ($pembimbing) {
-                $query->where('kelompok_bimbingan.pembimbing_id', $pembimbing->id);
-            })
+            ->whereHas('kelompokBimbingan', fn ($query) => $query->untukPembimbing($pembimbing->id))
             ->exists();
 
         if (!$isAuthorized) {
@@ -44,7 +42,7 @@ class NilaiTugasPembekalanController extends Controller
             'catatan' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        NilaiTugasPembekalan::updateOrCreate(
+        $nilai = NilaiTugasPembekalan::updateOrCreate(
             ['jawaban_tugas_siswa_id' => $jawabanTugasSiswa->id],
             [
                 'jawaban_tugas_siswa_id' => $jawabanTugasSiswa->id,
@@ -54,6 +52,15 @@ class NilaiTugasPembekalanController extends Controller
                 'dinilai_at' => now(),
             ]
         );
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Nilai tersimpan.',
+                'jawaban_id' => $jawabanTugasSiswa->id,
+                'nilai' => rtrim(rtrim(number_format((float) $nilai->nilai, 2, '.', ''), '0'), '.'),
+                'catatan' => $nilai->catatan,
+            ]);
+        }
 
         return redirect()->route('pembekalan.jawaban-siswa')->with('success', 'Nilai tugas berhasil disimpan.');
     }
@@ -95,9 +102,7 @@ class NilaiTugasPembekalanController extends Controller
         $authorizedJawaban = JawabanTugasSiswa::query()
             ->whereIn('id', $jawabanIds)
             ->whereNotNull('submitted_at')
-            ->whereHas('siswa.kelompokBimbingan', function ($query) use ($pembimbing) {
-                $query->where('kelompok_bimbingan.pembimbing_id', $pembimbing->id);
-            })
+            ->whereHas('siswa.kelompokBimbingan', fn ($query) => $query->untukPembimbing($pembimbing->id))
             ->get()
             ->keyBy('id');
 

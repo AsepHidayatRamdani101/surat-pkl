@@ -7,6 +7,7 @@ use App\Models\Kelas;
 use App\Models\Jurusan;
 use App\Models\Pembimbing;
 use App\Models\User;
+use App\Support\RoleRegistry;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
@@ -27,7 +28,7 @@ class PembimbingController extends Controller
     {
         $pembimbing = Pembimbing::all();
         $jurusan = Jurusan::orderBy('nama_jurusan')->get();
-        $kelas = Kelas::orderBy('nama_kelas')->get();
+        $kelas = Kelas::with('waliKelas:id,nama_pembimbing')->orderBy('nama_kelas')->get();
         $kelasOptions = $kelas->map(function ($item) {
             return [
                 'id' => (string) $item->id,
@@ -35,8 +36,14 @@ class PembimbingController extends Controller
                 'jurusan_id' => $item->jurusan_id ? (string) $item->jurusan_id : null,
             ];
         })->values()->all();
+        $waliKelasOptions = $kelas->map(fn ($item) => [
+            'id' => (string) $item->id,
+            'text' => $item->nama_kelas,
+            'wali_id' => $item->wali_kelas_id ? (string) $item->wali_kelas_id : null,
+            'wali_nama' => optional($item->waliKelas)->nama_pembimbing,
+        ])->values()->all();
 
-        return view('pembimbing.index', compact('pembimbing', 'jurusan', 'kelas', 'kelasOptions'));
+        return view('pembimbing.index', compact('pembimbing', 'jurusan', 'kelas', 'kelasOptions', 'waliKelasOptions'));
     }
 
     /**
@@ -50,6 +57,10 @@ class PembimbingController extends Controller
     public function data(Request $request)
     {
         $perusahaan = Pembimbing::with('jurusan')->get();
+        $waliKelasIds = Kelas::whereNotNull('wali_kelas_id')
+            ->get(['id', 'wali_kelas_id'])
+            ->groupBy('wali_kelas_id')
+            ->map(fn ($rows) => $rows->pluck('id')->map(fn ($id) => (string) $id)->values()->all());
         $existingUsernames = User::query()
             ->whereIn('username', $perusahaan->pluck('nip_pembimbing')->map(fn($nip) => (string) $nip)->all())
             ->pluck('username')
@@ -113,7 +124,7 @@ class PembimbingController extends Controller
                     ? '<span class="badge badge-soft-success px-2 py-1">Sudah Ada</span>'
                     : '<span class="badge badge-soft-secondary px-2 py-1">Belum Ada</span>';
             })
-            ->addColumn('aksi', function ($perusahaan) {
+            ->addColumn('aksi', function ($perusahaan) use ($waliKelasIds) {
                 return '
                     <div class="btn-group btn-aksi">
                         <button type="button" class="btn btn-outline-primary btn-sm btnEdit" title="Edit"
@@ -121,6 +132,8 @@ class PembimbingController extends Controller
                             data-nama="' . $perusahaan->nama_pembimbing . '"
                             data-nip="' . $perusahaan->nip_pembimbing . '"
                             data-jabatan="' . $perusahaan->jabatan_pembimbing . '"
+                            data-waka-role="' . e((string) $perusahaan->waka_role) . '"
+                            data-wali-kelas-ids="' . e(json_encode($waliKelasIds->get($perusahaan->id, []))) . '"
                             data-jenis="' . $perusahaan->jenis_kelamin . '"
                             data-nohp="' . $perusahaan->no_hp_pembimbing . '"
                             data-jumlah-jam="' . $perusahaan->jumlah_jam . '"
@@ -163,11 +176,12 @@ class PembimbingController extends Controller
             return response()->json(['message' => 'Jenis kelamin tidak valid.'], 422);
         }
 
-        Pembimbing::create([
+        $pembimbing = Pembimbing::create([
             'nama_pembimbing' => $request->nama_pembimbing,
             'nip_pembimbing' => $request->nip_pembimbing,
             'jenis_kelamin' => $jenisKelamin,
             'jabatan_pembimbing' => $request->jabatan_pembimbing,
+            'waka_role' => $this->wakaRole($request),
             'no_hp_pembimbing' => $request->no_hp_pembimbing,
             'jumlah_jam' => $request->jumlah_jam,
             'jumlah_siswa' => $request->jumlah_siswa,
@@ -176,6 +190,8 @@ class PembimbingController extends Controller
             'kelas_ids' => $this->normalizeKelasIds($request->kelas_ids, $request->jenis_guru),
 
         ]);
+
+        $this->syncWaliKelas($pembimbing, $request);
 
         return redirect()->route('pembimbing.index')->with('success', 'Data Pembimbing Berhasil Ditambahkan');
     }
@@ -385,7 +401,7 @@ class PembimbingController extends Controller
         }
 
         $pembimbing = Pembimbing::findOrFail($id);
-        $pembimbing->update([
+        $pembimbing->update(array_merge([
             'nama_pembimbing' => $request->nama_pembimbing,
             'nip_pembimbing' => $request->nip_pembimbing,
             'jenis_kelamin' => $jenisKelamin,
@@ -396,7 +412,9 @@ class PembimbingController extends Controller
             'jenis_guru' => $request->jenis_guru,
             'jurusan_id' => $request->jenis_guru === 'adaptif_normatif' ? null : $request->jurusan_id,
             'kelas_ids' => $this->normalizeKelasIds($request->kelas_ids, $request->jenis_guru),
-        ]);
+        ], $request->has('is_waka') ? ['waka_role' => $this->wakaRole($request)] : []));
+
+        $this->syncWaliKelas($pembimbing, $request);
 
         return response()->json(['success' => 'Data Pembimbing Berhasil Diupdate']);
     }
@@ -411,6 +429,35 @@ class PembimbingController extends Controller
         $pembimbing = Pembimbing::findOrFail($id);
         $pembimbing->delete();
         return response()->json(['success' => 'Data Pembimbing Berhasil Dihapus']);
+    }
+
+    // Peran wali kelas = kelas yang diampu. Hanya diproses bila form mengirim is_wali_kelas;
+    // bila tidak dicentang, semua kelas yang diampu pembimbing ini dilepas.
+    private function syncWaliKelas(Pembimbing $pembimbing, Request $request): void
+    {
+        if (!$request->has('is_wali_kelas')) {
+            return;
+        }
+
+        $ids = $request->boolean('is_wali_kelas')
+            ? Kelas::whereIn('id', (array) $request->input('wali_kelas_ids', []))->pluck('id')->all()
+            : [];
+
+        Kelas::where('wali_kelas_id', $pembimbing->id)
+            ->whereNotIn('id', $ids)
+            ->update(['wali_kelas_id' => null]);
+
+        if ($ids) {
+            Kelas::whereIn('id', $ids)->update(['wali_kelas_id' => $pembimbing->id]);
+        }
+    }
+
+    // Bidang waka dipilih manual dan berlaku untuk pembimbing mana pun. Kepala Sekolah memakai akun khusus.
+    private function wakaRole(Request $request): ?string
+    {
+        $role = $request->input('waka_role');
+
+        return $request->boolean('is_waka') && RoleRegistry::isWaka($role) ? $role : null;
     }
 
     private function normalizeJenisGuru($value): string

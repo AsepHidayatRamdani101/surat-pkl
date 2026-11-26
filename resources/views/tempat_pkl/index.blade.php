@@ -14,6 +14,9 @@
                     </div>
                 </div>
                 <div class="my-1 d-flex align-items-center flex-wrap">
+                    <a href="{{ route('tempat-pkl.index_cetak') }}" class="btn btn-outline-primary mr-2">
+                        <i class="fas fa-print mr-1"></i> Cetak Tempat PKL
+                    </a>
                     <a href="{{ route('tempat-pkl.export-excel') }}" class="btn btn-outline-success mr-2">
                         <i class="fas fa-file-excel mr-1"></i> Export Excel
                     </a>

@@ -28,7 +28,7 @@ class TempatPklController extends Controller
         if ($request->ajax()) {
             $query = TempatPkl::with(['siswa.kelas', 'perusahaan']);
 
-            if (auth()->user()->role !== 'panitia') {
+            if (!in_array(auth()->user()->role, ['panitia', ...\App\Support\RoleRegistry::keys()], true)) {
                 $query->whereHas('siswa.kelas.jurusan', function ($builder) {
                     $builder->where('id', auth()->user()->jurusan_id);
                 });
@@ -233,6 +233,10 @@ class TempatPklController extends Controller
 
     private function jurusanId(): ?int
     {
+        if (\App\Support\RoleRegistry::has(auth()->user()?->role)) {
+            return null;
+        }
+
         return auth()->user()?->jurusan_id ? (int) auth()->user()->jurusan_id : null;
     }
 

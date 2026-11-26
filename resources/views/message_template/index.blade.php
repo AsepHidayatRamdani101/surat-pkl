@@ -28,6 +28,12 @@
                     </div>
                 </div>
                 <div class="my-1 d-flex align-items-center flex-wrap">
+                    <a href="{{ route('message-template.send-message') }}" class="btn btn-outline-primary mr-2">
+                        <i class="fas fa-paper-plane mr-1"></i> Kirim Pesan
+                    </a>
+                    <a href="{{ route('message-template.fonnte-setting') }}" class="btn btn-outline-secondary mr-2">
+                        <i class="fas fa-plug mr-1"></i> Pengaturan Fonnte
+                    </a>
                     <a href="{{ route('message-template.logs') }}" class="btn btn-outline-info mr-2">
                         <i class="fas fa-history mr-1"></i> Riwayat Pengiriman
                     </a>

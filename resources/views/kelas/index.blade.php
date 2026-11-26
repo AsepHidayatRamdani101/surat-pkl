@@ -36,6 +36,7 @@
                             <th>Jurusan</th>
                             <th>Tingkat</th>
                             <th>Jumlah Rombel</th>
+                            <th>Wali Kelas</th>
                             <th style="width: 100px;" class="text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -114,10 +115,22 @@
                                         </select>
                                     </div>
 
-                                    <div class="form-group mb-0">
+                                    <div class="form-group">
                                         <label for="jumlah_rombel">Jumlah Rombel</label>
                                         <input type="number" name="jumlah_rombel" id="jumlah_rombel" class="form-control"
                                             min="0" required>
+                                    </div>
+
+                                    <div class="form-group mb-0">
+                                        <label for="wali_kelas_id">Wali Kelas</label>
+                                        <select name="wali_kelas_id" id="wali_kelas_id" class="form-control">
+                                            <option value="">Belum ditentukan</option>
+                                            @foreach ($pembimbing as $item)
+                                                <option value="{{ $item->id }}">{{ $item->nama_pembimbing }} ({{ $item->nip_pembimbing }})</option>
+                                            @endforeach
+                                        </select>
+                                        <small class="text-muted">Wali kelas dapat berganti peran lewat menu di bagian atas
+                                            untuk melihat dan mengekspor nilai siswa kelasnya.</small>
                                     </div>
                                 </div>
                                 <div class="modal-footer">
@@ -169,6 +182,12 @@
                     {
                         data: 'jumlah_rombel',
                         name: 'jumlah_rombel'
+                    },
+                    {
+                        data: 'wali_kelas_nama',
+                        name: 'wali_kelas_nama',
+                        orderable: false,
+                        searchable: false
                     },
                     {
                         data: 'aksi',
@@ -328,6 +347,7 @@
                         $('#jurusan_id').val(data.jurusan_id);
                         $('#tingkat').val(data.tingkat);
                         $('#jumlah_rombel').val(data.jumlah_rombel);
+                        $('#wali_kelas_id').val(data.wali_kelas_id || '');
                         $('#modalFormLabel').text('Edit Kelas');
                         $('#modalForm').modal('show');
                     }

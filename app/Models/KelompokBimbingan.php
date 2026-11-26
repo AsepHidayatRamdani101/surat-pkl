@@ -33,6 +33,14 @@ class KelompokBimbingan extends Model
         )->withTimestamps();
     }
 
+    public function scopeUntukPembimbing($query, $pembimbingId)
+    {
+        return $query->where(function ($q) use ($pembimbingId) {
+            $q->where('kelompok_bimbingan.pembimbing_id', $pembimbingId)
+                ->orWhereHas('pembimbings', fn ($m) => $m->where('pembimbings.id', $pembimbingId));
+        });
+    }
+
     public function siswa()
     {
         return $this->belongsToMany(Siswa::class, 'kelompok_bimbingan_siswa', 'kelompok_bimbingan_id', 'siswa_id');

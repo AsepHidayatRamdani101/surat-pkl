@@ -14,6 +14,9 @@
                     </div>
                 </div>
                 <div class="my-1 d-flex align-items-center flex-wrap">
+                    <a href="{{ route('monitoring.index_cetak') }}" class="btn btn-outline-primary mr-2">
+                        <i class="fas fa-print mr-1"></i> Cetak Monitoring PKL
+                    </a>
                     @if (auth()->user()->role === 'pembimbing')
                         <a href="{{ route('monitoring.exportExcel') }}" class="btn btn-outline-success">
                             <i class="fas fa-file-excel mr-1"></i> Export Excel
@@ -146,7 +149,10 @@
                         name: 'siswa.nama_siswa'
                     },
                     {
-                        data: 'siswa.kelas.nama_kelas',
+                        // Sebagian siswa mungkin belum memiliki kelas.
+                        data: function(row) {
+                            return row.siswa?.kelas?.nama_kelas ?? '-';
+                        },
                         name: 'siswa.kelas.nama_kelas'
                     },
                     {

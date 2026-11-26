@@ -153,6 +153,10 @@ class SuratIzinOrtuController extends Controller
 
     private function jurusanId(): ?int
     {
+        if (\App\Support\RoleRegistry::has(auth()->user()?->role)) {
+            return null;
+        }
+
         return auth()->user()?->jurusan_id ? (int) auth()->user()->jurusan_id : null;
     }
 

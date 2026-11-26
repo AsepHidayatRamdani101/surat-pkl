@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\FormatsExcelSheets;
 use App\Models\Kelas;
 use App\Models\Jurusan;
+use App\Models\Pembimbing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -19,17 +20,26 @@ class KelasController extends Controller
     public function index()
     {
         $jurusan = Jurusan::all();
-        return view('kelas.index', compact('jurusan'));
+        $pembimbing = Pembimbing::orderBy('nama_pembimbing')->get(['id', 'nama_pembimbing', 'nip_pembimbing']);
+        return view('kelas.index', compact('jurusan', 'pembimbing'));
     }
 
     public function data(Request $request)
     {
         if ($request->ajax()) {
-            $data = Kelas::with('jurusan')->get();
+            $data = Kelas::with(['jurusan', 'waliKelas'])->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('jurusan_nama', function ($row) {
                     return $row->jurusan->nama_jurusan ?? '-';
+                })
+                ->addColumn('wali_kelas_nama', function ($row) {
+                    if (!$row->waliKelas) {
+                        return '<span class="text-muted">Belum ditentukan</span>';
+                    }
+
+                    return e($row->waliKelas->nama_pembimbing)
+                        . '<br><small class="text-muted">' . e($row->waliKelas->nip_pembimbing) . '</small>';
                 })
                 ->addColumn('aksi', function ($row) {
                     return '
@@ -44,7 +54,7 @@ class KelasController extends Controller
                             </button>
                         </div>';
                 })
-                ->rawColumns(['aksi'])
+                ->rawColumns(['aksi', 'wali_kelas_nama'])
                 ->make(true);
         }
     }
@@ -56,6 +66,7 @@ class KelasController extends Controller
             'jurusan_id' => 'required|exists:jurusan,id',
             'tingkat' => 'required|integer|between:11,13',
             'jumlah_rombel' => 'required|integer|min:0',
+            'wali_kelas_id' => 'nullable|exists:pembimbings,id',
         ]);
 
         Kelas::create([
@@ -63,6 +74,7 @@ class KelasController extends Controller
             'jurusan_id' => $request->jurusan_id,
             'tingkat' => $request->tingkat,
             'jumlah_rombel' => $request->jumlah_rombel,
+            'wali_kelas_id' => $request->wali_kelas_id ?: null,
         ]);
 
         return response()->json(['message' => 'Data berhasil disimpan']);
@@ -75,6 +87,7 @@ class KelasController extends Controller
             'jurusan_id' => 'required|exists:jurusan,id',
             'tingkat' => 'required|integer|between:11,13',
             'jumlah_rombel' => 'required|integer|min:0',
+            'wali_kelas_id' => 'nullable|exists:pembimbings,id',
         ]);
 
         Kelas::findOrFail($id)->update([
@@ -82,6 +95,7 @@ class KelasController extends Controller
             'jurusan_id' => $request->jurusan_id,
             'tingkat' => $request->tingkat,
             'jumlah_rombel' => $request->jumlah_rombel,
+            'wali_kelas_id' => $request->wali_kelas_id ?: null,
         ]);
 
         return response()->json(['message' => 'Data berhasil diupdate']);

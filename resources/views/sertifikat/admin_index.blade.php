@@ -22,7 +22,11 @@
                                 <small>Cetak sertifikat pembekalan dan sertifikat pelaksanaan PKL per siswa</small>
                             </div>
                         </div>
-                        <form method="GET" action="{{ route('sertifikat.admin.index') }}" class="form-inline my-1">
+                        <div class="d-flex align-items-center flex-wrap my-1">
+                            <a href="{{ route('sertifikat.setting.edit') }}" class="btn btn-sm btn-outline-secondary mr-2">
+                                <i class="fas fa-sliders-h mr-1"></i> Pengaturan Sertifikat
+                            </a>
+                        <form method="GET" action="{{ route('sertifikat.admin.index') }}" class="form-inline">
                             <select name="wilayah" class="form-control form-control-sm mr-2" aria-label="Filter pembagian wilayah">
                                 <option value="">Semua Pembagian Wilayah</option>
                                 @foreach ($wilayahRows as $row)
@@ -40,6 +44,7 @@
                                 <a href="{{ route('sertifikat.admin.index') }}" class="btn btn-sm btn-outline-secondary ml-2">Reset</a>
                             @endif
                         </form>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">

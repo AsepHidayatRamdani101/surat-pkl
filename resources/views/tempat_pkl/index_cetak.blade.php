@@ -8,9 +8,14 @@
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <h4>Data Tempat PKL</h4>
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalTanggal">
-                        <i class="fas fa-calendar"></i> Nomor Surat
-                    </button>
+                    <div>
+                        <a href="{{ route('tempat-pkl.index') }}" class="btn btn-outline-secondary mr-2">
+                            <i class="fas fa-list mr-1"></i> Data Tempat
+                        </a>
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalTanggal">
+                            <i class="fas fa-calendar"></i> Nomor Surat
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="card-body">

@@ -396,7 +396,7 @@ class PembinaanPembekalanController extends Controller
     {
         $authUser = auth()->user();
 
-        if ($authUser && Gate::forUser($authUser)->allows('panitia')) {
+        if ($authUser && (Gate::forUser($authUser)->allows('panitia') || Gate::forUser($authUser)->allows('pimpinan'))) {
             return null;
         }
 

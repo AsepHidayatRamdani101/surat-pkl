@@ -9,7 +9,9 @@ use App\Models\Pembimbing;
 use App\Models\Siswa;
 use App\Models\TugasPembekalan;
 use Illuminate\Http\Request;
+use App\Support\JawabanFormatter;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 
 class JawabanTugasSiswaController extends Controller
 {
@@ -54,14 +56,14 @@ class JawabanTugasSiswaController extends Controller
                     if (empty($pembimbingAuthId)) {
                         $siswaQuery->whereRaw('1 = 0');
                     } else {
-                        $siswaQuery->whereHas('kelompokBimbingan', fn ($q) => $q->where('kelompok_bimbingan.pembimbing_id', $pembimbingAuthId));
+                        $siswaQuery->whereHas('kelompokBimbingan', fn ($q) => $q->untukPembimbing($pembimbingAuthId));
                     }
                 }
 
                 if (!empty($filters['kelompok_id'])) {
                     $siswaQuery->whereHas('kelompokBimbingan', fn ($q) => $q->where('kelompok_bimbingan.id', $filters['kelompok_id']));
                 } elseif (!empty($filters['pembimbing_id'])) {
-                    $siswaQuery->whereHas('kelompokBimbingan', fn ($q) => $q->where('kelompok_bimbingan.pembimbing_id', $filters['pembimbing_id']));
+                    $siswaQuery->whereHas('kelompokBimbingan', fn ($q) => $q->untukPembimbing($filters['pembimbing_id']));
                 }
 
                 $siswaList = $siswaQuery->get();
@@ -106,7 +108,7 @@ class JawabanTugasSiswaController extends Controller
                     if (empty($pembimbingAuthId)) {
                         $query->whereRaw('1 = 0');
                     } else {
-                        $query->whereHas('siswa.kelompokBimbingan', fn ($q) => $q->where('kelompok_bimbingan.pembimbing_id', $pembimbingAuthId));
+                        $query->whereHas('siswa.kelompokBimbingan', fn ($q) => $q->untukPembimbing($pembimbingAuthId));
                     }
                 }
 
@@ -115,7 +117,7 @@ class JawabanTugasSiswaController extends Controller
                 }
 
                 if (!empty($filters['pembimbing_id'])) {
-                    $query->whereHas('siswa.kelompokBimbingan', fn ($q) => $q->where('kelompok_bimbingan.pembimbing_id', $filters['pembimbing_id']));
+                    $query->whereHas('siswa.kelompokBimbingan', fn ($q) => $q->untukPembimbing($filters['pembimbing_id']));
                 }
 
                 if (!empty($filters['keyword'])) {
@@ -156,6 +158,8 @@ class JawabanTugasSiswaController extends Controller
             }
         }
 
+        [$detail, $soalMap] = $this->buildDetail($rows);
+
         $kelompokOptionsQuery = KelompokBimbingan::with('pembimbing')
             ->withCount('siswa')
             ->orderBy('nama_kelompok');
@@ -167,7 +171,7 @@ class JawabanTugasSiswaController extends Controller
                 $kelompokOptionsQuery->whereRaw('1 = 0');
                 $pembimbingOptionsQuery->whereRaw('1 = 0');
             } else {
-                $kelompokOptionsQuery->where('pembimbing_id', $pembimbingAuthId);
+                $kelompokOptionsQuery->untukPembimbing($pembimbingAuthId);
                 $pembimbingOptionsQuery->whereKey($pembimbingAuthId);
             }
         }
@@ -178,8 +182,62 @@ class JawabanTugasSiswaController extends Controller
 
         return view('pembekalan.jawaban_siswa', compact(
             'rows', 'filters', 'kelompokOptions', 'pembimbingOptions',
-            'materiOptions', 'canInputNilai', 'isFiltered'
+            'materiOptions', 'canInputNilai', 'isFiltered', 'detail', 'soalMap'
         ));
+    }
+
+    /**
+     * Data ringkas untuk modal penilaian: satu entri per jawaban dan satu entri soal per tugas.
+     */
+    private function buildDetail($rows): array
+    {
+        $detail = [];
+        $soalMap = [];
+
+        foreach ($rows->filter(fn ($r) => $r->jawaban_id) as $r) {
+            $tugas = $r->tugasPembekalan;
+            $tugasId = (int) ($tugas->id ?? 0);
+
+            if ($tugas && !isset($soalMap[$tugasId])) {
+                $soalMap[$tugasId] = $this->buildSoal($tugas);
+            }
+
+            $nilai = $r->nilaiTugas?->nilai;
+
+            $detail[$r->jawaban_id] = [
+                'id' => (int) $r->jawaban_id,
+                'tugas_id' => $tugasId,
+                'siswa' => $r->siswa->nama_siswa ?? '-',
+                'kelas' => $r->siswa->kelas->nama_kelas ?? '',
+                'materi' => $tugas?->materi?->topik ?? '-',
+                'tugas' => $tugas?->judul_tugas ?? '-',
+                'submitted' => $r->submitted_at ? \Carbon\Carbon::parse($r->submitted_at)->format('d-m-Y H:i') : null,
+                'html' => JawabanFormatter::render($r->jawaban_text),
+                'nilai' => $nilai === null ? '' : rtrim(rtrim(number_format((float) $nilai, 2, '.', ''), '0'), '.'),
+                'catatan' => (string) ($r->nilaiTugas?->catatan ?? ''),
+                'status' => $r->status,
+            ];
+        }
+
+        return [$detail, $soalMap];
+    }
+
+    private function buildSoal(TugasPembekalan $tugas): array
+    {
+        $files = collect(is_array($tugas->soal_files) ? $tugas->soal_files : [])->map(function ($path) {
+            return [
+                'name' => basename((string) $path),
+                'ext' => strtolower(pathinfo((string) $path, PATHINFO_EXTENSION)),
+                'url' => asset('storage/' . $path),
+                'exists' => Storage::disk('public')->exists($path),
+            ];
+        })->values()->all();
+
+        return [
+            'prompts' => array_values(array_filter((array) $tugas->soal_parsed_prompts, 'is_string')),
+            'essay' => array_values(array_filter((array) $tugas->soal_essay, fn ($v) => is_string($v) && trim($v) !== '')),
+            'files' => $files,
+        ];
     }
 
     public function index(Request $request)

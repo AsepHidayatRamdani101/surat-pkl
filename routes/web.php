@@ -52,6 +52,12 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth'])->name('dashboard');
+Route::get('/ganti-peran/{peran}', [\App\Http\Controllers\PeranController::class, 'ganti'])->middleware(['auth'])->name('peran.ganti');
+
+Route::middleware(['auth', 'can:wali_kelas'])->prefix('wali-kelas')->group(function () {
+    Route::get('/nilai', [\App\Http\Controllers\WaliKelasController::class, 'index'])->name('wali-kelas.nilai');
+    Route::get('/nilai/export', [\App\Http\Controllers\WaliKelasController::class, 'export'])->name('wali-kelas.export');
+});
 Route::get('/dashboard/siswa/absensi', [DashboardController::class, 'siswaAbsensi'])->middleware(['auth'])->name('dashboard.siswa.absensi');
 Route::get('/dashboard/siswa/materi', [DashboardController::class, 'siswaMateri'])->middleware(['auth'])->name('dashboard.siswa.materi');
 Route::get('/dashboard/siswa/materi/{materi}', [DashboardController::class, 'siswaMateriDetail'])->middleware(['auth'])->name('dashboard.siswa.materi.detail');
@@ -128,10 +134,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/sidang/kriteria/{id}', [KriteriaSidangController::class, 'destroy'])->name('sidang.kriteria.destroy');
 
     Route::get('/sidang/jadwal', [JadwalSidangController::class, 'index'])->name('sidang.jadwal');
+    Route::get('/sidang/bimbingan', [JadwalSidangController::class, 'index'])->defaults('jenis', 'bimbingan')->name('sidang.bimbingan');
     Route::get('/sidang/jadwal/data', [JadwalSidangController::class, 'data'])->name('sidang.jadwal.data');
     Route::post('/sidang/jadwal', [JadwalSidangController::class, 'store'])->name('sidang.jadwal.store');
     Route::post('/sidang/jadwal/generate', [JadwalSidangController::class, 'generate'])->name('sidang.jadwal.generate');
     Route::put('/sidang/jadwal/{id}', [JadwalSidangController::class, 'update'])->name('sidang.jadwal.update');
+    Route::post('/sidang/jadwal/bulk-delete', [JadwalSidangController::class, 'bulkDestroy'])->name('sidang.jadwal.bulk-delete');
     Route::delete('/sidang/jadwal/{id}', [JadwalSidangController::class, 'destroy'])->name('sidang.jadwal.destroy');
 
     Route::get('/sidang/laporan', [SidangController::class, 'laporan'])->name('sidang.laporan');
@@ -452,6 +460,7 @@ Route::middleware(['auth', 'can:panitia'])->group(function () {
     Route::get('/api/orangtua-list', [MessageTemplateController::class, 'apiOrangtuaList'])->name('api.orangtua-list');
 
     Route::get('/setting/system', [\App\Http\Controllers\SystemSettingController::class, 'index'])->name('setting.system');
+    Route::post('/setting/system/menu-kegiatan', [\App\Http\Controllers\SystemSettingController::class, 'updateMenuKegiatan'])->name('setting.menu-kegiatan');
     Route::post('/setting/system/clear-cache', [\App\Http\Controllers\SystemSettingController::class, 'clearCache'])->name('setting.clear-cache');
     Route::post('/setting/system/clear-sessions', [\App\Http\Controllers\SystemSettingController::class, 'clearSessions'])->name('setting.clear-sessions');
     Route::post('/setting/system/clear-views', [\App\Http\Controllers\SystemSettingController::class, 'clearViews'])->name('setting.clear-views');

@@ -33,19 +33,67 @@
                         <option value="bimbingan">Bimbingan Sidang</option>
                         <option value="sidang">Sidang</option>
                     </select>
+                    @if ($role === 'panitia')
+                        <button class="btn btn-outline-warning btn-sm mr-2" id="btnBukaKunciTerpilih" disabled>
+                            <i class="fas fa-unlock mr-1"></i> Buka Kunci Terpilih (<span id="jumlahTerkunci">0</span>)
+                        </button>
+                    @endif
                     @if (in_array($role, ['panitia', 'pembimbing']))
                         <button class="btn btn-outline-danger btn-sm mr-2" id="btnHapusTerpilih" disabled>
                             <i class="fas fa-trash mr-1"></i> Hapus Terpilih (<span id="jumlahTerpilih">0</span>)
                         </button>
                     @endif
                     @if ($role === 'pembimbing')
-                        <button class="btn btn-primary btn-sm" id="btnAturBimbinganMassal">
+                        <button class="btn btn-outline-primary btn-sm mr-2" id="btnAturBimbinganMassal">
                             <i class="fas fa-calendar-plus mr-1"></i> Tambah Bimbingan Massal
+                        </button>
+                        <button class="btn btn-primary btn-sm" id="btnAturSidang">
+                            <i class="fas fa-gavel mr-1"></i> Atur Sidang
                         </button>
                     @endif
                 </div>
             </div>
             <div class="card-body">
+                <div class="filter-jadwal mb-3">
+                    <div class="form-row align-items-end">
+                        <div class="col-6 col-md-2 form-group mb-2">
+                            <label class="small mb-1" for="filterTanggalDari">Tanggal dari</label>
+                            <input type="date" class="form-control form-control-sm" id="filterTanggalDari">
+                        </div>
+                        <div class="col-6 col-md-2 form-group mb-2">
+                            <label class="small mb-1" for="filterTanggalSampai">Sampai</label>
+                            <input type="date" class="form-control form-control-sm" id="filterTanggalSampai">
+                        </div>
+                        @if ($bisaFilterPembimbing)
+                            <div class="col-12 col-md-3 form-group mb-2">
+                                <label class="small mb-1" for="filterPembimbing">Pembimbing</label>
+                                <select class="form-control form-control-sm" id="filterPembimbing">
+                                    <option value="">Semua Pembimbing</option>
+                                    @foreach ($pembimbingList as $item)
+                                        <option value="{{ $item->id }}">{{ $item->nama_pembimbing }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+                        <div class="col-12 col-md-3 form-group mb-2">
+                            <label class="small mb-1" for="filterRuangan">Ruangan</label>
+                            <select class="form-control form-control-sm" id="filterRuangan">
+                                <option value="">Semua Ruangan</option>
+                                @foreach ($ruangan as $item)
+                                    <option value="{{ $item->id }}">{{ $item->nama_ruangan }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-auto form-group mb-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnResetFilter">
+                                <i class="fas fa-undo mr-1"></i> Reset
+                            </button>
+                        </div>
+                    </div>
+                    <small class="text-muted" id="infoFilter" style="display: none;">
+                        <i class="fas fa-filter mr-1"></i>Filter tanggal, pembimbing, atau ruangan hanya menampilkan siswa yang sudah dijadwalkan.
+                    </small>
+                </div>
                 <table id="jadwalTable" class="table table-striped table-hover" style="width: 100%;">
                     <thead>
                         <tr>
@@ -313,6 +361,80 @@
                 </div>
             </div>
 
+            {{-- Modal atur sidang: satu ruangan, satu waktu mulai, durasi mengikuti jumlah siswa --}}
+            <div class="modal fade" id="modalAturSidang" tabindex="-1" role="dialog">
+                <div class="modal-dialog" role="document">
+                    <form id="formAturSidang">
+                        @csrf
+                        <div id="aturSidangSiswaInputs"></div>
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"><i class="fas fa-gavel mr-1"></i> Atur Sidang</h5>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info small mb-3" id="infoAturSidang"></div>
+                                <div class="form-group">
+                                    <label>Ruangan <span class="text-danger">*</span></label>
+                                    <select class="form-control" name="ruangan_sidang_id" id="aturSidangRuangan" required>
+                                        <option value="">-- Pilih Ruangan --</option>
+                                        @foreach ($ruangan as $item)
+                                            <option value="{{ $item->id }}">{{ $item->nama_ruangan }}{{ $item->lokasi ? ' (' . $item->lokasi . ')' : '' }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 form-group">
+                                        <label>Tanggal <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" name="tanggal" id="aturSidangTanggal"
+                                            min="{{ now()->toDateString() }}" required>
+                                    </div>
+                                    <div class="col-md-6 form-group">
+                                        <label>Waktu Mulai <span class="text-danger">*</span></label>
+                                        <input type="time" class="form-control" name="jam_mulai" id="aturSidangMulai" required>
+                                    </div>
+                                </div>
+                                <div class="small text-muted mb-2">
+                                    <i class="far fa-clock mr-1"></i>Jam kerja {{ $jamKerja['mulai'] }}–{{ $jamKerja['selesai'] }}.
+                                    Tidak ada sidang pada
+                                    @foreach ($jamKerja['istirahat'] as $item)
+                                        {{ strtolower($item['nama']) }} {{ $item['mulai'] }}–{{ $item['selesai'] }}{{ $loop->last ? '.' : ' dan' }}
+                                    @endforeach
+                                    Slot yang menabrak jam tersebut otomatis dimajukan.
+                                </div>
+                                <div class="sidang-ringkasan" id="aturSidangRingkasan">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">Jumlah siswa</span><strong id="ringkasJumlah">0</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">Durasi per siswa</span><strong>{{ $durasiSidang }} menit</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">Waktu sidang</span><strong id="ringkasWaktu">-</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">Istirahat ({{ $istirahatSidang }} menit)</span><strong id="ringkasIstirahat">-</strong>
+                                    </div>
+                                </div>
+                                <div class="alert alert-warning small mt-3 mb-0" id="peringatanSidang" style="display: none;"></div>
+                                <div class="form-group mt-3 mb-0">
+                                    <label>Catatan</label>
+                                    <input type="text" class="form-control" name="catatan" maxlength="1000">
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                    <i class="fas fa-lock mr-1"></i>Setelah disimpan, tanggal, waktu, dan ruangan
+                                    terkunci (termasuk waktu istirahat) dan tidak dapat dipakai jadwal lain.
+                                </small>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-lock mr-1"></i> Simpan &amp; Kunci</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="modal fade" id="modalPembimbing" tabindex="-1" role="dialog">
                 <div class="modal-dialog" role="document">
                     <form id="formPembimbing">
@@ -327,7 +449,7 @@
                             <div class="modal-body">
                                 <div class="alert alert-info small">
                                     Jadwal dibuat untuk siswa yang dipilih. Jadwal sidang otomatis memakai
-                                    durasi <strong>10 menit per siswa</strong> dan langsung dikunci.
+                                    durasi <strong>{{ $durasiSidang }} menit per siswa</strong> dan langsung dikunci.
                                 </div>
                                 <div class="form-group">
                                     <label>Jenis Jadwal</label>
@@ -362,7 +484,7 @@
                                 <div class="form-group">
                                     <label>Jeda Antar Sesi (menit)</label>
                                     <input type="number" class="form-control" name="jeda_menit" value="5" min="0" max="120">
-                                    <small class="text-muted">Jeda diterapkan antar siswa saat sidang.</small>
+                                    <small class="text-muted">Berlaku untuk bimbingan. Sidang otomatis istirahat {{ $istirahatSidang }} menit.</small>
                                 </div>
                                 <div class="form-group">
                                     <label>Catatan</label>
@@ -383,6 +505,22 @@
 
 @section('css')
     @include('sidang.partials.table_styles')
+    <style>
+        .filter-jadwal {
+            background: #f8f9fa;
+            border: 1px solid #e3e6ea;
+            border-radius: .4rem;
+            padding: .75rem .9rem .35rem;
+        }
+
+        .sidang-ringkasan {
+            background: #f8f9fa;
+            border: 1px solid #e3e6ea;
+            border-radius: .4rem;
+            padding: .65rem .9rem;
+            line-height: 1.9;
+        }
+    </style>
 @endsection
 
 @section('js')
@@ -420,12 +558,30 @@
                 serverSide: true,
                 ajax: {
                     url: '{{ route('sidang.jadwal.data') }}',
-                    data: d => { d.jenis = $('#filterJenis').val(); }
+                    data: d => {
+                        d.jenis = $('#filterJenis').val();
+                        d.tanggal_dari = $('#filterTanggalDari').val();
+                        d.tanggal_sampai = $('#filterTanggalSampai').val();
+                        d.pembimbing_id = $('#filterPembimbing').val() || '';
+                        d.ruangan_sidang_id = $('#filterRuangan').val();
+                    }
                 },
                 columns: columns,
             });
 
-            $('#filterJenis').on('change', () => table.ajax.reload());
+            const filterAktif = () => ['#filterTanggalDari', '#filterTanggalSampai', '#filterPembimbing', '#filterRuangan']
+                .some(selector => $(selector).val());
+
+            $('#filterJenis, #filterTanggalDari, #filterTanggalSampai, #filterPembimbing, #filterRuangan').on('change', function() {
+                $('#infoFilter').toggle(filterAktif());
+                table.ajax.reload();
+            });
+
+            $('#btnResetFilter').on('click', function() {
+                $('#filterTanggalDari, #filterTanggalSampai, #filterPembimbing, #filterRuangan').val('');
+                $('#infoFilter').hide();
+                table.ajax.reload();
+            });
 
             $(document).on('click', '.btnAturPerOrang', function() {
                 const button = $(this);
@@ -470,12 +626,17 @@
             });
 
             const selectedRows = () => $('.row-check:checked');
-            const selectedJadwalIds = () => selectedRows().map(function() { return $(this).data('id'); }).get().filter(Boolean);
+            const selectedJadwalIds = () => selectedRows().filter(function() { return Number($(this).data('terkunci')) !== 1; })
+                .map(function() { return $(this).data('id'); }).get().filter(Boolean);
+            const selectedTerkunciIds = () => selectedRows().filter(function() { return Number($(this).data('terkunci')) === 1; })
+                .map(function() { return $(this).data('id'); }).get().filter(Boolean);
             const refreshSelection = () => {
                 const total = selectedRows().length;
                 const hapusCount = selectedJadwalIds().length;
                 $('#jumlahTerpilih').text(hapusCount);
                 $('#btnHapusTerpilih').prop('disabled', hapusCount === 0);
+                $('#jumlahTerkunci').text(selectedTerkunciIds().length);
+                $('#btnBukaKunciTerpilih').prop('disabled', selectedTerkunciIds().length === 0);
                 $('#checkAll').prop('checked', total > 0 && total === $('.row-check:not(:disabled)').length);
             };
 
@@ -484,6 +645,32 @@
             $('#checkAll').on('change', function() {
                 $('.row-check:not(:disabled)').prop('checked', this.checked);
                 refreshSelection();
+            });
+
+            const bukaKunci = ids => {
+                Swal.fire({
+                    icon: 'warning',
+                    title: `Buka kunci ${ids.length} jadwal?`,
+                    text: 'Waktu dan ruangan jadwal ini bisa diubah atau dihapus. Jadwal akan terkunci lagi saat sidang disimpan ulang.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, buka kunci',
+                    cancelButtonText: 'Batal',
+                }).then(result => {
+                    if (!result.isConfirmed) return;
+                    $.post('{{ route('sidang.jadwal.buka-kunci') }}', { ids: ids })
+                        .done(response => {
+                            table.ajax.reload(null, false);
+                            Swal.fire('Berhasil', response.message, 'success');
+                        })
+                        .fail(xhr => Swal.fire('Gagal',
+                            xhr.responseJSON?.message || 'Kunci jadwal tidak dapat dibuka.', 'error'));
+                });
+            };
+
+            $(document).on('click', '.btnBukaKunci', function() { bukaKunci([$(this).data('id')]); });
+            $('#btnBukaKunciTerpilih').on('click', function() {
+                const ids = selectedTerkunciIds();
+                if (ids.length) bukaKunci(ids);
             });
 
             $('#btnHapusTerpilih').on('click', function() {
@@ -523,6 +710,105 @@
                             xhr.responseJSON?.message || 'Jadwal tidak dapat disimpan.', 'error'));
                 });
 
+                const DURASI_SIDANG = @json($durasiSidang);
+                const ISTIRAHAT_SIDANG = @json($istirahatSidang);
+                const siswaBelumSidang = @json($siswaBelumSidangIds).map(Number);
+                const fmtJam = menit => String(Math.floor(menit / 60) % 24).padStart(2, '0') + ':' + String(menit % 60).padStart(2, '0');
+
+                const siswaSidangTerpilih = () => {
+                    const dipilih = [...new Set(selectedRows().map(function() { return Number($(this).data('siswa_id')); }).get())]
+                        .filter(id => siswaBelumSidang.includes(id));
+                    return dipilih.length ? dipilih : siswaBelumSidang;
+                };
+
+                const JAM_KERJA = @json($jamKerja);
+                const keMenit = jam => { const [h, m] = jam.split(':').map(Number); return h * 60 + m; };
+                const kerjaMulai = keMenit(JAM_KERJA.mulai);
+                const kerjaSelesai = keMenit(JAM_KERJA.selesai);
+                const istirahat = JAM_KERJA.istirahat.map(i => ({ ...i, awal: keMenit(i.mulai), akhir: keMenit(i.selesai) }));
+
+                // Sama dengan JamKerjaSidang::susun di server: slot yang menabrak istirahat dimajukan.
+                function susunSlot(awal, jumlah) {
+                    const slots = [];
+                    let waktu = awal;
+                    for (let i = 0; i < jumlah; i++) {
+                        istirahat.forEach(r => {
+                            if (waktu < r.akhir && waktu + DURASI_SIDANG > r.awal) waktu = r.akhir;
+                        });
+                        slots.push([waktu, waktu + DURASI_SIDANG]);
+                        waktu += DURASI_SIDANG;
+                    }
+                    return slots;
+                }
+
+                function hitungRingkasanSidang() {
+                    const jumlah = siswaSidangTerpilih().length;
+                    const mulai = $('#aturSidangMulai').val();
+                    const peringatan = $('#peringatanSidang');
+                    const tombol = $('#formAturSidang [type="submit"]');
+                    $('#ringkasJumlah').text(jumlah);
+                    peringatan.hide().removeClass('alert-info').addClass('alert-warning');
+                    tombol.prop('disabled', false);
+                    if (!mulai || !jumlah) {
+                        $('#ringkasWaktu, #ringkasIstirahat').text('-');
+                        return;
+                    }
+                    const awal = keMenit(mulai);
+                    if (awal < kerjaMulai || awal >= kerjaSelesai) {
+                        $('#ringkasWaktu, #ringkasIstirahat').text('-');
+                        peringatan.html(`<i class="fas fa-exclamation-triangle mr-1"></i>Waktu mulai harus di dalam jam kerja ${JAM_KERJA.mulai}–${JAM_KERJA.selesai}.`).show();
+                        tombol.prop('disabled', true);
+                        return;
+                    }
+                    const slots = susunSlot(awal, jumlah);
+                    const selesai = slots[jumlah - 1][1];
+                    $('#ringkasWaktu').text(fmtJam(slots[0][0]) + ' – ' + fmtJam(selesai));
+                    $('#ringkasIstirahat').text(fmtJam(selesai) + ' – ' + fmtJam(selesai + ISTIRAHAT_SIDANG));
+                    if (selesai > kerjaSelesai) {
+                        const muat = slots.filter(s => s[1] <= kerjaSelesai).length;
+                        peringatan.html(`<i class="fas fa-exclamation-triangle mr-1"></i>Sidang berakhir pukul ${fmtJam(selesai)}, melewati jam kerja sekolah (${JAM_KERJA.selesai}). `
+                            + `Pada waktu mulai ini hanya muat <strong>${muat} siswa</strong>. `
+                            + 'Mulai lebih awal, atau <strong>tambah hari</strong>: centang sebagian siswa di tabel, simpan, lalu atur lagi sisanya di hari berikutnya.').show();
+                        tombol.prop('disabled', true);
+                    } else if (slots.some((s, i) => s[0] !== awal + i * DURASI_SIDANG)) {
+                        peringatan.removeClass('alert-warning').addClass('alert-info')
+                            .html('<i class="fas fa-info-circle mr-1"></i>Sebagian siswa dimajukan karena menabrak jam istirahat atau shalat dzuhur.').show();
+                    }
+                }
+
+                $('#btnAturSidang').on('click', function() {
+                    const ids = siswaSidangTerpilih();
+                    if (!siswaBelumSidang.length) {
+                        Swal.fire('Perhatian', 'Semua siswa bimbingan Anda sudah memiliki jadwal sidang.', 'info');
+                        return;
+                    }
+                    $('#formAturSidang')[0].reset();
+                    $('#aturSidangSiswaInputs').html(ids.map(id => `<input type="hidden" name="siswa_ids[]" value="${id}">`).join(''));
+                    const dipilihManual = selectedRows().length > 0 && ids.length !== siswaBelumSidang.length;
+                    $('#infoAturSidang').html(`Sidang diatur untuk <strong>${ids.length} siswa ${dipilihManual ? 'terpilih' : 'bimbingan Anda yang belum disidang'}</strong>. `
+                        + 'Centang baris siswa terlebih dahulu untuk memilih sebagian saja. '
+                        + `Waktu selesai dihitung otomatis (${DURASI_SIDANG} menit per siswa).`);
+                    hitungRingkasanSidang();
+                    $('#modalAturSidang').modal('show');
+                });
+
+                $('#aturSidangMulai').on('input change', hitungRingkasanSidang);
+
+                $('#formAturSidang').on('submit', function(e) {
+                    e.preventDefault();
+                    const form = $(this);
+                    const tombol = form.find('[type="submit"]').prop('disabled', true);
+                    $.post('{{ route('sidang.jadwal.atur-sidang') }}', form.serialize())
+                        .done(response => {
+                            $('#modalAturSidang').modal('hide');
+                            table.ajax.reload();
+                            Swal.fire('Berhasil', response.message, 'success');
+                        })
+                        .fail(xhr => Swal.fire('Gagal',
+                            xhr.responseJSON?.message || 'Jadwal sidang tidak dapat disimpan.', 'error'))
+                        .always(hitungRingkasanSidang);
+                });
+
                 $('#pembimbingJenis').on('change', function() {
                     const sidang = $(this).val() === 'sidang';
                     $('#pembimbingRuangan').prop('required', sidang);
@@ -547,7 +833,7 @@
 
             $('#gen_jenis').on('change', function() {
                 const sidang = $(this).val() === 'sidang';
-                $('#gen_durasi').val(sidang ? 10 : 30).prop('readonly', sidang);
+                $('#gen_durasi').val(sidang ? @json($durasiSidang ?? 20) : 30).prop('readonly', sidang);
                 $('#generateRuanganGroup').toggle(sidang);
             }).trigger('change');
 

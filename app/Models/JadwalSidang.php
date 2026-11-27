@@ -9,6 +9,10 @@ class JadwalSidang extends Model
 {
     use HasFactory;
 
+    public const DURASI_SIDANG_MENIT = 20;
+
+    public const ISTIRAHAT_SIDANG_MENIT = 30;
+
     protected $table = 'jadwal_sidangs';
 
     protected $fillable = [

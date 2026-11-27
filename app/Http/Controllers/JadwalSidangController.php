@@ -6,6 +6,7 @@ use App\Models\JadwalSidang;
 use App\Models\Pembimbing;
 use App\Models\RuanganSidang;
 use App\Models\Siswa;
+use App\Support\JamKerjaSidang;
 use App\Support\RoleRegistry;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,7 +23,8 @@ class JadwalSidangController extends Controller
         abort_unless(in_array($role, ['panitia', 'pembimbing', 'siswa'], true) || RoleRegistry::has($role), 403);
 
         $ruangan = RuanganSidang::orderBy('nama_ruangan')->get();
-        $pembimbing = $role === 'panitia'
+        $bisaFilterPembimbing = !in_array($role, ['pembimbing', 'siswa'], true);
+        $pembimbing = $bisaFilterPembimbing
             ? Pembimbing::orderBy('nama_pembimbing')->get(['id', 'nama_pembimbing'])
             : collect();
         $siswaList = $role === 'panitia'
@@ -31,6 +33,11 @@ class JadwalSidangController extends Controller
 
         return view('sidang.jadwal.index', [
             'role' => $role,
+            'bisaFilterPembimbing' => $bisaFilterPembimbing,
+            'siswaBelumSidangIds' => $role === 'pembimbing' ? $this->siswaBelumSidang($this->pembimbingId())->all() : [],
+            'jamKerja' => JamKerjaSidang::untukJs(),
+            'durasiSidang' => JadwalSidang::DURASI_SIDANG_MENIT,
+            'istirahatSidang' => JadwalSidang::ISTIRAHAT_SIDANG_MENIT,
             'ruangan' => $ruangan,
             'pembimbingList' => $pembimbing,
             'siswaList' => $siswaList,
@@ -46,7 +53,24 @@ class JadwalSidangController extends Controller
         $allowedIds = $user->role === 'siswa'
             ? collect([$this->currentSiswa()->id])
             : ($user->role === 'pembimbing' ? $this->siswaBimbinganIds($this->pembimbingId()) : $this->allBimbinganSiswaIds());
-        $jenisList = $request->filled('jenis') ? [$request->input('jenis')] : ['bimbingan', 'sidang'];
+        $filter = $request->validate([
+            'jenis' => ['nullable', Rule::in(['bimbingan', 'sidang'])],
+            'tanggal_dari' => ['nullable', 'date'],
+            'tanggal_sampai' => ['nullable', 'date'],
+            'pembimbing_id' => ['nullable', 'integer'],
+            'ruangan_sidang_id' => ['nullable', 'integer'],
+        ]);
+        $jenisList = !empty($filter['jenis']) ? [$filter['jenis']] : ['bimbingan', 'sidang'];
+
+        $tanggalDari = !empty($filter['tanggal_dari']) ? Carbon::parse($filter['tanggal_dari'])->toDateString() : null;
+        $tanggalSampai = !empty($filter['tanggal_sampai']) ? Carbon::parse($filter['tanggal_sampai'])->toDateString() : null;
+        if ($tanggalDari && $tanggalSampai && $tanggalDari > $tanggalSampai) {
+            [$tanggalDari, $tanggalSampai] = [$tanggalSampai, $tanggalDari];
+        }
+        // Pembimbing hanya melihat siswanya sendiri, dan siswa hanya dirinya: filter pembimbing hanya untuk panitia/pimpinan.
+        $pembimbingFilter = in_array($user->role, ['pembimbing', 'siswa'], true) ? null : ($filter['pembimbing_id'] ?? null);
+        $ruanganFilter = $filter['ruangan_sidang_id'] ?? null;
+
         $students = Siswa::with(['kelas', 'pembimbingBimbingan', 'kelompokBimbingan.pembimbing', 'kelompokBimbingan.pembimbings'])
             ->whereIn('id', $allowedIds)
             ->orderBy('kelas_id')->orderBy('nama_siswa')->get();
@@ -91,9 +115,34 @@ class JadwalSidangController extends Controller
             });
         })->values();
 
+        // Baris siswa yang belum dijadwalkan tidak punya tanggal/ruangan, jadi ikut tersaring oleh filter tersebut.
+        if ($tanggalDari || $tanggalSampai || $pembimbingFilter || $ruanganFilter) {
+            $rows = $rows->filter(function ($item) use ($tanggalDari, $tanggalSampai, $pembimbingFilter, $ruanganFilter) {
+                $tanggal = $item->tanggal?->format('Y-m-d');
+
+                if (($tanggalDari || $tanggalSampai) && !$tanggal) {
+                    return false;
+                }
+                if ($tanggalDari && $tanggal < $tanggalDari) {
+                    return false;
+                }
+                if ($tanggalSampai && $tanggal > $tanggalSampai) {
+                    return false;
+                }
+                if ($pembimbingFilter && (int) $item->pembimbing_id !== (int) $pembimbingFilter) {
+                    return false;
+                }
+                if ($ruanganFilter && (int) $item->ruangan_sidang_id !== (int) $ruanganFilter) {
+                    return false;
+                }
+
+                return true;
+            })->values();
+        }
+
         return DataTables::of($rows)
             ->addIndexColumn()
-            ->addColumn('pilih', fn ($item) => '<input type="checkbox" class="row-check" data-id="' . ($item->id ?? '') . '" data-siswa_id="' . $item->siswa_id . '" data-terkunci="' . ($item->terkunci ? 1 : 0) . '"' . ($item->terkunci ? ' disabled' : '') . '>')
+            ->addColumn('pilih', fn ($item) => '<input type="checkbox" class="row-check" data-id="' . ($item->id ?? '') . '" data-siswa_id="' . $item->siswa_id . '" data-terkunci="' . ($item->terkunci ? 1 : 0) . '"' . ($item->terkunci && $user->role !== 'panitia' ? ' disabled' : '') . '>')
             ->addColumn('nama_siswa', fn ($item) => optional($item->siswa)->nama_siswa ?? '-')
             ->addColumn('kelas', fn ($item) => optional(optional($item->siswa)->kelas)->nama_kelas ?? '-')
             ->addColumn('nama_pembimbing', fn ($item) => optional($item->pembimbing)->nama_pembimbing ?? '-')
@@ -111,7 +160,14 @@ class JadwalSidangController extends Controller
                 }
 
                 if ($item->terkunci) {
-                    return '<span class="badge badge-success"><i class="fas fa-lock mr-1"></i>Terkunci</span>';
+                    $bukaKunci = $user->role === 'panitia' && $item->id
+                        ? '<button type="button" class="btn btn-outline-warning btn-sm btnBukaKunci" title="Buka Kunci Waktu"
+                                data-id="' . $item->id . '">
+                                <i class="fas fa-unlock"></i> Buka Kunci
+                            </button>'
+                        : '<span class="badge badge-success"><i class="fas fa-lock mr-1"></i>Terkunci</span>';
+
+                    return $bukaKunci;
                 }
 
                 $hapus = $item->id
@@ -141,8 +197,8 @@ class JadwalSidangController extends Controller
                             data-ruangan_sidang_id="' . ($item->ruangan_sidang_id ?? '') . '"
                             data-jenis="' . $item->jenis . '"
                             data-tanggal="' . optional($item->tanggal)->format('Y-m-d') . '"
-                            data-jam_mulai="' . substr($item->jam_mulai, 0, 5) . '"
-                            data-jam_selesai="' . substr($item->jam_selesai, 0, 5) . '"
+                            data-jam_mulai="' . substr((string) $item->jam_mulai, 0, 5) . '"
+                            data-jam_selesai="' . substr((string) $item->jam_selesai, 0, 5) . '"
                             data-catatan="' . htmlentities($item->catatan ?? '') . '">
                             <i class="fas fa-pen"></i>
                         </button>
@@ -164,9 +220,22 @@ class JadwalSidangController extends Controller
         abort_unless($this->allBimbinganSiswaIds()->contains((int) $data['siswa_id']), 422, 'Siswa belum terdaftar dalam kelompok bimbingan pembekalan PKL.');
         $data['pembimbing_id'] = $this->pembimbingUntukSiswa(Siswa::with(['kelompokBimbingan.pembimbing', 'kelompokBimbingan.pembimbings', 'pembimbingBimbingan'])->findOrFail($data['siswa_id']));
         if ($data['jenis'] === 'sidang') {
+            $mulai = Carbon::parse($data['tanggal'] . ' ' . $data['jam_mulai']);
+            $selesai = $mulai->copy()->addMinutes(JadwalSidang::DURASI_SIDANG_MENIT);
+            $diluar = JamKerjaSidang::validasiSlot($mulai, $selesai);
+            abort_if($diluar, 422, $diluar);
+            $bentrok = $this->cariBentrokSidang(
+                $mulai,
+                $selesai->copy()->addMinutes(JadwalSidang::ISTIRAHAT_SIDANG_MENIT),
+                $data['pembimbing_id'],
+                $data['ruangan_sidang_id'] ?? null,
+                JadwalSidang::where('siswa_id', $data['siswa_id'])->where('jenis', 'sidang')->pluck('id')->all()
+            );
+            abort_if($bentrok, 422, $bentrok);
+
             $data['terkunci'] = true;
-            $data['jeda_menit'] = (int) ($request->input('jeda_menit', 0));
-            $data['jam_selesai'] = Carbon::parse($data['tanggal'] . ' ' . $data['jam_mulai'])->addMinutes(10)->format('H:i');
+            $data['jeda_menit'] = JadwalSidang::ISTIRAHAT_SIDANG_MENIT;
+            $data['jam_selesai'] = $selesai->format('H:i');
         }
         JadwalSidang::updateOrCreate(['siswa_id' => $data['siswa_id'], 'jenis' => $data['jenis']], $data);
         return response()->json(['success' => true]);
@@ -182,15 +251,49 @@ class JadwalSidangController extends Controller
         $data['siswa_id'] = $jadwal->siswa_id;
         $data['pembimbing_id'] = $jadwal->pembimbing_id;
         if ($data['jenis'] === 'sidang') {
+            $mulai = Carbon::parse($data['tanggal'] . ' ' . $data['jam_mulai']);
+            $selesai = $mulai->copy()->addMinutes(JadwalSidang::DURASI_SIDANG_MENIT);
+            $diluar = JamKerjaSidang::validasiSlot($mulai, $selesai);
+            abort_if($diluar, 422, $diluar);
+            $bentrok = $this->cariBentrokSidang(
+                $mulai,
+                $selesai->copy()->addMinutes(JadwalSidang::ISTIRAHAT_SIDANG_MENIT),
+                $data['pembimbing_id'],
+                $data['ruangan_sidang_id'] ?? null,
+                [$jadwal->id]
+            );
+            abort_if($bentrok, 422, $bentrok);
+
             $data['terkunci'] = true;
-            $data['jeda_menit'] = (int) ($request->input('jeda_menit', 0));
-            $data['jam_selesai'] = Carbon::parse($data['tanggal'] . ' ' . $data['jam_mulai'])
-                ->addMinutes(10)
-                ->format('H:i');
+            $data['jeda_menit'] = JadwalSidang::ISTIRAHAT_SIDANG_MENIT;
+            $data['jam_selesai'] = $selesai->format('H:i');
         }
         $jadwal->update($data);
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Panitia membuka kunci waktu/ruangan jadwal agar bisa diubah atau dihapus.
+     * Jadwal yang dibuka tetap menahan ruangan dan pembimbingnya sampai diubah atau dihapus,
+     * dan terkunci lagi otomatis begitu jadwal sidang disimpan ulang.
+     */
+    public function bukaKunci(Request $request)
+    {
+        abort_unless(auth()->user()->role === 'panitia', 403);
+
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $dibuka = JadwalSidang::whereIn('id', $data['ids'])->where('terkunci', true)->update(['terkunci' => false]);
+        abort_if($dibuka === 0, 422, 'Tidak ada jadwal terkunci yang dibuka.');
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$dibuka} jadwal berhasil dibuka kuncinya. Silakan ubah atau hapus jadwalnya.",
+        ]);
     }
 
     public function destroy($id)
@@ -263,6 +366,14 @@ class JadwalSidangController extends Controller
         $jenis = $data['jenis'];
         $lewatiAkhirPekan = (bool) ($data['lewati_akhir_pekan'] ?? true);
 
+        if ($jenis === 'sidang') {
+            abort_if(
+                $data['jam_mulai'] < JamKerjaSidang::MULAI || $data['jam_selesai'] > JamKerjaSidang::SELESAI,
+                422,
+                'Jam sidang harus berada dalam jam kerja sekolah ' . JamKerjaSidang::MULAI . '–' . JamKerjaSidang::SELESAI . '.'
+            );
+        }
+
         if (!empty($data['timpa_jadwal'])) {
             JadwalSidang::where('jenis', $jenis)->delete();
         }
@@ -286,7 +397,7 @@ class JadwalSidangController extends Controller
         $tanggal = Carbon::parse($data['tanggal_mulai']);
         $jamMulaiHari = $data['jam_mulai'];
         $jamAkhirHari = $data['jam_selesai'];
-        $durasi = $jenis === 'sidang' ? 10 : (int) $data['durasi_menit'];
+        $durasi = $jenis === 'sidang' ? JadwalSidang::DURASI_SIDANG_MENIT : (int) $data['durasi_menit'];
         $jeda = (int) ($data['jeda_menit'] ?? 0);
 
         if ($lewatiAkhirPekan) {
@@ -300,6 +411,9 @@ class JadwalSidangController extends Controller
         $dibuat = 0;
 
         foreach ($siswaList as $siswa) {
+            if ($jenis === 'sidang') {
+                $slotWaktu = JamKerjaSidang::geser($slotWaktu, $durasi);
+            }
             $selesai = $slotWaktu->copy()->addMinutes($durasi);
 
             // Slot melewati jam kerja: pindah ruangan berikutnya, atau hari berikutnya.
@@ -381,8 +495,8 @@ class JadwalSidangController extends Controller
 
         $tanggal = Carbon::parse($data['tanggal']);
         $mulai = Carbon::parse($data['tanggal'] . ' ' . $data['jam_mulai']);
-        $durasi = $jenis === 'sidang' ? 10 : (int) $data['durasi_menit'];
-        $jeda = (int) ($data['jeda_menit'] ?? 0);
+        $durasi = $jenis === 'sidang' ? JadwalSidang::DURASI_SIDANG_MENIT : (int) $data['durasi_menit'];
+        $jeda = $jenis === 'sidang' ? JadwalSidang::ISTIRAHAT_SIDANG_MENIT : (int) ($data['jeda_menit'] ?? 0);
         $ruanganId = $data['ruangan_sidang_id'] ?? null;
         $selesai = $mulai->copy()->addMinutes($durasi);
         $jadwalId = $data['jadwal_id'] ?? null;
@@ -402,11 +516,21 @@ class JadwalSidangController extends Controller
             abort(422, 'Siswa sudah memiliki jadwal sidang yang terkunci.');
         }
 
-        abort_if(
-            $this->hasScheduleConflict($tanggal->toDateString(), $mulai, $selesai, $pembimbingId, $ruanganId, $jadwalLama?->id),
-            422,
-            'Jadwal bertabrakan dengan jadwal lain.'
-        );
+        if ($jenis === 'sidang') {
+            $diluar = JamKerjaSidang::validasiSlot($mulai, $selesai);
+            abort_if($diluar, 422, $diluar);
+            $bentrok = $this->cariBentrokSidang(
+                $mulai,
+                $selesai->copy()->addMinutes(JadwalSidang::ISTIRAHAT_SIDANG_MENIT),
+                $pembimbingId,
+                $ruanganId,
+                array_filter([$jadwalLama?->id])
+            );
+            abort_if($bentrok, 422, $bentrok);
+        } else {
+            $bentrok = $this->cariBentrokSidang($mulai, $selesai, $pembimbingId, $ruanganId, array_filter([$jadwalLama?->id]));
+            abort_if($bentrok, 422, $bentrok);
+        }
 
         $values = [
             'siswa_id' => (int) $data['siswa_id'],
@@ -441,7 +565,7 @@ class JadwalSidangController extends Controller
         return response()->json([
             'success' => true,
             'message' => $jenis === 'sidang'
-                ? 'Jadwal sidang berhasil dibuat dan dikunci (10 menit).'
+                ? 'Jadwal sidang berhasil dibuat dan dikunci (' . JadwalSidang::DURASI_SIDANG_MENIT . ' menit, lalu istirahat ' . JadwalSidang::ISTIRAHAT_SIDANG_MENIT . ' menit).'
                 : 'Jadwal bimbingan berhasil disimpan.',
         ]);
     }
@@ -482,6 +606,16 @@ class JadwalSidangController extends Controller
 
         DB::transaction(function () use ($data, $siswaIds, $pembimbingId, $tanggalMulai, $tanggalSelesai, &$dibuat) {
             for ($hari = $tanggalMulai->copy(); $hari->lte($tanggalSelesai); $hari->addDay()) {
+                $bentrok = $this->cariBentrokSidang(
+                    Carbon::parse($hari->toDateString() . ' ' . $data['jam_mulai']),
+                    Carbon::parse($hari->toDateString() . ' ' . $data['jam_selesai']),
+                    $pembimbingId,
+                    $data['ruangan_sidang_id'] ?? null,
+                    [],
+                    true
+                );
+                abort_if($bentrok, 422, $hari->format('d/m/Y') . ': ' . $bentrok);
+
                 foreach ($siswaIds as $siswaId) {
                     JadwalSidang::updateOrCreate(
                         [
@@ -509,6 +643,157 @@ class JadwalSidangController extends Controller
             'success' => true,
             'message' => "Jadwal bimbingan diterapkan ke {$siswaIds->count()} siswa selama {$jumlahHari} hari ({$dibuat} jadwal).",
         ]);
+    }
+
+    /**
+     * Pembimbing mengatur sidang untuk siswa bimbingannya sekaligus: tiap siswa
+     * mendapat DURASI_SIDANG_MENIT berurutan, lalu ruangan dan pembimbing dikunci
+     * sampai istirahat ISTIRAHAT_SIDANG_MENIT setelah siswa terakhir selesai.
+     */
+    public function aturSidang(Request $request)
+    {
+        abort_unless(auth()->user()->role === 'pembimbing', 403);
+
+        $data = $request->validate([
+            'ruangan_sidang_id' => ['required', 'exists:ruangan_sidangs,id'],
+            'tanggal' => ['required', 'date', 'after_or_equal:today'],
+            'jam_mulai' => ['required', 'date_format:H:i'],
+            'catatan' => ['nullable', 'string', 'max:1000'],
+            'siswa_ids' => ['nullable', 'array'],
+            'siswa_ids.*' => ['integer'],
+        ]);
+
+        $pembimbingId = $this->pembimbingId();
+        $siswaIds = $this->siswaBelumSidang($pembimbingId);
+
+        $terpilih = collect($data['siswa_ids'] ?? [])->map(fn ($id) => (int) $id)->unique();
+        if ($terpilih->isNotEmpty()) {
+            $siswaIds = $siswaIds->intersect($terpilih)->values();
+        }
+        abort_if($siswaIds->isEmpty(), 422, 'Tidak ada siswa bimbingan Anda yang belum dijadwalkan sidang.');
+
+        $siswaList = Siswa::whereIn('id', $siswaIds)->orderBy('kelas_id')->orderBy('nama_siswa')->get(['id']);
+        $jumlah = $siswaList->count();
+        $ruanganId = (int) $data['ruangan_sidang_id'];
+
+        $mulai = Carbon::parse($data['tanggal'] . ' ' . $data['jam_mulai']);
+        $durasi = JadwalSidang::DURASI_SIDANG_MENIT;
+        $awalKerja = JamKerjaSidang::pada($mulai, JamKerjaSidang::MULAI);
+        $akhirKerja = JamKerjaSidang::pada($mulai, JamKerjaSidang::SELESAI);
+
+        abort_if(
+            $mulai->lt($awalKerja) || $mulai->gte($akhirKerja),
+            422,
+            'Waktu mulai harus di dalam jam kerja sekolah ' . JamKerjaSidang::MULAI . '–' . JamKerjaSidang::SELESAI . '.'
+        );
+
+        // Slot yang menabrak istirahat (09.00–09.30) atau shalat dzuhur (12.00–12.30) dimajukan otomatis.
+        $slots = JamKerjaSidang::susun($mulai, $jumlah, $durasi);
+        $selesai = end($slots)[1];
+
+        if ($selesai->gt($akhirKerja)) {
+            $muat = collect($slots)->filter(fn ($slot) => $slot[1]->lte($akhirKerja))->count();
+            abort(422, "Waktu sidang {$jumlah} siswa berakhir pukul {$selesai->format('H:i')}, melewati jam kerja sekolah "
+                . '(' . JamKerjaSidang::SELESAI . "). Pada waktu mulai ini hanya muat {$muat} siswa. "
+                . 'Pilih waktu mulai lebih awal, atau pilih sebagian siswa saja lalu tambah hari untuk sisanya.');
+        }
+
+        $terkunciSampai = $selesai->copy()->addMinutes(JadwalSidang::ISTIRAHAT_SIDANG_MENIT);
+
+        DB::transaction(function () use ($siswaList, $slots, $jumlah, $mulai, $terkunciSampai, $pembimbingId, $ruanganId, $data) {
+            // Kunci baris ruangan agar dua pembimbing tidak bisa menyimpan slot yang sama bersamaan.
+            RuanganSidang::whereKey($ruanganId)->lockForUpdate()->first();
+
+            $bentrok = $this->cariBentrokSidang($mulai, $terkunciSampai, $pembimbingId, $ruanganId);
+            abort_if($bentrok, 422, $bentrok);
+
+            foreach ($siswaList->values() as $urutan => $siswa) {
+                [$mulaiSiswa, $selesaiSiswa] = $slots[$urutan];
+
+                JadwalSidang::create([
+                    'siswa_id' => $siswa->id,
+                    'pembimbing_id' => $pembimbingId,
+                    'ruangan_sidang_id' => $ruanganId,
+                    'jenis' => 'sidang',
+                    'terkunci' => true,
+                    'jeda_menit' => $urutan === $jumlah - 1 ? JadwalSidang::ISTIRAHAT_SIDANG_MENIT : 0,
+                    'tanggal' => $mulai->toDateString(),
+                    'jam_mulai' => $mulaiSiswa->format('H:i'),
+                    'jam_selesai' => $selesaiSiswa->format('H:i'),
+                    'catatan' => $data['catatan'] ?? null,
+                ]);
+            }
+        });
+
+        $ruangan = RuanganSidang::find($ruanganId);
+        $awalSidang = $slots[0][0];
+
+        return response()->json([
+            'success' => true,
+            'message' => "Sidang {$jumlah} siswa dijadwalkan di {$ruangan->nama_ruangan}, "
+                . $mulai->locale('id')->translatedFormat('d F Y') . ' pukul ' . $awalSidang->format('H:i') . '–' . $selesai->format('H:i')
+                . '. Waktu dan ruangan terkunci sampai ' . $terkunciSampai->format('H:i')
+                . ' (istirahat ' . JadwalSidang::ISTIRAHAT_SIDANG_MENIT . ' menit).',
+        ]);
+    }
+
+    private function siswaBelumSidang(int $pembimbingId)
+    {
+        $sudah = JadwalSidang::where('jenis', 'sidang')->pluck('siswa_id')->map(fn ($id) => (int) $id);
+
+        return $this->siswaBimbinganIds($pembimbingId)
+            ->map(fn ($id) => (int) $id)
+            ->diff($sudah)
+            ->values();
+    }
+
+    /**
+     * Cari jadwal yang bentrok dengan rentang [$mulai, $akhir) di ruangan atau pembimbing yang sama.
+     * Jadwal sidang tersimpan ikut menahan waktu istirahat (jeda_menit) setelah jam selesainya.
+     * Mengembalikan pesan kesalahan, atau null bila aman.
+     */
+    private function cariBentrokSidang(Carbon $mulai, Carbon $akhir, ?int $pembimbingId, ?int $ruanganId, array $kecualiIds = [], bool $hanyaSidang = false): ?string
+    {
+        if (!$pembimbingId && !$ruanganId) {
+            return null;
+        }
+
+        $tanggal = $mulai->toDateString();
+        $rows = JadwalSidang::with(['ruangan', 'pembimbing'])
+            ->whereDate('tanggal', $tanggal)
+            ->whereNotNull('jam_mulai')
+            ->when($hanyaSidang, fn ($query) => $query->where('jenis', 'sidang'))
+            ->when($kecualiIds, fn ($query) => $query->whereNotIn('id', $kecualiIds))
+            ->where(function ($query) use ($pembimbingId, $ruanganId) {
+                if ($pembimbingId) {
+                    $query->orWhere('pembimbing_id', $pembimbingId);
+                }
+                if ($ruanganId) {
+                    $query->orWhere('ruangan_sidang_id', $ruanganId);
+                }
+            })
+            ->get();
+
+        foreach ($rows as $row) {
+            $rowMulai = Carbon::parse($tanggal . ' ' . $row->jam_mulai);
+            $rowAkhir = Carbon::parse($tanggal . ' ' . $row->jam_selesai);
+            if ($row->jenis === 'sidang') {
+                $rowAkhir->addMinutes((int) $row->jeda_menit);
+            }
+
+            if ($rowMulai->lt($akhir) && $rowAkhir->gt($mulai)) {
+                $pemilik = $ruanganId && (int) $row->ruangan_sidang_id === $ruanganId
+                    ? 'Ruangan ' . ($row->ruangan->nama_ruangan ?? '-')
+                    : 'Pembimbing ' . ($row->pembimbing->nama_pembimbing ?? '-');
+
+                $istirahat = $row->jenis === 'sidang' && (int) $row->jeda_menit > 0 ? ' (termasuk istirahat)' : '';
+
+                return "{$pemilik} sudah terpakai pada {$rowMulai->format('H:i')}–{$rowAkhir->format('H:i')}"
+                    . $istirahat . '. Pilih waktu atau ruangan lain.';
+            }
+        }
+
+        return null;
     }
 
     private function siswaBimbinganIds(int $pembimbingId)
@@ -542,23 +827,6 @@ class JadwalSidangController extends Controller
             ->whereHas('kelompokBimbingan')
             ->orWhereHas('pembimbingBimbingan')
             ->pluck('id');
-    }
-
-    private function hasScheduleConflict(string $tanggal, Carbon $mulai, Carbon $selesai, int $pembimbingId, ?int $ruanganId, ?int $kecualiId = null): bool
-    {
-        return JadwalSidang::whereDate('tanggal', $tanggal)
-            ->when($kecualiId, fn ($query) => $query->where('id', '!=', $kecualiId))
-            ->where(function ($query) use ($pembimbingId, $ruanganId) {
-                $query->where('pembimbing_id', $pembimbingId);
-                if ($ruanganId) {
-                    $query->orWhere('ruangan_sidang_id', $ruanganId);
-                }
-            })
-            ->where(function ($query) use ($mulai, $selesai) {
-                $query->where('jam_mulai', '<', $selesai->format('H:i:s'))
-                    ->where('jam_selesai', '>', $mulai->format('H:i:s'));
-            })
-            ->exists();
     }
 
     private function pembimbingUntukSiswa(Siswa $siswa): ?int

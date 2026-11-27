@@ -138,6 +138,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/sidang/jadwal/data', [JadwalSidangController::class, 'data'])->name('sidang.jadwal.data');
     Route::post('/sidang/jadwal', [JadwalSidangController::class, 'store'])->name('sidang.jadwal.store');
     Route::post('/sidang/jadwal/generate', [JadwalSidangController::class, 'generate'])->name('sidang.jadwal.generate');
+    Route::post('/sidang/jadwal/atur-sidang', [JadwalSidangController::class, 'aturSidang'])->name('sidang.jadwal.atur-sidang');
+    Route::post('/sidang/jadwal/buka-kunci', [JadwalSidangController::class, 'bukaKunci'])->name('sidang.jadwal.buka-kunci');
     Route::put('/sidang/jadwal/{id}', [JadwalSidangController::class, 'update'])->name('sidang.jadwal.update');
     Route::post('/sidang/jadwal/bulk-delete', [JadwalSidangController::class, 'bulkDestroy'])->name('sidang.jadwal.bulk-delete');
     Route::delete('/sidang/jadwal/{id}', [JadwalSidangController::class, 'destroy'])->name('sidang.jadwal.destroy');
